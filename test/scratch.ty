@@ -1,0 +1,7 @@
+
+a = "Hello"
+
+def foo():
+    printf("%s", a)
+
+foo()
