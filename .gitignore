@@ -8,4 +8,15 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
-_deps
+_deps/
+cmake-build-debug/
+antlr4_runtime/
+.idea/
+gen/
+cmake/
+thirdparty/
+include/parser/
+build.ninja
+exec
+*.asm
+*.o

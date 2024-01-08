@@ -1,7 +1,13 @@
 
-a = "Hello"
+a = "Hello world"
+
+printf("Message: %s", a)
+
+b = "bar"
 
 def foo():
-    printf("%s", a)
+    printf("Foo: %s", b)
 
 foo()
+
+printf("Message: %s", "bye")

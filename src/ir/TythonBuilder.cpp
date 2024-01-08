@@ -77,7 +77,7 @@ llvm::StructType *TythonBuilder::getValueStructType(tython::Type type) {
     return this->typeMap.at(type);
 }
 
-llvm::Value *TythonBuilder::getContent(Variable *dataEntry) {
+llvm::Value *TythonBuilder::getValuePtr(Variable *dataEntry) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
@@ -94,18 +94,26 @@ llvm::Value *TythonBuilder::getContent(Value *value) {
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
-    return this->CreateGEP(this->getValueStructType(value->type), value->content, { zero, one });
+    auto gep = this->CreateGEP(this->getValueStructType(value->type), value->content, { zero, one });
+
+    return this->CreateLoad(this->getLLVMType(value->type), gep);
 }
 
 llvm::Value *TythonBuilder::getValueContent(Variable *dataEntry) {
 
+    auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
+    // double indirection
+
     auto gep1 = this->CreateGEP(this->variableStructType, dataEntry->variable, { zero, one });
-    return this->CreateGEP(this->getValueStructType(dataEntry->value->type), gep1, { zero, one });
+
+    auto load = this->CreateLoad(ptr_t, gep1);
+
+    return this->CreateGEP(this->getValueStructType(dataEntry->value->type), load, { zero, one });
 }
 
 Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content) {
@@ -121,13 +129,17 @@ Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content) {
     }
 
     // store the content in the alloc
+    const auto int8_t = llvm::IntegerType::getInt8Ty(this->getContext());
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
-    auto content_ptr = this->CreateGEP(ty, alloc, { zero, one });
+    auto type_ptr = this->CreateGEP(ty, alloc, { zero, zero });
+    auto typeValue = llvm::ConstantInt::get(int8_t, type);
+    this->CreateStore(typeValue, type_ptr);
 
+    auto content_ptr = this->CreateGEP(ty, alloc, { zero, one });
     this->CreateStore(content, content_ptr);
 
     return new Value(type, alloc);
@@ -149,17 +161,17 @@ Variable *TythonBuilder::CreateVariable(std::string &name) {
     }
 
     // set name
-    {
-        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-        const auto zero = llvm::ConstantInt::get(int32_t, 0);
-        auto name_ptr = this->CreateGEP(this->variableStructType, alloc, {zero, zero});
-        // create string literal character array
-        auto charVector = std::vector<char>(name.begin(), name.end());
-        charVector.push_back('\0'); // null-terminator
-        // populate allocated char*
-        auto bytes = llvm::ConstantDataArray::get(this->getContext(), charVector);
-        this->CreateStore(bytes, name_ptr);
-    }
+//    {
+//        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+//        const auto zero = llvm::ConstantInt::get(int32_t, 0);
+//        auto name_ptr = this->CreateGEP(this->variableStructType, alloc, {zero, zero});
+//        // create string literal character array
+//        auto charVector = std::vector<char>(name.begin(), name.end());
+//        charVector.push_back('\0'); // null-terminator
+//        // populate allocated char*
+//        auto bytes = llvm::ConstantDataArray::get(this->getContext(), charVector);
+//        this->CreateStore(bytes, name_ptr);
+//    }
 
     const auto variable = new Variable(name, alloc);
 
@@ -171,15 +183,15 @@ Variable *TythonBuilder::CreateVariable(std::string &name) {
 llvm::Value* TythonBuilder::CreateMalloc(llvm::Type* type, unsigned int amount) {
 
     // get size of type
-    auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     auto type_width = this->module->getDataLayout().getTypeAllocSize(type).getFixedSize();
 
     llvm::Value* reserve_size;
 
     if (amount > 1) {
-        reserve_size = llvm::ConstantInt::get(int64_t, type_width * amount);
+        reserve_size = llvm::ConstantInt::get(int32_t, type_width * amount);
     } else {
-        reserve_size = llvm::ConstantInt::get(int64_t, type_width);
+        reserve_size = llvm::ConstantInt::get(int32_t, type_width);
     }
 
     auto f = this->module->malloc_func;

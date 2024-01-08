@@ -17,7 +17,7 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
     }
 
     // get reference to target content field
-    auto content = builder->getContent(dataEntry);
+    auto content = builder->getValuePtr(dataEntry);
 
     this->builder->CreateStore(value->content, content);
     // update shadow
@@ -33,7 +33,10 @@ std::any SourceFileVisitor::visitAtomic(TythonParser::AtomicContext *ctx) {
         // fetch the identifier if it exists, otherwise throw exception
         if (auto dataEntry = this->builder->current_scope->findDataEntry(identifier->getText())) {
 //            return dataEntry->value; // todo: we can do this iff we know that the variable's value was declared in this same (function-level) scope! Note: it's a bit hard to distinguish a function level at the moment, we can restrict it to stricly "his scope" first.
-            return new Value(dataEntry->value->type, this->builder->getValueContent(dataEntry));
+
+            auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+            auto load = this->builder->CreateLoad(ptr_t, this->builder->getValuePtr(dataEntry));
+            return new Value(dataEntry->value->type, load);
         }
 
         throw CompileException("Unknown symbol " + identifier->getText());
@@ -72,7 +75,12 @@ std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
         // populate allocated char*
         auto bytes = llvm::ConstantDataArray::get(this->builder->getContext(), charVector);
 
-        return this->builder->CreateValue(tython::Type::STRING, bytes);
+        auto int8_t = llvm::IntegerType::getInt8Ty(this->builder->getContext());
+        auto malloc = this->builder->CreateMalloc(int8_t, charVector.size());
+
+        this->builder->CreateStore(bytes, malloc);
+
+        return this->builder->CreateValue(tython::Type::STRING, malloc);
     }
 
     throw NotImplemented("Encountered unknown literal type. Language implementation and specification have probably diverged. Please contact the project maintainer.");
@@ -87,8 +95,7 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "if_end", f, nullptr);
 
     auto expression_value = any_cast<Value*>(visitExpression(ctx->expression()));
-    auto condition = this->builder->getContent(expression_value);
-    auto load = this->builder->CreateLoad(this->builder->getLLVMType(expression_value->type), condition);
+    auto load = this->builder->getContent(expression_value);
 
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
     const auto zero = llvm::ConstantInt::get(int64_t, 0, true);
@@ -212,18 +219,11 @@ std::any SourceFileVisitor::visitParameters(TythonParser::ParametersContext *ctx
         values.push_back(any_cast<Value*>(TythonBaseVisitor::visitExpression(p)));
     }
 
-//
-//    std::transform(ctx->params.begin(), ctx->params.end(), values.begin(),
-//                   [this](auto p){ return any_cast<Value*>(TythonBaseVisitor::visitExpression(p)); });
-
     std::vector<llvm::Value*> params;
     params.reserve(values.size());
-//
-//    std::transform(values.begin(), values.end(), params.begin(),
-//                   [this](Value* v){ return builder->getContent(v); });
 
     for (auto v : values) {
-        params.push_back(builder->getContent(v));
+        params.push_back(this->builder->getContent(v));
     }
 
     return params;
@@ -247,7 +247,7 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
         }
 
         // assign the passed argument value to the new variable
-        auto target = this->builder->getContent(dataEntry);
+        auto target = this->builder->getValuePtr(dataEntry);
         this->builder->CreateStore(v, target);
         dataEntry->value = new Value(tython::Type::UNKNOWN, v);
 

@@ -32,7 +32,7 @@ public:
 
     llvm::Type* getLLVMType(tython::Type type);
     llvm::StructType* getValueStructType(tython::Type type);
-    llvm::Value* getContent(Variable* dataEntry);
+    llvm::Value* getValuePtr(Variable* dataEntry);
     llvm::Value* getContent(Value* value);
     llvm::Value* getValueContent(Variable* dataEntry);
 
