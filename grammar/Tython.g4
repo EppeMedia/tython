@@ -4,21 +4,29 @@ program             : (statement | function)+ EOF;
 
 globalStatement     : assign_statement SYM_STMNT_DELIMITER?;
 
-function            : KW_DEF IDENTIFIER SYM_LPAR arguments SYM_RPAR SYM_BLOCK_START
+function            : KW_DEF IDENTIFIER SYM_LPAR arguments SYM_ELLIPS? SYM_RPAR SYM_BLOCK_START
                         block;
 
 block               : (SYM_INDENT statement)*;
 
 statement           : (expression | assign_statement | branch_statement | return_statement) SYM_STMNT_DELIMITER?;
 
-assign_statement    : IDENTIFIER SYM_ASSIGN atomic;
+assign_statement    : IDENTIFIER SYM_ASSIGN expression;
 branch_statement    : if_statement;
 return_statement    : KW_RETURN expression;
 
 if_statement        : KW_IF expression SYM_BLOCK_START
-                        br_true=block
-                     (KW_ELSE
-                        br_else=block)?;
+                        br_if=block
+                      (KW_ELSE (
+                        br_else_if=if_statement
+                        | (SYM_BLOCK_START br_else=block)
+                      )
+                      )?;
+
+else_if_statement   : ;
+
+else_statement      : KW_ELSE SYM_BLOCK_START
+                        br_else=block;
 
 arguments           : args+=IDENTIFIER?
                     | args+=IDENTIFIER (SYM_ARG_SEPARATOR args+=IDENTIFIER)+;
@@ -26,13 +34,15 @@ arguments           : args+=IDENTIFIER?
 parameters          : params+=expression?
                     | params+=expression (SYM_ARG_SEPARATOR params+=expression)+;
 
-expression          : atomic | binary_expression | call_expression;
-
 call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 
-binary_expression   : lhs=atomic binary_operator rhs=atomic;
+expression          : lhs=expression binary_operator rhs=expression #binary_expression
+                    | call_expression                               #lbl_call_expression
+                    | SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
+                    | atomic                                        #lbl_atomic
+                    ;
 
-binary_operator     : inequality_operator | boolean_operator | arithmetic_operator;
+binary_operator     : inequality_operator | logic_operator | arithmetic_operator;
 
 inequality_operator : SYM_NEQ
                     | SYM_LT
@@ -41,7 +51,7 @@ inequality_operator : SYM_NEQ
                     | SYM_GT
                     | SYM_GTE;
 
-boolean_operator    : SYM_AND | SYM_OR;
+logic_operator    : SYM_AND | SYM_OR;
 
 arithmetic_operator : SYM_PLUS
                     | SYM_MINUS
@@ -87,6 +97,8 @@ SYM_EXP             : '**';
 
 SYM_INDENT          : [\t] | '    ';
 SYM_COMMENT         : '#' ~[\r\n]* -> skip;
+
+SYM_ELLIPS          : '...';
 
 IDENTIFIER          : ([a-zA-Z] | '_')+([a-zA-Z0-9] | '_')*;
 

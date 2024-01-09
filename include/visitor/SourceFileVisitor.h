@@ -36,10 +36,16 @@ public:
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;
 
-    llvm::Value* visitExternCallExpression(TythonParser::Call_expressionContext *ctx);
-    llvm::Value* visitInternalCallExpression(TythonParser::Call_expressionContext *ctx);
+    Value* visitExternCallExpression(TythonParser::Call_expressionContext *ctx);
+    Value* visitInternalCallExpression(TythonParser::Call_expressionContext *ctx);
     std::vector<llvm::Value*> visitExternCallParameters(TythonParser::ParametersContext *ctx);
     std::vector<llvm::Value*> visitInternalCallParameters(TythonParser::ParametersContext *ctx);
+
+    std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override;
+    std::any visitBinary_expression(TythonParser::Binary_expressionContext *ctx) override;
+
+    llvm::Value* visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
 
 };
 

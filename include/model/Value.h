@@ -10,11 +10,12 @@
 namespace tython {
 
     enum Type {
-        UNKNOWN,
+        NONE,
         INTEGER,
         FP,
         STRING,
-        NONE
+        AGGREGATE,
+        UNKNOWN,
     };
 }
 

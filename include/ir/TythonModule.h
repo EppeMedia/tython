@@ -18,7 +18,7 @@ private:
     llvm::FunctionCallee* printf_func;
     llvm::FunctionCallee* malloc_func;
 
-    std::map<std::string, llvm::Function*> function_shadow_symbol_table;
+    std::map<std::string, Value*> function_shadow_symbol_table;
 
 private:
 
@@ -43,14 +43,15 @@ public:
      * @param procedure_name The name of the function to find.
      * @return Returns a pointer to the function with the specified name, or nullptr if no such function could be found.
      */
-    llvm::Function* findProcedure(const std::string& procedure_name);
+    Value* findProcedure(const std::string& procedure_name);
 
     /**
      * Registers a procedure (function) by its name, case-insensitive. Procedures can not be overloaded.
      * @param f The procedure to register.
+     * @param return_type The expected return type of the function (may be tython::UNKNOWN).
      * @param procedure_name The name under which to register the procedure.
      */
-    void registerProcedure(llvm::Function* f, const std::string& procedure_name);
+    void registerProcedure(llvm::Function* f, tython::Type return_type, const std::string& procedure_name);
 
 };
 

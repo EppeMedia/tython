@@ -21,11 +21,11 @@ void TythonModule::initialize() {
     this->malloc_func = new llvm::FunctionCallee();
     *(this->malloc_func) = this->getOrInsertFunction("malloc", malloc_type);
 
-    registerProcedure((llvm::Function*)this->printf_func->getCallee(), "printf");
-    registerProcedure((llvm::Function*)this->printf_func->getCallee(), "malloc");
+    registerProcedure((llvm::Function*)this->printf_func->getCallee(), tython::NONE, "printf");
+    registerProcedure((llvm::Function*)this->printf_func->getCallee(), tython::UNKNOWN, "malloc"); // we do currently not track an opaque pointer type
 }
 
-llvm::Function* TythonModule::findProcedure(const std::string& _procedure_name) {
+Value* TythonModule::findProcedure(const std::string& _procedure_name) {
 
     std::string procedure_name = std::string(_procedure_name);
 
@@ -40,7 +40,7 @@ llvm::Function* TythonModule::findProcedure(const std::string& _procedure_name) 
     return nullptr;
 }
 
-void TythonModule::registerProcedure(llvm::Function* f, const std::string& _procedure_name) {
+void TythonModule::registerProcedure(llvm::Function* f, tython::Type return_type, const std::string& _procedure_name) {
 
     std::string procedure_name = std::string(_procedure_name);
 
@@ -52,5 +52,7 @@ void TythonModule::registerProcedure(llvm::Function* f, const std::string& _proc
         throw CompileException("Illegal redefinition of procedure \"" + _procedure_name + "\".");
     }
 
-    function_shadow_symbol_table.insert({ procedure_name, f });
+    auto f_value = new Value(return_type, f);
+
+    function_shadow_symbol_table.insert({ procedure_name, f_value });
 }

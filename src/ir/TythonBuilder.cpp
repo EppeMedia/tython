@@ -8,6 +8,11 @@ void TythonBuilder::init() {
     // create global scope
     this->current_scope = new Scope();
 
+    initFirstClassTypes();
+    initBuiltinFunctions();
+}
+
+void TythonBuilder::initFirstClassTypes() {
     llvm::Type* int8_t = llvm::Type::getInt8Ty(this->getContext());
     llvm::Type* int8ptr_t = llvm::Type::getInt8PtrTy(this->getContext());
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0); // opaque pointer type
@@ -48,26 +53,103 @@ void TythonBuilder::init() {
     this->typeMap.insert({ tython::Type::STRING, stringType });
 
     llvm::ArrayRef<llvm::Type*> none_types = {
-            int8_t,     // type
+            int8_t     // type
     };
 
     auto noneType = llvm::StructType::create(this->getContext(), none_types, "Value.None");
     this->typeMap.insert({ tython::Type::NONE, noneType });
 
-    this->typeMap.insert({ tython::Type::UNKNOWN, stringType });
+    llvm::ArrayRef<llvm::Type*> unknown_types = {
+            int8_t,     // type
+            getLLVMType(tython::Type::UNKNOWN) // content
+    };
+
+    auto unknownType = llvm::StructType::create(this->getContext(), unknown_types, "Value.Unknown");
+    this->typeMap.insert({ tython::Type::UNKNOWN, unknownType });
+}
+
+void TythonBuilder::initBuiltinFunctions() {
+
+    // todo: this is only initializing the type(ptr) function at the moment
+
+    // create a new scope for this function's arguments. The body scope of the function will be nested in this.
+    this->nestScope();
+
+    // function declarations are fully opaque; we only know that it may return something, and that it takes n variable arguments
+    auto int8_type = llvm::IntegerType::getInt8Ty(this->getContext());
+    const auto int64_type = llvm::IntegerType::getInt64Ty(this->getContext());
+    auto ptr_type = llvm::PointerType::get(this->getContext(), 0);
+    auto return_type = ptr_type;
+
+    std::string name = "type";
+
+    llvm::FunctionType* ft = llvm::FunctionType::get(return_type, { ptr_type }, false);
+    auto fn = llvm::Function::Create(ft, llvm::GlobalValue::InternalLinkage, name, this->module);
+
+    this->module->registerProcedure(fn, tython::INTEGER, name);
+
+    auto old_bb = this->GetInsertBlock();
+
+    auto prologue = llvm::BasicBlock::Create(this->getContext(), "prologue", fn);
+    this->SetInsertPoint(prologue);
+
+    // arguments
+    auto arg = fn->getArg(0);
+
+    auto body = llvm::BasicBlock::Create(this->getContext(), "body", fn);
+    this->CreateBr(body);
+    this->SetInsertPoint(body);
+
+    this->nestScope();
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+
+    // function body
+    auto gep = this->CreateGEP(this->getValueStructType(tython::UNKNOWN), arg, { zero, zero });
+    auto load = this->CreateLoad(int8_type, gep);
+//    auto cast = this->CreateBitCast(load, int64_type);
+
+    auto result = this->CreateValue(tython::INTEGER, load, true);
+
+    this->popScope();
+
+    auto epilogue = llvm::BasicBlock::Create(this->getContext(), "epilogue", fn);
+    this->CreateBr(epilogue);
+    this->SetInsertPoint(epilogue);
+
+    // return the result
+    this->CreateRet(result->content);
+
+    // back to enclosing scope
+    this->popScope();
+
+    this->SetInsertPoint(old_bb);
+}
+
+Scope *TythonBuilder::nestScope() {
+    return this->current_scope = new Scope(this->current_scope);
+}
+
+Scope *TythonBuilder::popScope() {
+    return this->current_scope = this->current_scope->parent;
 }
 
 llvm::Type *TythonBuilder::getLLVMType(tython::Type type) {
 
     switch (type) {
+        case tython::NONE:
+            return llvm::Type::getVoidTy(this->getContext());
         case tython::INTEGER:
             return llvm::IntegerType::getInt64Ty(this->getContext());
         case tython::FP:
             return llvm::Type::getDoubleTy(this->getContext());
-        case tython::UNKNOWN:
-        case tython::NONE:
         case tython::STRING:
             return llvm::Type::getInt8PtrTy(this->getContext());
+        case tython::AGGREGATE:
+            return llvm::PointerType::get(this->getContext(), 0);
+        case tython::UNKNOWN:
+            return llvm::PointerType::get(this->getContext(), 0);
     }
 
     return llvm::Type::getVoidTy(this->getContext());
@@ -77,7 +159,7 @@ llvm::StructType *TythonBuilder::getValueStructType(tython::Type type) {
     return this->typeMap.at(type);
 }
 
-llvm::Value *TythonBuilder::getValuePtr(Variable *dataEntry) {
+llvm::Value *TythonBuilder::CreateGetValuePtr(Variable *dataEntry) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
@@ -87,7 +169,31 @@ llvm::Value *TythonBuilder::getValuePtr(Variable *dataEntry) {
     return this->CreateGEP(this->variableStructType, dataEntry->variable, { zero, one });
 }
 
-llvm::Value *TythonBuilder::getContent(Value *value) {
+llvm::Value *TythonBuilder::CreateGetType(Variable *variable) {
+
+    auto value_ptr = CreateGetValuePtr(variable);
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+
+    auto gep = this->CreateGEP(this->getValueStructType(variable->value->type), value_ptr, { zero, zero });
+
+    return this->CreateLoad(this->getLLVMType(variable->value->type), gep);
+}
+
+llvm::Value *TythonBuilder::CreateGetType(Value *value) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+
+    auto gep = this->CreateGEP(this->getValueStructType(value->type), value->content, { zero, zero });
+
+    return this->CreateLoad(this->getLLVMType(value->type), gep);
+}
+
+llvm::Value *TythonBuilder::CreateGetContent(Value *value) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
@@ -99,30 +205,13 @@ llvm::Value *TythonBuilder::getContent(Value *value) {
     return this->CreateLoad(this->getLLVMType(value->type), gep);
 }
 
-llvm::Value *TythonBuilder::getValueContent(Variable *dataEntry) {
-
-    auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto one = llvm::ConstantInt::get(int32_t, 1);
-
-    // double indirection
-
-    auto gep1 = this->CreateGEP(this->variableStructType, dataEntry->variable, { zero, one });
-
-    auto load = this->CreateLoad(ptr_t, gep1);
-
-    return this->CreateGEP(this->getValueStructType(dataEntry->value->type), load, { zero, one });
-}
-
-Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content) {
+Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content, bool forceHeap) {
 
     const auto ty = this->getValueStructType(type);
 
     llvm::Value* alloc;
 
-    if (this->current_scope->parent) {
+    if (this->current_scope->parent && !forceHeap) {
         alloc = this->CreateAlloca(ty);
     } else {
         alloc = this->CreateMalloc(ty);
@@ -160,7 +249,7 @@ Variable *TythonBuilder::CreateVariable(std::string &name) {
         alloc = new llvm::GlobalVariable(*this->module, this->variableStructType, false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
     }
 
-    // set name
+    // todo: set name
 //    {
 //        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 //        const auto zero = llvm::ConstantInt::get(int32_t, 0);

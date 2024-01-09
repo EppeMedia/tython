@@ -6,7 +6,7 @@
 std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statementContext *ctx) {
 
     string identifier = ctx->IDENTIFIER()->getText();
-    auto value = any_cast<Value*>(visitAtomic(ctx->atomic()));
+    auto value = any_cast<Value*>(visit(ctx->expression()));
 
     // resolve identifier
     auto dataEntry = this->builder->current_scope->findDataEntry(identifier);
@@ -17,9 +17,9 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
     }
 
     // get reference to target content field
-    auto content = builder->getValuePtr(dataEntry);
+    auto gep = builder->CreateGetValuePtr(dataEntry);
 
-    this->builder->CreateStore(value->content, content);
+    this->builder->CreateStore(value->content, gep);
     // update shadow
     dataEntry->value = value;
 
@@ -35,7 +35,7 @@ std::any SourceFileVisitor::visitAtomic(TythonParser::AtomicContext *ctx) {
 //            return dataEntry->value; // todo: we can do this iff we know that the variable's value was declared in this same (function-level) scope! Note: it's a bit hard to distinguish a function level at the moment, we can restrict it to stricly "his scope" first.
 
             auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
-            auto load = this->builder->CreateLoad(ptr_t, this->builder->getValuePtr(dataEntry));
+            auto load = this->builder->CreateLoad(ptr_t, this->builder->CreateGetValuePtr(dataEntry));
             return new Value(dataEntry->value->type, load);
         }
 
@@ -90,34 +90,55 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
 
     llvm::Function* f = builder->GetInsertBlock()->getParent();
 
-    llvm::BasicBlock* br_true = llvm::BasicBlock::Create(this->builder->getContext(), "if_true", f, nullptr);
-    llvm::BasicBlock* br_else = llvm::BasicBlock::Create(this->builder->getContext(), "if_else", f, nullptr);
-    llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "if_end", f, nullptr);
+    llvm::BasicBlock* br_true = llvm::BasicBlock::Create(this->builder->getContext(), "if", f, nullptr);
+    llvm::BasicBlock* br_else_if = llvm::BasicBlock::Create(this->builder->getContext(), "else_if", f, nullptr);
+    llvm::BasicBlock* br_else = llvm::BasicBlock::Create(this->builder->getContext(), "else", f, nullptr);
+    llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_if", f, nullptr);
 
-    auto expression_value = any_cast<Value*>(visitExpression(ctx->expression()));
-    auto load = this->builder->getContent(expression_value);
+    auto expression_value = any_cast<Value*>(visit(ctx->expression()));
+    auto load = this->builder->CreateGetContent(expression_value);
 
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
     const auto zero = llvm::ConstantInt::get(int64_t, 0, true);
 
-    auto check = this->builder->CreateICmpSLT(load, zero);
+    auto check = this->builder->CreateICmpSGT(load, zero);
 
-    this->builder->CreateCondBr(check, br_true, br_else);
+    llvm::BasicBlock* br_false;
 
-    { // true
+    if (ctx->br_else_if) {
+        br_false = br_else_if;
+    } else if (ctx->br_else) {
+        br_false = br_else;
+    } else {
+        br_false = br_end;
+    }
+
+    this->builder->CreateCondBr(check, br_true, br_false);
+
+    { // if
 
         this->builder->SetInsertPoint(br_true);
 
-        visit(ctx->br_true);
+        visit(ctx->br_if);
 
         this->builder->CreateBr(br_end);
     }
 
-    { // false
+    { // if_else
+        this->builder->SetInsertPoint(br_else_if);
+
+        if (ctx->br_else_if) {
+            visit(ctx->br_else_if);
+        }
+
+        this->builder->CreateBr(br_end);
+    }
+
+    { // else
 
         this->builder->SetInsertPoint(br_else);
 
-        if (ctx->KW_ELSE()) {
+        if (ctx->br_else) {
             visit(ctx->br_else);
         }
 
@@ -148,11 +169,11 @@ std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
     auto identifier = ctx->IDENTIFIER()->getText();
 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
-    this->builder->current_scope = new Scope(this->builder->current_scope);
+    this->builder->nestScope();
 
     // function declarations are fully opaque; we only know that it may return something, and that it takes n variable arguments
     // todo: check if there is any returns, then return (variable) ptr type, otherwise return void.
-    auto void_type = llvm::Type::getVoidTy(this->builder->getContext());
+    auto return_type = llvm::Type::getVoidTy(this->builder->getContext());
     auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
 
     std::vector<llvm::Type*> arg_types;
@@ -161,10 +182,13 @@ std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
         arg_types.push_back(ptr_type);
     }
 
-    llvm::FunctionType* ft = llvm::FunctionType::get(void_type, arg_types, false);
+    const bool isVarArgs = ctx->SYM_ELLIPS();
+
+    llvm::FunctionType* ft = llvm::FunctionType::get(return_type, arg_types, isVarArgs);
     auto fn = llvm::Function::Create(ft, llvm::GlobalValue::InternalLinkage, identifier, this->module);
 
-    this->module->registerProcedure(fn, identifier);
+    // todo: this return type should depend on any return statements in the content of the body
+    this->module->registerProcedure(fn, tython::UNKNOWN, identifier);
 
     auto old_bb = this->builder->GetInsertBlock();
 
@@ -189,8 +213,7 @@ std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
         this->builder->CreateRetVoid();
     }
 
-    // pop scope
-    this->builder->current_scope = this->builder->current_scope->parent;
+    this->builder->popScope();
 
     this->builder->SetInsertPoint(old_bb);
 
@@ -206,7 +229,7 @@ std::any SourceFileVisitor::visitCall_expression(TythonParser::Call_expressionCo
     return visitInternalCallExpression(ctx);
 }
 
-llvm::Value* SourceFileVisitor::visitExternCallExpression(TythonParser::Call_expressionContext *ctx) {
+Value* SourceFileVisitor::visitExternCallExpression(TythonParser::Call_expressionContext *ctx) {
 
     if (!ctx->KW_EXTERN()) {
         throw CompileException("Syntactical mismatch: interpreting an unmarked function call as an <extern> function call!");
@@ -220,7 +243,10 @@ llvm::Value* SourceFileVisitor::visitExternCallExpression(TythonParser::Call_exp
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitExternCallParameters(ctx->parameters()));
 
-    return this->builder->CreateCall(f, params);
+    auto return_value = this->builder->CreateCall((llvm::Function*)f->content, params);
+
+    // create a typed value wrapper for the return value
+    return this->builder->CreateValue(tython::UNKNOWN, return_value);
 }
 
 std::vector<llvm::Value*> SourceFileVisitor::visitExternCallParameters(TythonParser::ParametersContext *ctx) {
@@ -229,20 +255,20 @@ std::vector<llvm::Value*> SourceFileVisitor::visitExternCallParameters(TythonPar
     values.reserve(ctx->params.size());
 
     for (auto p : ctx->params) {
-        values.push_back(any_cast<Value*>(TythonBaseVisitor::visitExpression(p)));
+        values.push_back(any_cast<Value*>(visit(p)));
     }
 
     std::vector<llvm::Value*> params;
     params.reserve(values.size());
 
     for (auto v : values) {
-        params.push_back(this->builder->getContent(v));
+        params.push_back(this->builder->CreateGetContent(v));
     }
 
     return params;
 }
 
-llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_expressionContext *ctx) {
+Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_expressionContext *ctx) {
 
     if (ctx->KW_EXTERN()) {
         throw CompileException("Syntactical mismatch: interpreting a marked <extern> function call as an internal function call!");
@@ -256,7 +282,9 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
 
-    return this->builder->CreateCall(f, params);
+    auto return_value = this->builder->CreateCall((llvm::Function*)f->content, params);
+
+    return new Value(f->type, return_value);
 }
 
 std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonParser::ParametersContext *ctx) {
@@ -265,7 +293,7 @@ std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonP
     values.reserve(ctx->params.size());
 
     for (auto p : ctx->params) {
-        values.push_back(any_cast<Value*>(TythonBaseVisitor::visitExpression(p)));
+        values.push_back(any_cast<Value*>(visit(p)));
     }
 
     std::vector<llvm::Value*> params;
@@ -287,16 +315,10 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
         auto identifier = ctx->args.at(i)->getText();
         auto v = this->builder->GetInsertBlock()->getParent()->getArg(i); // todo: seems like a stack member to me, it will probably be deleted wih the call frame. What would then if we assign it to a global variable?
 
-        // resolve identifier
-        auto dataEntry = this->builder->current_scope->findDataEntry(identifier);
-
-        // if a variable of this identifier is unknown, we create one on the fly
-        if (!dataEntry) {
-            dataEntry = this->builder->CreateVariable(identifier);
-        }
+        auto dataEntry = this->builder->CreateVariable(identifier);
 
         // assign the passed argument value to the new variable
-        auto target = this->builder->getValuePtr(dataEntry);
+        auto target = this->builder->CreateGetValuePtr(dataEntry);
         this->builder->CreateStore(v, target);
         dataEntry->value = new Value(tython::Type::UNKNOWN, v);
 
@@ -304,4 +326,51 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
     }
 
     return vars;
+}
+
+std::any SourceFileVisitor::visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) {
+    return visit(ctx->expression());
+}
+
+std::any SourceFileVisitor::visitBinary_expression(TythonParser::Binary_expressionContext *ctx) {
+
+    auto lhs_value = any_cast<Value*>(visit(ctx->lhs));
+    auto rhs_value = any_cast<Value*>(visit(ctx->rhs));
+
+    // obtain the contents of the expression values
+    auto lhs_content = this->builder->CreateGetContent(lhs_value);
+    auto rhs_content = this->builder->CreateGetContent(rhs_value);
+
+    auto result = visitBinaryOperator(ctx->binary_operator(), lhs_content, rhs_content);
+
+    // the result of a binary expression is always an integer
+    return this->builder->CreateValue(tython::INTEGER, result);
+}
+
+llvm::Value* SourceFileVisitor::visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
+
+    if (ctx->inequality_operator()) {
+        return visitInequalityOperator(ctx->inequality_operator(), lhs, rhs);
+    }
+
+    throw NotImplemented("Unimplemented binary operator \"" + ctx->getText() + "\"!");
+}
+
+llvm::Value* SourceFileVisitor::visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
+
+    if (ctx->SYM_EQ()) {
+        return this->builder->CreateICmpEQ(lhs, rhs);
+    } else if (ctx->SYM_NEQ()) {
+        return this->builder->CreateICmpNE(lhs, rhs);
+    } else if (ctx->SYM_GT()) {
+        return this->builder->CreateICmpSGT(lhs, rhs);
+    } else if (ctx->SYM_GTE()) {
+        return this->builder->CreateICmpSGE(lhs, rhs);
+    } else if (ctx->SYM_LTE()) {
+        return this->builder->CreateICmpSLE(lhs, rhs);
+    } else if (ctx->SYM_LT()) {
+        return this->builder->CreateICmpSLT(lhs, rhs);
+    }
+
+    throw NotImplemented("Unimplemented inequality operator \"" + ctx->getText() + "\"!");
 }

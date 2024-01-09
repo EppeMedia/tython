@@ -1,4 +1,12 @@
-def foo(arg1, arg2):
-    extern printf("Foo: %s, %s", arg1, arg2)
+a = "nvm"
 
-foo("param1", "param2")
+b = 4#type(a)
+
+if (b == 1):
+    extern printf("a is an integer: %u", a)
+else if (b == 3):
+    extern printf("a is a string: %s", a)
+else:
+    extern printf("a is something else: %s", a)
+
+extern printf("Done.")
