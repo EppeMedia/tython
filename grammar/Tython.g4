@@ -28,7 +28,7 @@ parameters          : params+=expression?
 
 expression          : atomic | binary_expression | call_expression;
 
-call_expression     : IDENTIFIER SYM_LPAR parameters SYM_RPAR;
+call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 
 binary_expression   : lhs=atomic binary_operator rhs=atomic;
 
@@ -58,6 +58,7 @@ KW_RETURN           : 'return';
 KW_IF               : 'if';
 KW_ELSE             : 'else';
 KW_WHILE            : 'while';
+KW_EXTERN           : 'extern';
 
 // symbols
 SYM_LPAR            : '(';

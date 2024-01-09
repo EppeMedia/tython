@@ -1,13 +1,4 @@
+def foo(arg1, arg2):
+    extern printf("Foo: %s, %s", arg1, arg2)
 
-a = "Hello world"
-
-printf("Message: %s", a)
-
-b = "bar"
-
-def foo():
-    printf("Foo: %s", b)
-
-foo()
-
-printf("Message: %s", "bye")
+foo("param1", "param2")

@@ -199,18 +199,31 @@ std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
 
 std::any SourceFileVisitor::visitCall_expression(TythonParser::Call_expressionContext *ctx) {
 
+    if (ctx->KW_EXTERN()) {
+        return visitExternCallExpression(ctx);
+    }
+
+    return visitInternalCallExpression(ctx);
+}
+
+llvm::Value* SourceFileVisitor::visitExternCallExpression(TythonParser::Call_expressionContext *ctx) {
+
+    if (!ctx->KW_EXTERN()) {
+        throw CompileException("Syntactical mismatch: interpreting an unmarked function call as an <extern> function call!");
+    }
+
     auto f = this->module->findProcedure(ctx->IDENTIFIER()->getText());
 
     if (!f) {
         throw CompileException("Undefined reference to function \"" + ctx->IDENTIFIER()->getText() + "\".");
     }
 
-    auto params = any_cast<std::vector<llvm::Value*>>(visit(ctx->parameters()));
+    auto params = any_cast<std::vector<llvm::Value*>>(visitExternCallParameters(ctx->parameters()));
 
     return this->builder->CreateCall(f, params);
 }
 
-std::any SourceFileVisitor::visitParameters(TythonParser::ParametersContext *ctx) {
+std::vector<llvm::Value*> SourceFileVisitor::visitExternCallParameters(TythonParser::ParametersContext *ctx) {
 
     std::vector<Value*> values;
     values.reserve(ctx->params.size());
@@ -224,6 +237,42 @@ std::any SourceFileVisitor::visitParameters(TythonParser::ParametersContext *ctx
 
     for (auto v : values) {
         params.push_back(this->builder->getContent(v));
+    }
+
+    return params;
+}
+
+llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_expressionContext *ctx) {
+
+    if (ctx->KW_EXTERN()) {
+        throw CompileException("Syntactical mismatch: interpreting a marked <extern> function call as an internal function call!");
+    }
+
+    auto f = this->module->findProcedure(ctx->IDENTIFIER()->getText());
+
+    if (!f) {
+        throw CompileException("Undefined reference to function \"" + ctx->IDENTIFIER()->getText() + "\".");
+    }
+
+    auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
+
+    return this->builder->CreateCall(f, params);
+}
+
+std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonParser::ParametersContext *ctx) {
+
+    std::vector<Value*> values;
+    values.reserve(ctx->params.size());
+
+    for (auto p : ctx->params) {
+        values.push_back(any_cast<Value*>(TythonBaseVisitor::visitExpression(p)));
+    }
+
+    std::vector<llvm::Value*> params;
+    params.reserve(values.size());
+
+    for (auto v : values) {
+        params.push_back(v->content);
     }
 
     return params;

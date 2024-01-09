@@ -34,8 +34,12 @@ public:
     std::any visitFunction(TythonParser::FunctionContext *ctx) override;
 
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
-    std::any visitParameters(TythonParser::ParametersContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;
+
+    llvm::Value* visitExternCallExpression(TythonParser::Call_expressionContext *ctx);
+    llvm::Value* visitInternalCallExpression(TythonParser::Call_expressionContext *ctx);
+    std::vector<llvm::Value*> visitExternCallParameters(TythonParser::ParametersContext *ctx);
+    std::vector<llvm::Value*> visitInternalCallParameters(TythonParser::ParametersContext *ctx);
 
 };
 
