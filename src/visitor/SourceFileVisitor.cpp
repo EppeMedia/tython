@@ -152,19 +152,16 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
 
 std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
 
-    auto block_scope = new Scope(this->builder->current_scope);
-    this->builder->current_scope = block_scope;
+    this->builder->nestScope();
 
-    for (auto s : ctx->statement()) {
-        TythonBaseVisitor::visitStatement(s);
-    }
+    TythonParserBaseVisitor::visitBlock(ctx);
 
-    this->builder->current_scope = this->builder->current_scope->parent;
+    this->builder->popScope();
 
     return nullptr;
 }
 
-std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
+std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext *ctx) {
 
     auto identifier = ctx->IDENTIFIER()->getText();
 
@@ -201,7 +198,7 @@ std::any SourceFileVisitor::visitFunction(TythonParser::FunctionContext *ctx) {
     this->builder->CreateBr(body);
     this->builder->SetInsertPoint(body);
 
-    visit(ctx->block());
+    visitBlock(ctx->block());
 
     auto epilogue = llvm::BasicBlock::Create(this->builder->getContext(), "epilogue", fn);
     this->builder->CreateBr(epilogue);

@@ -1,6 +1,4 @@
-#include <iostream>
 #include "../../include/ir/TythonBuilder.h"
-#include "../../include/utils/Utils.h"
 #include "../../include/exception/CompileException.h"
 
 void TythonBuilder::init() {

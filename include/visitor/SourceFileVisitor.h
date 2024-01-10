@@ -5,14 +5,14 @@
 #ifndef CROSSOVER_PROCEDUREVISITOR_H
 #define CROSSOVER_PROCEDUREVISITOR_H
 
-#include "../parser/TythonBaseVisitor.h"
+#include "../../grammar/generated/TythonParserBaseVisitor.h"
 #include "../ir/TythonModule.h"
 #include "../../include/ir/TythonBuilder.h"
 #include <any>
 
 using namespace std;
 
-class SourceFileVisitor : public TythonBaseVisitor {
+class SourceFileVisitor : public TythonParserBaseVisitor {
 
 private:
 
@@ -31,7 +31,7 @@ public:
 
     std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
     std::any visitBlock(TythonParser::BlockContext *ctx) override;
-    std::any visitFunction(TythonParser::FunctionContext *ctx) override;
+    std::any visitFunction_def(TythonParser::Function_defContext *ctx) override;
 
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;

@@ -1,0 +1,116 @@
+
+// Generated from /home/manzi/repos/tython/grammar/TythonParser.g4 by ANTLR 4.12.0
+
+#pragma once
+
+
+#include "antlr4-runtime.h"
+#include "TythonParserVisitor.h"
+
+
+/**
+ * This class provides an empty implementation of TythonParserVisitor, which can be
+ * extended to create a visitor which only needs to handle a subset of the available methods.
+ */
+class  TythonParserBaseVisitor : public TythonParserVisitor {
+public:
+
+  virtual std::any visitProgram(TythonParser::ProgramContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitGlobalStatement(TythonParser::GlobalStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitFunction_def(TythonParser::Function_defContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitBlock(TythonParser::BlockContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitStatement(TythonParser::StatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitSimple_statement(TythonParser::Simple_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitSimple_statements(TythonParser::Simple_statementsContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitCompound_statement(TythonParser::Compound_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitReturn_statement(TythonParser::Return_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitIf_statement(TythonParser::If_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitArguments(TythonParser::ArgumentsContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitParameters(TythonParser::ParametersContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitBinary_expression(TythonParser::Binary_expressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_atomic(TythonParser::Lbl_atomicContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitBinary_operator(TythonParser::Binary_operatorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitInequality_operator(TythonParser::Inequality_operatorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLogic_operator(TythonParser::Logic_operatorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitArithmetic_operator(TythonParser::Arithmetic_operatorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAtomic(TythonParser::AtomicContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitConstant(TythonParser::ConstantContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+
+};
+

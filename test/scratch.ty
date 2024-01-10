@@ -1,12 +1,8 @@
-a = "nvm"
 
-b = 4#type(a)
+extern printf("%s", "Start")
 
-if (b == 1):
-    extern printf("a is an integer: %u", a)
-else if (b == 3):
-    extern printf("a is a string: %s", a)
-else:
-    extern printf("a is something else: %s", a)
+foo = 42
 
-extern printf("Done.")
+print(foo)
+
+extern printf("%s", "Done")

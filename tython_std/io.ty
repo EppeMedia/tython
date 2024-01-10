@@ -1,0 +1,14 @@
+/*
+Prints the content of the specified argument to the standard output stream.
+*/
+def print(arg):
+    type = type(arg)
+
+    if (type == 1):
+        extern printf("%ld", arg)
+    else if (type == 2):
+        extern printf("%f", arg)
+    else if (type == 3):
+        extern printf("%s", arg)
+    else:
+        extern printf("%p", arg)

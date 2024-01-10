@@ -15,7 +15,7 @@ antlr4_runtime/
 gen/
 cmake/
 thirdparty/
-include/parser/
+include/parser_temp/
 build.ninja
 exec
 *.asm
