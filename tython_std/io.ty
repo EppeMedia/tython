@@ -1,14 +1,25 @@
 /*
 Prints the content of the specified argument to the standard output stream.
+
+    enum Type {
+        NONE,
+        INTEGER,
+        FP,
+        STRING,
+        AGGREGATE,
+        UNKNOWN,
+    };
 */
 def print(arg):
     type = type(arg)
 
+    if (type == 0):
+        extern printf("None")
     if (type == 1):
-        extern printf("%ld", arg)
+        extern printf("%ld\n", arg)
     else if (type == 2):
-        extern printf("%f", arg)
+        extern printf("%f\n", arg)
     else if (type == 3):
-        extern printf("%s", arg)
+        extern printf("%s\n", arg)
     else:
-        extern printf("%p", arg)
+        extern printf("%p\n", arg)

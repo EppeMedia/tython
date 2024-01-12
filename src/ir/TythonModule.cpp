@@ -22,7 +22,7 @@ void TythonModule::initialize() {
     *(this->malloc_func) = this->getOrInsertFunction("malloc", malloc_type);
 
     registerProcedure((llvm::Function*)this->printf_func->getCallee(), tython::NONE, "printf");
-    registerProcedure((llvm::Function*)this->printf_func->getCallee(), tython::UNKNOWN, "malloc"); // we do currently not track an opaque pointer type
+    registerProcedure((llvm::Function*)this->malloc_func->getCallee(), tython::UNKNOWN, "malloc"); // we do currently not track the type of an opaque pointer type
 }
 
 Value* TythonModule::findProcedure(const std::string& _procedure_name) {
@@ -55,4 +55,8 @@ void TythonModule::registerProcedure(llvm::Function* f, tython::Type return_type
     auto f_value = new Value(return_type, f);
 
     function_shadow_symbol_table.insert({ procedure_name, f_value });
+}
+
+const std::map<std::string, Value *> *TythonModule::listProcedures() {
+    return new std::map(this->function_shadow_symbol_table);
 }

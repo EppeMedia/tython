@@ -39,11 +39,13 @@ options {
     tokenVocab=TythonLexer;
 }
 
-program             : (statement)+ EOF;
+program             : import_statement* (statement)+ EOF;
 
-globalStatement     : assign_statement SYM_STMNT_DELIMITER?;
+import_statement    : KW_IMPORT import_path SYM_STMNT_DELIMITER? NEWLINE;
 
-function_def        : KW_DEF IDENTIFIER SYM_LPAR arguments SYM_ELLIPS? SYM_RPAR SYM_BLOCK_START
+import_path         : IDENTIFIER (SYM_DOT IDENTIFIER)*;
+
+function_def        : KW_DEF KW_EXTERN? IDENTIFIER SYM_LPAR arguments SYM_ELLIPS? SYM_RPAR SYM_BLOCK_START
                         block;
 
 block               : simple_statements

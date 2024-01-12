@@ -15,16 +15,6 @@ using namespace std;
 
 namespace utils {
 
-    typedef struct configuration {
-        std::vector<std::string> src_files;
-        bool help;
-        bool verbose;
-        std::string out;
-        std::vector<std::string> link_objects;
-        std::string emit_llvm;
-        bool debug;
-    } configuration_t;
-
     /**
      * auxilliary function used to generate nested substructs recursively
      * @param ancestorsPtr
@@ -72,13 +62,13 @@ namespace utils {
      */
     vector<string> extractTextSymbols(string& input);
 
-
     /**
-     * Extract program name from program path
-     * @param input
-     * @return
+     * Gets the object name from the specified file path.
+     * @param path The path from which to get the object name.
+     * @return The object name from the given path.
      */
-    string extractProgramNameFromPath(string path);
+    std::string get_objectname(std::string& path);
+
 };
 
 

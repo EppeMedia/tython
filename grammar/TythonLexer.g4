@@ -55,6 +55,7 @@ KW_IF               : 'if';
 KW_ELSE             : 'else';
 KW_WHILE            : 'while';
 KW_EXTERN           : 'extern';
+KW_IMPORT           : 'import';
 
 // symbols
 SYM_LPAR            : '(' {this->openBrace();};
@@ -81,12 +82,14 @@ SYM_MULT            : '*';
 SYM_DIV             : '/';
 SYM_EXP             : '**';
 
+SYM_DOT             : '.';
+SYM_ELLIPS          : '...';
+
 SYM_COMMENT         : '#' ~[\r\n]* -> skip;
 SYM_COMMENT_START   : '/*' -> pushMode(comment_block), skip;
 
-SYM_ELLIPS          : '...';
 
-// named references
+// references
 IDENTIFIER          : ([a-zA-Z] | '_')+([a-zA-Z0-9] | '_')*;
 
 // literals
@@ -97,7 +100,7 @@ TRUE_LIT            : 'true';
 FALSE_LIT           : 'false';
 
 NEWLINE             : ({this->atStartOfInput()}? WS | ( '\r'? '\n' | '\r' | '\f') WS?) {this->onNewLine();};
-WS                  : [ \t\f]+ -> channel(HIDDEN);
+WS                  : [ \t]+ -> channel(HIDDEN);
 
 mode comment_block;
 

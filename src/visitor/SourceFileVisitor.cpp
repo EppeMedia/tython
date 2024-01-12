@@ -2,6 +2,24 @@
 #include <string>
 #include "../../include/exception/CompileException.h"
 #include "../../include/exception/NotImplemented.h"
+#include <regex>
+
+std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statementContext *ctx) {
+
+    const auto identifier = ctx->import_path()->getText();
+
+    // check the object table if we have found an object of the specified name
+    if (this->external_object_symbol_table.count(identifier)) {
+
+        this->imports.insert(identifier);
+
+    } else {
+
+        throw CompileException("Attempt to import unknown object " + identifier + ". Did you check the order of inclusion?");
+    }
+
+    return nullptr;
+}
 
 std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statementContext *ctx) {
 
@@ -70,17 +88,13 @@ std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
         auto raw = ctx->STR_LIT()->getText();
         // trim double quotes
         auto trim = raw.substr(1, raw.size() - 2);
-        auto charVector = std::vector<char>(trim.begin(), trim.end());
-        charVector.push_back('\0'); // null-terminator
-        // populate allocated char*
-        auto bytes = llvm::ConstantDataArray::get(this->builder->getContext(), charVector);
 
-        auto int8_t = llvm::IntegerType::getInt8Ty(this->builder->getContext());
-        auto malloc = this->builder->CreateMalloc(int8_t, charVector.size());
+        // todo: a more rigorous way of achieving this and other escapable characters...
+        auto clean = std::regex_replace(trim, std::regex("\\\\n"), "\n");
 
-        this->builder->CreateStore(bytes, malloc);
+        auto global = this->builder->CreateGlobalString(clean, "string_literal");
 
-        return this->builder->CreateValue(tython::Type::STRING, malloc);
+        return this->builder->CreateValue(tython::Type::STRING, global);
     }
 
     throw NotImplemented("Encountered unknown literal type. Language implementation and specification have probably diverged. Please contact the project maintainer.");
@@ -163,6 +177,17 @@ std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
 
 std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext *ctx) {
 
+    llvm::GlobalValue::LinkageTypes linkageType;
+
+    if (ctx->KW_EXTERN()) {
+
+        linkageType = llvm::GlobalValue::CommonLinkage;
+
+    } else {
+
+        linkageType = llvm::GlobalValue::CommonLinkage;
+    }
+
     auto identifier = ctx->IDENTIFIER()->getText();
 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
@@ -182,7 +207,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     const bool isVarArgs = ctx->SYM_ELLIPS();
 
     llvm::FunctionType* ft = llvm::FunctionType::get(return_type, arg_types, isVarArgs);
-    auto fn = llvm::Function::Create(ft, llvm::GlobalValue::InternalLinkage, identifier, this->module);
+    auto fn = llvm::Function::Create(ft, linkageType, identifier, this->module);
 
     // todo: this return type should depend on any return statements in the content of the body
     this->module->registerProcedure(fn, tython::UNKNOWN, identifier);
@@ -271,10 +296,25 @@ Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_express
         throw CompileException("Syntactical mismatch: interpreting a marked <extern> function call as an internal function call!");
     }
 
-    auto f = this->module->findProcedure(ctx->IDENTIFIER()->getText());
+    const auto function_name = ctx->IDENTIFIER()->getText();
+    auto f = this->module->findProcedure(function_name);
 
     if (!f) {
-        throw CompileException("Undefined reference to function \"" + ctx->IDENTIFIER()->getText() + "\".");
+
+        // check other processed objects so far
+        for (auto &entry : this->external_object_symbol_table) {
+            // check if the object is imported in this source file
+            if (this->imports.count(entry.first)) {
+                // check if that object contains the function
+                if (entry.second.count(function_name)) {
+                    f = entry.second.find(function_name)->second;
+                }
+            }
+        }
+
+        if (!f) {
+            throw CompileException("Undefined reference to function \"" + function_name + "\".");
+        }
     }
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));

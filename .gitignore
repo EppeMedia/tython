@@ -17,6 +17,6 @@ cmake/
 thirdparty/
 include/parser_temp/
 build.ninja
+
+build/
 exec
-*.asm
-*.o

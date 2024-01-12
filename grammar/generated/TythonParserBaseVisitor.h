@@ -19,7 +19,11 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitGlobalStatement(TythonParser::GlobalStatementContext *ctx) override {
+  virtual std::any visitImport_statement(TythonParser::Import_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitImport_path(TythonParser::Import_pathContext *ctx) override {
     return visitChildren(ctx);
   }
 

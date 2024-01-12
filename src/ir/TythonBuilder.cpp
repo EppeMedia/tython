@@ -227,6 +227,15 @@ Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content, bool 
     this->CreateStore(typeValue, type_ptr);
 
     auto content_ptr = this->CreateGEP(ty, alloc, { zero, one });
+
+    // if the size of what we are storing is smaller than the allocated size, we need to zero-initialize (reads of the memory are expecting the stated memory to be fully initialized)
+    auto target_type = this->getLLVMType(type);
+
+    if (target_type->getScalarSizeInBits() != content->getType()->getScalarSizeInBits()) {
+        auto content_type_size = llvm::ConstantInt::get(int32_t, target_type->getScalarSizeInBits() / 8);
+        this->CreateMemSetInline(content_ptr, llvm::MaybeAlign(0), zero, content_type_size, false);
+    }
+
     this->CreateStore(content, content_ptr);
 
     return new Value(type, alloc);

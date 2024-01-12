@@ -21,7 +21,9 @@ public:
    */
     virtual std::any visitProgram(TythonParser::ProgramContext *context) = 0;
 
-    virtual std::any visitGlobalStatement(TythonParser::GlobalStatementContext *context) = 0;
+    virtual std::any visitImport_statement(TythonParser::Import_statementContext *context) = 0;
+
+    virtual std::any visitImport_path(TythonParser::Import_pathContext *context) = 0;
 
     virtual std::any visitFunction_def(TythonParser::Function_defContext *context) = 0;
 

@@ -1,8 +1,9 @@
+import io
 
-extern printf("%s", "Start")
+def extern main():
 
-foo = 42
+    a = "Hello World!"
+    b = 42
 
-print(foo)
-
-extern printf("%s", "Done")
+    print(a)
+    print(b)

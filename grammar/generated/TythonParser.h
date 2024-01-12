@@ -13,23 +13,24 @@ class  TythonParser : public antlr4::Parser {
 public:
   enum {
     INDENT = 1, DEDENT = 2, KW_DEF = 3, KW_RETURN = 4, KW_IF = 5, KW_ELSE = 6, 
-    KW_WHILE = 7, KW_EXTERN = 8, SYM_LPAR = 9, SYM_RPAR = 10, SYM_BLOCK_START = 11, 
-    SYM_ARG_SEPARATOR = 12, SYM_STMNT_DELIMITER = 13, SYM_ASSIGN = 14, SYM_NEQ = 15, 
-    SYM_LTE = 16, SYM_LT = 17, SYM_EQ = 18, SYM_GT = 19, SYM_GTE = 20, SYM_AND = 21, 
-    SYM_OR = 22, SYM_PLUS = 23, SYM_MINUS = 24, SYM_MULT = 25, SYM_DIV = 26, 
-    SYM_EXP = 27, SYM_COMMENT = 28, SYM_COMMENT_START = 29, SYM_ELLIPS = 30, 
-    IDENTIFIER = 31, INT_LIT = 32, FLOAT_LIT = 33, STR_LIT = 34, TRUE_LIT = 35, 
-    FALSE_LIT = 36, NEWLINE = 37, WS = 38, SYM_COMMENT_END = 39, ALL_ELSE = 40
+    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, SYM_LPAR = 10, SYM_RPAR = 11, 
+    SYM_BLOCK_START = 12, SYM_ARG_SEPARATOR = 13, SYM_STMNT_DELIMITER = 14, 
+    SYM_ASSIGN = 15, SYM_NEQ = 16, SYM_LTE = 17, SYM_LT = 18, SYM_EQ = 19, 
+    SYM_GT = 20, SYM_GTE = 21, SYM_AND = 22, SYM_OR = 23, SYM_PLUS = 24, 
+    SYM_MINUS = 25, SYM_MULT = 26, SYM_DIV = 27, SYM_EXP = 28, SYM_DOT = 29, 
+    SYM_ELLIPS = 30, SYM_COMMENT = 31, SYM_COMMENT_START = 32, IDENTIFIER = 33, 
+    INT_LIT = 34, FLOAT_LIT = 35, STR_LIT = 36, TRUE_LIT = 37, FALSE_LIT = 38, 
+    NEWLINE = 39, WS = 40, SYM_COMMENT_END = 41, COMMENT_CONTENT = 42
   };
 
   enum {
-    RuleProgram = 0, RuleGlobalStatement = 1, RuleFunction_def = 2, RuleBlock = 3, 
-    RuleStatement = 4, RuleSimple_statement = 5, RuleSimple_statements = 6, 
-    RuleCompound_statement = 7, RuleAssign_statement = 8, RuleReturn_statement = 9, 
-    RuleIf_statement = 10, RuleArguments = 11, RuleParameters = 12, RuleCall_expression = 13, 
-    RuleExpression = 14, RuleBinary_operator = 15, RuleInequality_operator = 16, 
-    RuleLogic_operator = 17, RuleArithmetic_operator = 18, RuleAtomic = 19, 
-    RuleConstant = 20
+    RuleProgram = 0, RuleImport_statement = 1, RuleImport_path = 2, RuleFunction_def = 3, 
+    RuleBlock = 4, RuleStatement = 5, RuleSimple_statement = 6, RuleSimple_statements = 7, 
+    RuleCompound_statement = 8, RuleAssign_statement = 9, RuleReturn_statement = 10, 
+    RuleIf_statement = 11, RuleArguments = 12, RuleParameters = 13, RuleCall_expression = 14, 
+    RuleExpression = 15, RuleBinary_operator = 16, RuleInequality_operator = 17, 
+    RuleLogic_operator = 18, RuleArithmetic_operator = 19, RuleAtomic = 20, 
+    RuleConstant = 21
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -50,7 +51,8 @@ public:
 
 
   class ProgramContext;
-  class GlobalStatementContext;
+  class Import_statementContext;
+  class Import_pathContext;
   class Function_defContext;
   class BlockContext;
   class StatementContext;
@@ -76,6 +78,8 @@ public:
     ProgramContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *EOF();
+    std::vector<Import_statementContext *> import_statement();
+    Import_statementContext* import_statement(size_t i);
     std::vector<StatementContext *> statement();
     StatementContext* statement(size_t i);
 
@@ -86,11 +90,13 @@ public:
 
   ProgramContext* program();
 
-  class  GlobalStatementContext : public antlr4::ParserRuleContext {
+  class  Import_statementContext : public antlr4::ParserRuleContext {
   public:
-    GlobalStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    Import_statementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    Assign_statementContext *assign_statement();
+    antlr4::tree::TerminalNode *KW_IMPORT();
+    Import_pathContext *import_path();
+    antlr4::tree::TerminalNode *NEWLINE();
     antlr4::tree::TerminalNode *SYM_STMNT_DELIMITER();
 
 
@@ -98,7 +104,23 @@ public:
    
   };
 
-  GlobalStatementContext* globalStatement();
+  Import_statementContext* import_statement();
+
+  class  Import_pathContext : public antlr4::ParserRuleContext {
+  public:
+    Import_pathContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> IDENTIFIER();
+    antlr4::tree::TerminalNode* IDENTIFIER(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> SYM_DOT();
+    antlr4::tree::TerminalNode* SYM_DOT(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Import_pathContext* import_path();
 
   class  Function_defContext : public antlr4::ParserRuleContext {
   public:
@@ -111,6 +133,7 @@ public:
     antlr4::tree::TerminalNode *SYM_RPAR();
     antlr4::tree::TerminalNode *SYM_BLOCK_START();
     BlockContext *block();
+    antlr4::tree::TerminalNode *KW_EXTERN();
     antlr4::tree::TerminalNode *SYM_ELLIPS();
 
 

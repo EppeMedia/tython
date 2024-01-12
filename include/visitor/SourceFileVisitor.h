@@ -18,12 +18,18 @@ private:
 
     TythonModule* module;
     TythonBuilder* builder;
+    const std::map<std::string, const std::map<std::string, Value*>&>& external_object_symbol_table;
+    std::set<std::string> imports;
 
 public:
 
-    SourceFileVisitor(TythonModule* bcModule, TythonBuilder* builder) :
+    SourceFileVisitor(TythonModule* bcModule, TythonBuilder* builder, const std::map<std::string, const std::map<std::string, Value*>&>& object_symbol_table) :
             module(bcModule),
-            builder(builder) {}
+            builder(builder),
+            external_object_symbol_table(object_symbol_table),
+            imports() {}
+
+    std::any visitImport_statement(TythonParser::Import_statementContext *ctx) override;
 
     std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override;
     std::any visitAtomic(TythonParser::AtomicContext *ctx) override;

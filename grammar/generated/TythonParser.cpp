@@ -43,91 +43,100 @@ void tythonparserParserInitialize() {
   assert(tythonparserParserStaticData == nullptr);
   auto staticData = std::make_unique<TythonParserStaticData>(
     std::vector<std::string>{
-      "program", "globalStatement", "function_def", "block", "statement", 
-      "simple_statement", "simple_statements", "compound_statement", "assign_statement", 
-      "return_statement", "if_statement", "arguments", "parameters", "call_expression", 
-      "expression", "binary_operator", "inequality_operator", "logic_operator", 
-      "arithmetic_operator", "atomic", "constant"
+      "program", "import_statement", "import_path", "function_def", "block", 
+      "statement", "simple_statement", "simple_statements", "compound_statement", 
+      "assign_statement", "return_statement", "if_statement", "arguments", 
+      "parameters", "call_expression", "expression", "binary_operator", 
+      "inequality_operator", "logic_operator", "arithmetic_operator", "atomic", 
+      "constant"
     },
     std::vector<std::string>{
       "", "", "", "'def'", "'return'", "'if'", "'else'", "'while'", "'extern'", 
-      "'('", "')'", "':'", "','", "';'", "'='", "'!='", "'<='", "'<'", "'=='", 
-      "'>'", "'>='", "'&&'", "'||'", "'+'", "'-'", "'*'", "'/'", "'**'", 
-      "", "'/*'", "'...'", "", "", "", "", "'true'", "'false'", "", "", 
-      "'*/'"
+      "'import'", "'('", "')'", "':'", "','", "';'", "'='", "'!='", "'<='", 
+      "'<'", "'=='", "'>'", "'>='", "'&&'", "'||'", "'+'", "'-'", "'*'", 
+      "'/'", "'**'", "'.'", "'...'", "", "'/*'", "", "", "", "", "'true'", 
+      "'false'", "", "", "'*/'"
     },
     std::vector<std::string>{
       "", "INDENT", "DEDENT", "KW_DEF", "KW_RETURN", "KW_IF", "KW_ELSE", 
-      "KW_WHILE", "KW_EXTERN", "SYM_LPAR", "SYM_RPAR", "SYM_BLOCK_START", 
+      "KW_WHILE", "KW_EXTERN", "KW_IMPORT", "SYM_LPAR", "SYM_RPAR", "SYM_BLOCK_START", 
       "SYM_ARG_SEPARATOR", "SYM_STMNT_DELIMITER", "SYM_ASSIGN", "SYM_NEQ", 
       "SYM_LTE", "SYM_LT", "SYM_EQ", "SYM_GT", "SYM_GTE", "SYM_AND", "SYM_OR", 
-      "SYM_PLUS", "SYM_MINUS", "SYM_MULT", "SYM_DIV", "SYM_EXP", "SYM_COMMENT", 
-      "SYM_COMMENT_START", "SYM_ELLIPS", "IDENTIFIER", "INT_LIT", "FLOAT_LIT", 
-      "STR_LIT", "TRUE_LIT", "FALSE_LIT", "NEWLINE", "WS", "SYM_COMMENT_END", 
-      "ALL_ELSE"
+      "SYM_PLUS", "SYM_MINUS", "SYM_MULT", "SYM_DIV", "SYM_EXP", "SYM_DOT", 
+      "SYM_ELLIPS", "SYM_COMMENT", "SYM_COMMENT_START", "IDENTIFIER", "INT_LIT", 
+      "FLOAT_LIT", "STR_LIT", "TRUE_LIT", "FALSE_LIT", "NEWLINE", "WS", 
+      "SYM_COMMENT_END", "COMMENT_CONTENT"
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,40,189,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,42,211,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
-  	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,1,0,4,
-  	0,44,8,0,11,0,12,0,45,1,0,1,0,1,1,1,1,3,1,52,8,1,1,2,1,2,1,2,1,2,1,2,
-  	3,2,59,8,2,1,2,1,2,1,2,1,2,1,3,1,3,1,3,1,3,4,3,69,8,3,11,3,12,3,70,1,
-  	3,1,3,3,3,75,8,3,1,4,1,4,3,4,79,8,4,1,5,1,5,1,5,3,5,84,8,5,1,6,1,6,1,
-  	6,5,6,89,8,6,10,6,12,6,92,9,6,1,6,3,6,95,8,6,1,6,1,6,1,7,1,7,3,7,101,
-  	8,7,1,8,1,8,1,8,1,8,1,9,1,9,1,9,1,10,1,10,1,10,1,10,1,10,1,10,1,10,1,
-  	10,3,10,118,8,10,3,10,120,8,10,1,11,3,11,123,8,11,1,11,1,11,1,11,4,11,
-  	128,8,11,11,11,12,11,129,3,11,132,8,11,1,12,3,12,135,8,12,1,12,1,12,1,
-  	12,4,12,140,8,12,11,12,12,12,141,3,12,144,8,12,1,13,3,13,147,8,13,1,13,
-  	1,13,1,13,1,13,1,13,1,14,1,14,1,14,1,14,1,14,1,14,1,14,3,14,161,8,14,
-  	1,14,1,14,1,14,1,14,5,14,167,8,14,10,14,12,14,170,9,14,1,15,1,15,1,15,
-  	3,15,175,8,15,1,16,1,16,1,17,1,17,1,18,1,18,1,19,1,19,3,19,185,8,19,1,
-  	20,1,20,1,20,0,1,28,21,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,
-  	34,36,38,40,0,4,1,0,15,20,1,0,21,22,1,0,23,27,1,0,32,34,193,0,43,1,0,
-  	0,0,2,49,1,0,0,0,4,53,1,0,0,0,6,74,1,0,0,0,8,78,1,0,0,0,10,83,1,0,0,0,
-  	12,85,1,0,0,0,14,100,1,0,0,0,16,102,1,0,0,0,18,106,1,0,0,0,20,109,1,0,
-  	0,0,22,131,1,0,0,0,24,143,1,0,0,0,26,146,1,0,0,0,28,160,1,0,0,0,30,174,
-  	1,0,0,0,32,176,1,0,0,0,34,178,1,0,0,0,36,180,1,0,0,0,38,184,1,0,0,0,40,
-  	186,1,0,0,0,42,44,3,8,4,0,43,42,1,0,0,0,44,45,1,0,0,0,45,43,1,0,0,0,45,
-  	46,1,0,0,0,46,47,1,0,0,0,47,48,5,0,0,1,48,1,1,0,0,0,49,51,3,16,8,0,50,
-  	52,5,13,0,0,51,50,1,0,0,0,51,52,1,0,0,0,52,3,1,0,0,0,53,54,5,3,0,0,54,
-  	55,5,31,0,0,55,56,5,9,0,0,56,58,3,22,11,0,57,59,5,30,0,0,58,57,1,0,0,
-  	0,58,59,1,0,0,0,59,60,1,0,0,0,60,61,5,10,0,0,61,62,5,11,0,0,62,63,3,6,
-  	3,0,63,5,1,0,0,0,64,75,3,12,6,0,65,66,5,37,0,0,66,68,5,1,0,0,67,69,3,
-  	8,4,0,68,67,1,0,0,0,69,70,1,0,0,0,70,68,1,0,0,0,70,71,1,0,0,0,71,72,1,
-  	0,0,0,72,73,5,2,0,0,73,75,1,0,0,0,74,64,1,0,0,0,74,65,1,0,0,0,75,7,1,
-  	0,0,0,76,79,3,12,6,0,77,79,3,14,7,0,78,76,1,0,0,0,78,77,1,0,0,0,79,9,
-  	1,0,0,0,80,84,3,28,14,0,81,84,3,16,8,0,82,84,3,18,9,0,83,80,1,0,0,0,83,
-  	81,1,0,0,0,83,82,1,0,0,0,84,11,1,0,0,0,85,90,3,10,5,0,86,87,5,13,0,0,
-  	87,89,3,10,5,0,88,86,1,0,0,0,89,92,1,0,0,0,90,88,1,0,0,0,90,91,1,0,0,
-  	0,91,94,1,0,0,0,92,90,1,0,0,0,93,95,5,13,0,0,94,93,1,0,0,0,94,95,1,0,
-  	0,0,95,96,1,0,0,0,96,97,5,37,0,0,97,13,1,0,0,0,98,101,3,20,10,0,99,101,
-  	3,4,2,0,100,98,1,0,0,0,100,99,1,0,0,0,101,15,1,0,0,0,102,103,5,31,0,0,
-  	103,104,5,14,0,0,104,105,3,28,14,0,105,17,1,0,0,0,106,107,5,4,0,0,107,
-  	108,3,28,14,0,108,19,1,0,0,0,109,110,5,5,0,0,110,111,3,28,14,0,111,112,
-  	5,11,0,0,112,119,3,6,3,0,113,117,5,6,0,0,114,118,3,20,10,0,115,116,5,
-  	11,0,0,116,118,3,6,3,0,117,114,1,0,0,0,117,115,1,0,0,0,118,120,1,0,0,
-  	0,119,113,1,0,0,0,119,120,1,0,0,0,120,21,1,0,0,0,121,123,5,31,0,0,122,
-  	121,1,0,0,0,122,123,1,0,0,0,123,132,1,0,0,0,124,127,5,31,0,0,125,126,
-  	5,12,0,0,126,128,5,31,0,0,127,125,1,0,0,0,128,129,1,0,0,0,129,127,1,0,
-  	0,0,129,130,1,0,0,0,130,132,1,0,0,0,131,122,1,0,0,0,131,124,1,0,0,0,132,
-  	23,1,0,0,0,133,135,3,28,14,0,134,133,1,0,0,0,134,135,1,0,0,0,135,144,
-  	1,0,0,0,136,139,3,28,14,0,137,138,5,12,0,0,138,140,3,28,14,0,139,137,
-  	1,0,0,0,140,141,1,0,0,0,141,139,1,0,0,0,141,142,1,0,0,0,142,144,1,0,0,
-  	0,143,134,1,0,0,0,143,136,1,0,0,0,144,25,1,0,0,0,145,147,5,8,0,0,146,
-  	145,1,0,0,0,146,147,1,0,0,0,147,148,1,0,0,0,148,149,5,31,0,0,149,150,
-  	5,9,0,0,150,151,3,24,12,0,151,152,5,10,0,0,152,27,1,0,0,0,153,154,6,14,
-  	-1,0,154,161,3,26,13,0,155,156,5,9,0,0,156,157,3,28,14,0,157,158,5,10,
-  	0,0,158,161,1,0,0,0,159,161,3,38,19,0,160,153,1,0,0,0,160,155,1,0,0,0,
-  	160,159,1,0,0,0,161,168,1,0,0,0,162,163,10,4,0,0,163,164,3,30,15,0,164,
-  	165,3,28,14,5,165,167,1,0,0,0,166,162,1,0,0,0,167,170,1,0,0,0,168,166,
-  	1,0,0,0,168,169,1,0,0,0,169,29,1,0,0,0,170,168,1,0,0,0,171,175,3,32,16,
-  	0,172,175,3,34,17,0,173,175,3,36,18,0,174,171,1,0,0,0,174,172,1,0,0,0,
-  	174,173,1,0,0,0,175,31,1,0,0,0,176,177,7,0,0,0,177,33,1,0,0,0,178,179,
-  	7,1,0,0,179,35,1,0,0,0,180,181,7,2,0,0,181,37,1,0,0,0,182,185,3,40,20,
-  	0,183,185,5,31,0,0,184,182,1,0,0,0,184,183,1,0,0,0,185,39,1,0,0,0,186,
-  	187,7,3,0,0,187,41,1,0,0,0,23,45,51,58,70,74,78,83,90,94,100,117,119,
-  	122,129,131,134,141,143,146,160,168,174,184
+  	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
+  	21,1,0,5,0,46,8,0,10,0,12,0,49,9,0,1,0,4,0,52,8,0,11,0,12,0,53,1,0,1,
+  	0,1,1,1,1,1,1,3,1,61,8,1,1,1,1,1,1,2,1,2,1,2,5,2,68,8,2,10,2,12,2,71,
+  	9,2,1,3,1,3,3,3,75,8,3,1,3,1,3,1,3,1,3,3,3,81,8,3,1,3,1,3,1,3,1,3,1,4,
+  	1,4,1,4,1,4,4,4,91,8,4,11,4,12,4,92,1,4,1,4,3,4,97,8,4,1,5,1,5,3,5,101,
+  	8,5,1,6,1,6,1,6,3,6,106,8,6,1,7,1,7,1,7,5,7,111,8,7,10,7,12,7,114,9,7,
+  	1,7,3,7,117,8,7,1,7,1,7,1,8,1,8,3,8,123,8,8,1,9,1,9,1,9,1,9,1,10,1,10,
+  	1,10,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,3,11,140,8,11,3,11,142,8,
+  	11,1,12,3,12,145,8,12,1,12,1,12,1,12,4,12,150,8,12,11,12,12,12,151,3,
+  	12,154,8,12,1,13,3,13,157,8,13,1,13,1,13,1,13,4,13,162,8,13,11,13,12,
+  	13,163,3,13,166,8,13,1,14,3,14,169,8,14,1,14,1,14,1,14,1,14,1,14,1,15,
+  	1,15,1,15,1,15,1,15,1,15,1,15,3,15,183,8,15,1,15,1,15,1,15,1,15,5,15,
+  	189,8,15,10,15,12,15,192,9,15,1,16,1,16,1,16,3,16,197,8,16,1,17,1,17,
+  	1,18,1,18,1,19,1,19,1,20,1,20,3,20,207,8,20,1,21,1,21,1,21,0,1,30,22,
+  	0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,0,4,1,0,
+  	16,21,1,0,22,23,1,0,24,28,1,0,34,36,217,0,47,1,0,0,0,2,57,1,0,0,0,4,64,
+  	1,0,0,0,6,72,1,0,0,0,8,96,1,0,0,0,10,100,1,0,0,0,12,105,1,0,0,0,14,107,
+  	1,0,0,0,16,122,1,0,0,0,18,124,1,0,0,0,20,128,1,0,0,0,22,131,1,0,0,0,24,
+  	153,1,0,0,0,26,165,1,0,0,0,28,168,1,0,0,0,30,182,1,0,0,0,32,196,1,0,0,
+  	0,34,198,1,0,0,0,36,200,1,0,0,0,38,202,1,0,0,0,40,206,1,0,0,0,42,208,
+  	1,0,0,0,44,46,3,2,1,0,45,44,1,0,0,0,46,49,1,0,0,0,47,45,1,0,0,0,47,48,
+  	1,0,0,0,48,51,1,0,0,0,49,47,1,0,0,0,50,52,3,10,5,0,51,50,1,0,0,0,52,53,
+  	1,0,0,0,53,51,1,0,0,0,53,54,1,0,0,0,54,55,1,0,0,0,55,56,5,0,0,1,56,1,
+  	1,0,0,0,57,58,5,9,0,0,58,60,3,4,2,0,59,61,5,14,0,0,60,59,1,0,0,0,60,61,
+  	1,0,0,0,61,62,1,0,0,0,62,63,5,39,0,0,63,3,1,0,0,0,64,69,5,33,0,0,65,66,
+  	5,29,0,0,66,68,5,33,0,0,67,65,1,0,0,0,68,71,1,0,0,0,69,67,1,0,0,0,69,
+  	70,1,0,0,0,70,5,1,0,0,0,71,69,1,0,0,0,72,74,5,3,0,0,73,75,5,8,0,0,74,
+  	73,1,0,0,0,74,75,1,0,0,0,75,76,1,0,0,0,76,77,5,33,0,0,77,78,5,10,0,0,
+  	78,80,3,24,12,0,79,81,5,30,0,0,80,79,1,0,0,0,80,81,1,0,0,0,81,82,1,0,
+  	0,0,82,83,5,11,0,0,83,84,5,12,0,0,84,85,3,8,4,0,85,7,1,0,0,0,86,97,3,
+  	14,7,0,87,88,5,39,0,0,88,90,5,1,0,0,89,91,3,10,5,0,90,89,1,0,0,0,91,92,
+  	1,0,0,0,92,90,1,0,0,0,92,93,1,0,0,0,93,94,1,0,0,0,94,95,5,2,0,0,95,97,
+  	1,0,0,0,96,86,1,0,0,0,96,87,1,0,0,0,97,9,1,0,0,0,98,101,3,14,7,0,99,101,
+  	3,16,8,0,100,98,1,0,0,0,100,99,1,0,0,0,101,11,1,0,0,0,102,106,3,30,15,
+  	0,103,106,3,18,9,0,104,106,3,20,10,0,105,102,1,0,0,0,105,103,1,0,0,0,
+  	105,104,1,0,0,0,106,13,1,0,0,0,107,112,3,12,6,0,108,109,5,14,0,0,109,
+  	111,3,12,6,0,110,108,1,0,0,0,111,114,1,0,0,0,112,110,1,0,0,0,112,113,
+  	1,0,0,0,113,116,1,0,0,0,114,112,1,0,0,0,115,117,5,14,0,0,116,115,1,0,
+  	0,0,116,117,1,0,0,0,117,118,1,0,0,0,118,119,5,39,0,0,119,15,1,0,0,0,120,
+  	123,3,22,11,0,121,123,3,6,3,0,122,120,1,0,0,0,122,121,1,0,0,0,123,17,
+  	1,0,0,0,124,125,5,33,0,0,125,126,5,15,0,0,126,127,3,30,15,0,127,19,1,
+  	0,0,0,128,129,5,4,0,0,129,130,3,30,15,0,130,21,1,0,0,0,131,132,5,5,0,
+  	0,132,133,3,30,15,0,133,134,5,12,0,0,134,141,3,8,4,0,135,139,5,6,0,0,
+  	136,140,3,22,11,0,137,138,5,12,0,0,138,140,3,8,4,0,139,136,1,0,0,0,139,
+  	137,1,0,0,0,140,142,1,0,0,0,141,135,1,0,0,0,141,142,1,0,0,0,142,23,1,
+  	0,0,0,143,145,5,33,0,0,144,143,1,0,0,0,144,145,1,0,0,0,145,154,1,0,0,
+  	0,146,149,5,33,0,0,147,148,5,13,0,0,148,150,5,33,0,0,149,147,1,0,0,0,
+  	150,151,1,0,0,0,151,149,1,0,0,0,151,152,1,0,0,0,152,154,1,0,0,0,153,144,
+  	1,0,0,0,153,146,1,0,0,0,154,25,1,0,0,0,155,157,3,30,15,0,156,155,1,0,
+  	0,0,156,157,1,0,0,0,157,166,1,0,0,0,158,161,3,30,15,0,159,160,5,13,0,
+  	0,160,162,3,30,15,0,161,159,1,0,0,0,162,163,1,0,0,0,163,161,1,0,0,0,163,
+  	164,1,0,0,0,164,166,1,0,0,0,165,156,1,0,0,0,165,158,1,0,0,0,166,27,1,
+  	0,0,0,167,169,5,8,0,0,168,167,1,0,0,0,168,169,1,0,0,0,169,170,1,0,0,0,
+  	170,171,5,33,0,0,171,172,5,10,0,0,172,173,3,26,13,0,173,174,5,11,0,0,
+  	174,29,1,0,0,0,175,176,6,15,-1,0,176,183,3,28,14,0,177,178,5,10,0,0,178,
+  	179,3,30,15,0,179,180,5,11,0,0,180,183,1,0,0,0,181,183,3,40,20,0,182,
+  	175,1,0,0,0,182,177,1,0,0,0,182,181,1,0,0,0,183,190,1,0,0,0,184,185,10,
+  	4,0,0,185,186,3,32,16,0,186,187,3,30,15,5,187,189,1,0,0,0,188,184,1,0,
+  	0,0,189,192,1,0,0,0,190,188,1,0,0,0,190,191,1,0,0,0,191,31,1,0,0,0,192,
+  	190,1,0,0,0,193,197,3,34,17,0,194,197,3,36,18,0,195,197,3,38,19,0,196,
+  	193,1,0,0,0,196,194,1,0,0,0,196,195,1,0,0,0,197,33,1,0,0,0,198,199,7,
+  	0,0,0,199,35,1,0,0,0,200,201,7,1,0,0,201,37,1,0,0,0,202,203,7,2,0,0,203,
+  	39,1,0,0,0,204,207,3,42,21,0,205,207,5,33,0,0,206,204,1,0,0,0,206,205,
+  	1,0,0,0,207,41,1,0,0,0,208,209,7,3,0,0,209,43,1,0,0,0,26,47,53,60,69,
+  	74,80,92,96,100,105,112,116,122,139,141,144,151,153,156,163,165,168,182,
+  	190,196,206
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -186,6 +195,14 @@ tree::TerminalNode* TythonParser::ProgramContext::EOF() {
   return getToken(TythonParser::EOF, 0);
 }
 
+std::vector<TythonParser::Import_statementContext *> TythonParser::ProgramContext::import_statement() {
+  return getRuleContexts<TythonParser::Import_statementContext>();
+}
+
+TythonParser::Import_statementContext* TythonParser::ProgramContext::import_statement(size_t i) {
+  return getRuleContext<TythonParser::Import_statementContext>(i);
+}
+
 std::vector<TythonParser::StatementContext *> TythonParser::ProgramContext::statement() {
   return getRuleContexts<TythonParser::StatementContext>();
 }
@@ -221,18 +238,28 @@ TythonParser::ProgramContext* TythonParser::program() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(43); 
+    setState(47);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == TythonParser::KW_IMPORT) {
+      setState(44);
+      import_statement();
+      setState(49);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+    }
+    setState(51); 
     _errHandler->sync(this);
     _la = _input->LA(1);
     do {
-      setState(42);
+      setState(50);
       statement();
-      setState(45); 
+      setState(53); 
       _errHandler->sync(this);
       _la = _input->LA(1);
     } while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 32212255544) != 0));
-    setState(47);
+      ((1ULL << _la) & 128849020216) != 0));
+    setState(55);
     match(TythonParser::EOF);
    
   }
@@ -245,36 +272,44 @@ TythonParser::ProgramContext* TythonParser::program() {
   return _localctx;
 }
 
-//----------------- GlobalStatementContext ------------------------------------------------------------------
+//----------------- Import_statementContext ------------------------------------------------------------------
 
-TythonParser::GlobalStatementContext::GlobalStatementContext(ParserRuleContext *parent, size_t invokingState)
+TythonParser::Import_statementContext::Import_statementContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-TythonParser::Assign_statementContext* TythonParser::GlobalStatementContext::assign_statement() {
-  return getRuleContext<TythonParser::Assign_statementContext>(0);
+tree::TerminalNode* TythonParser::Import_statementContext::KW_IMPORT() {
+  return getToken(TythonParser::KW_IMPORT, 0);
 }
 
-tree::TerminalNode* TythonParser::GlobalStatementContext::SYM_STMNT_DELIMITER() {
+TythonParser::Import_pathContext* TythonParser::Import_statementContext::import_path() {
+  return getRuleContext<TythonParser::Import_pathContext>(0);
+}
+
+tree::TerminalNode* TythonParser::Import_statementContext::NEWLINE() {
+  return getToken(TythonParser::NEWLINE, 0);
+}
+
+tree::TerminalNode* TythonParser::Import_statementContext::SYM_STMNT_DELIMITER() {
   return getToken(TythonParser::SYM_STMNT_DELIMITER, 0);
 }
 
 
-size_t TythonParser::GlobalStatementContext::getRuleIndex() const {
-  return TythonParser::RuleGlobalStatement;
+size_t TythonParser::Import_statementContext::getRuleIndex() const {
+  return TythonParser::RuleImport_statement;
 }
 
 
-std::any TythonParser::GlobalStatementContext::accept(tree::ParseTreeVisitor *visitor) {
+std::any TythonParser::Import_statementContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<TythonParserVisitor*>(visitor))
-    return parserVisitor->visitGlobalStatement(this);
+    return parserVisitor->visitImport_statement(this);
   else
     return visitor->visitChildren(this);
 }
 
-TythonParser::GlobalStatementContext* TythonParser::globalStatement() {
-  GlobalStatementContext *_localctx = _tracker.createInstance<GlobalStatementContext>(_ctx, getState());
-  enterRule(_localctx, 2, TythonParser::RuleGlobalStatement);
+TythonParser::Import_statementContext* TythonParser::import_statement() {
+  Import_statementContext *_localctx = _tracker.createInstance<Import_statementContext>(_ctx, getState());
+  enterRule(_localctx, 2, TythonParser::RuleImport_statement);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -286,15 +321,93 @@ TythonParser::GlobalStatementContext* TythonParser::globalStatement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(49);
-    assign_statement();
-    setState(51);
+    setState(57);
+    match(TythonParser::KW_IMPORT);
+    setState(58);
+    import_path();
+    setState(60);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_STMNT_DELIMITER) {
-      setState(50);
+      setState(59);
       match(TythonParser::SYM_STMNT_DELIMITER);
+    }
+    setState(62);
+    match(TythonParser::NEWLINE);
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Import_pathContext ------------------------------------------------------------------
+
+TythonParser::Import_pathContext::Import_pathContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<tree::TerminalNode *> TythonParser::Import_pathContext::IDENTIFIER() {
+  return getTokens(TythonParser::IDENTIFIER);
+}
+
+tree::TerminalNode* TythonParser::Import_pathContext::IDENTIFIER(size_t i) {
+  return getToken(TythonParser::IDENTIFIER, i);
+}
+
+std::vector<tree::TerminalNode *> TythonParser::Import_pathContext::SYM_DOT() {
+  return getTokens(TythonParser::SYM_DOT);
+}
+
+tree::TerminalNode* TythonParser::Import_pathContext::SYM_DOT(size_t i) {
+  return getToken(TythonParser::SYM_DOT, i);
+}
+
+
+size_t TythonParser::Import_pathContext::getRuleIndex() const {
+  return TythonParser::RuleImport_path;
+}
+
+
+std::any TythonParser::Import_pathContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<TythonParserVisitor*>(visitor))
+    return parserVisitor->visitImport_path(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+TythonParser::Import_pathContext* TythonParser::import_path() {
+  Import_pathContext *_localctx = _tracker.createInstance<Import_pathContext>(_ctx, getState());
+  enterRule(_localctx, 4, TythonParser::RuleImport_path);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(64);
+    match(TythonParser::IDENTIFIER);
+    setState(69);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == TythonParser::SYM_DOT) {
+      setState(65);
+      match(TythonParser::SYM_DOT);
+      setState(66);
+      match(TythonParser::IDENTIFIER);
+      setState(71);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
     }
    
   }
@@ -341,6 +454,10 @@ TythonParser::BlockContext* TythonParser::Function_defContext::block() {
   return getRuleContext<TythonParser::BlockContext>(0);
 }
 
+tree::TerminalNode* TythonParser::Function_defContext::KW_EXTERN() {
+  return getToken(TythonParser::KW_EXTERN, 0);
+}
+
 tree::TerminalNode* TythonParser::Function_defContext::SYM_ELLIPS() {
   return getToken(TythonParser::SYM_ELLIPS, 0);
 }
@@ -360,7 +477,7 @@ std::any TythonParser::Function_defContext::accept(tree::ParseTreeVisitor *visit
 
 TythonParser::Function_defContext* TythonParser::function_def() {
   Function_defContext *_localctx = _tracker.createInstance<Function_defContext>(_ctx, getState());
-  enterRule(_localctx, 4, TythonParser::RuleFunction_def);
+  enterRule(_localctx, 6, TythonParser::RuleFunction_def);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -372,27 +489,35 @@ TythonParser::Function_defContext* TythonParser::function_def() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(53);
+    setState(72);
     match(TythonParser::KW_DEF);
-    setState(54);
+    setState(74);
+    _errHandler->sync(this);
+
+    _la = _input->LA(1);
+    if (_la == TythonParser::KW_EXTERN) {
+      setState(73);
+      match(TythonParser::KW_EXTERN);
+    }
+    setState(76);
     match(TythonParser::IDENTIFIER);
-    setState(55);
+    setState(77);
     match(TythonParser::SYM_LPAR);
-    setState(56);
+    setState(78);
     arguments();
-    setState(58);
+    setState(80);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_ELLIPS) {
-      setState(57);
+      setState(79);
       match(TythonParser::SYM_ELLIPS);
     }
-    setState(60);
+    setState(82);
     match(TythonParser::SYM_RPAR);
-    setState(61);
+    setState(83);
     match(TythonParser::SYM_BLOCK_START);
-    setState(62);
+    setState(84);
     block();
    
   }
@@ -450,7 +575,7 @@ std::any TythonParser::BlockContext::accept(tree::ParseTreeVisitor *visitor) {
 
 TythonParser::BlockContext* TythonParser::block() {
   BlockContext *_localctx = _tracker.createInstance<BlockContext>(_ctx, getState());
-  enterRule(_localctx, 6, TythonParser::RuleBlock);
+  enterRule(_localctx, 8, TythonParser::RuleBlock);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -461,7 +586,7 @@ TythonParser::BlockContext* TythonParser::block() {
     exitRule();
   });
   try {
-    setState(74);
+    setState(96);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_RETURN:
@@ -472,29 +597,29 @@ TythonParser::BlockContext* TythonParser::block() {
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(64);
+        setState(86);
         simple_statements();
         break;
       }
 
       case TythonParser::NEWLINE: {
         enterOuterAlt(_localctx, 2);
-        setState(65);
+        setState(87);
         match(TythonParser::NEWLINE);
-        setState(66);
+        setState(88);
         match(TythonParser::INDENT);
-        setState(68); 
+        setState(90); 
         _errHandler->sync(this);
         _la = _input->LA(1);
         do {
-          setState(67);
+          setState(89);
           antlrcpp::downCast<BlockContext *>(_localctx)->indent_statements = statement();
-          setState(70); 
+          setState(92); 
           _errHandler->sync(this);
           _la = _input->LA(1);
         } while ((((_la & ~ 0x3fULL) == 0) &&
-          ((1ULL << _la) & 32212255544) != 0));
-        setState(72);
+          ((1ULL << _la) & 128849020216) != 0));
+        setState(94);
         match(TythonParser::DEDENT);
         break;
       }
@@ -542,7 +667,7 @@ std::any TythonParser::StatementContext::accept(tree::ParseTreeVisitor *visitor)
 
 TythonParser::StatementContext* TythonParser::statement() {
   StatementContext *_localctx = _tracker.createInstance<StatementContext>(_ctx, getState());
-  enterRule(_localctx, 8, TythonParser::RuleStatement);
+  enterRule(_localctx, 10, TythonParser::RuleStatement);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -552,7 +677,7 @@ TythonParser::StatementContext* TythonParser::statement() {
     exitRule();
   });
   try {
-    setState(78);
+    setState(100);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_RETURN:
@@ -563,7 +688,7 @@ TythonParser::StatementContext* TythonParser::statement() {
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(76);
+        setState(98);
         simple_statements();
         break;
       }
@@ -571,7 +696,7 @@ TythonParser::StatementContext* TythonParser::statement() {
       case TythonParser::KW_DEF:
       case TythonParser::KW_IF: {
         enterOuterAlt(_localctx, 2);
-        setState(77);
+        setState(99);
         compound_statement();
         break;
       }
@@ -623,7 +748,7 @@ std::any TythonParser::Simple_statementContext::accept(tree::ParseTreeVisitor *v
 
 TythonParser::Simple_statementContext* TythonParser::simple_statement() {
   Simple_statementContext *_localctx = _tracker.createInstance<Simple_statementContext>(_ctx, getState());
-  enterRule(_localctx, 10, TythonParser::RuleSimple_statement);
+  enterRule(_localctx, 12, TythonParser::RuleSimple_statement);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -633,26 +758,26 @@ TythonParser::Simple_statementContext* TythonParser::simple_statement() {
     exitRule();
   });
   try {
-    setState(83);
+    setState(105);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 6, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(80);
+      setState(102);
       expression(0);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(81);
+      setState(103);
       assign_statement();
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(82);
+      setState(104);
       return_statement();
       break;
     }
@@ -712,7 +837,7 @@ std::any TythonParser::Simple_statementsContext::accept(tree::ParseTreeVisitor *
 
 TythonParser::Simple_statementsContext* TythonParser::simple_statements() {
   Simple_statementsContext *_localctx = _tracker.createInstance<Simple_statementsContext>(_ctx, getState());
-  enterRule(_localctx, 12, TythonParser::RuleSimple_statements);
+  enterRule(_localctx, 14, TythonParser::RuleSimple_statements);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -725,31 +850,31 @@ TythonParser::Simple_statementsContext* TythonParser::simple_statements() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(85);
+    setState(107);
     simple_statement();
-    setState(90);
+    setState(112);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(86);
+        setState(108);
         match(TythonParser::SYM_STMNT_DELIMITER);
-        setState(87);
+        setState(109);
         simple_statement(); 
       }
-      setState(92);
+      setState(114);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx);
     }
-    setState(94);
+    setState(116);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_STMNT_DELIMITER) {
-      setState(93);
+      setState(115);
       match(TythonParser::SYM_STMNT_DELIMITER);
     }
-    setState(96);
+    setState(118);
     match(TythonParser::NEWLINE);
    
   }
@@ -791,7 +916,7 @@ std::any TythonParser::Compound_statementContext::accept(tree::ParseTreeVisitor 
 
 TythonParser::Compound_statementContext* TythonParser::compound_statement() {
   Compound_statementContext *_localctx = _tracker.createInstance<Compound_statementContext>(_ctx, getState());
-  enterRule(_localctx, 14, TythonParser::RuleCompound_statement);
+  enterRule(_localctx, 16, TythonParser::RuleCompound_statement);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -801,19 +926,19 @@ TythonParser::Compound_statementContext* TythonParser::compound_statement() {
     exitRule();
   });
   try {
-    setState(100);
+    setState(122);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_IF: {
         enterOuterAlt(_localctx, 1);
-        setState(98);
+        setState(120);
         if_statement();
         break;
       }
 
       case TythonParser::KW_DEF: {
         enterOuterAlt(_localctx, 2);
-        setState(99);
+        setState(121);
         function_def();
         break;
       }
@@ -865,7 +990,7 @@ std::any TythonParser::Assign_statementContext::accept(tree::ParseTreeVisitor *v
 
 TythonParser::Assign_statementContext* TythonParser::assign_statement() {
   Assign_statementContext *_localctx = _tracker.createInstance<Assign_statementContext>(_ctx, getState());
-  enterRule(_localctx, 16, TythonParser::RuleAssign_statement);
+  enterRule(_localctx, 18, TythonParser::RuleAssign_statement);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -876,11 +1001,11 @@ TythonParser::Assign_statementContext* TythonParser::assign_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(102);
+    setState(124);
     match(TythonParser::IDENTIFIER);
-    setState(103);
+    setState(125);
     match(TythonParser::SYM_ASSIGN);
-    setState(104);
+    setState(126);
     expression(0);
    
   }
@@ -922,7 +1047,7 @@ std::any TythonParser::Return_statementContext::accept(tree::ParseTreeVisitor *v
 
 TythonParser::Return_statementContext* TythonParser::return_statement() {
   Return_statementContext *_localctx = _tracker.createInstance<Return_statementContext>(_ctx, getState());
-  enterRule(_localctx, 18, TythonParser::RuleReturn_statement);
+  enterRule(_localctx, 20, TythonParser::RuleReturn_statement);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -933,9 +1058,9 @@ TythonParser::Return_statementContext* TythonParser::return_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(106);
+    setState(128);
     match(TythonParser::KW_RETURN);
-    setState(107);
+    setState(129);
     expression(0);
    
   }
@@ -1001,7 +1126,7 @@ std::any TythonParser::If_statementContext::accept(tree::ParseTreeVisitor *visit
 
 TythonParser::If_statementContext* TythonParser::if_statement() {
   If_statementContext *_localctx = _tracker.createInstance<If_statementContext>(_ctx, getState());
-  enterRule(_localctx, 20, TythonParser::RuleIf_statement);
+  enterRule(_localctx, 22, TythonParser::RuleIf_statement);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1013,34 +1138,34 @@ TythonParser::If_statementContext* TythonParser::if_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(109);
+    setState(131);
     match(TythonParser::KW_IF);
-    setState(110);
+    setState(132);
     expression(0);
-    setState(111);
+    setState(133);
     match(TythonParser::SYM_BLOCK_START);
-    setState(112);
+    setState(134);
     antlrcpp::downCast<If_statementContext *>(_localctx)->br_if = block();
-    setState(119);
+    setState(141);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::KW_ELSE) {
-      setState(113);
+      setState(135);
       match(TythonParser::KW_ELSE);
-      setState(117);
+      setState(139);
       _errHandler->sync(this);
       switch (_input->LA(1)) {
         case TythonParser::KW_IF: {
-          setState(114);
+          setState(136);
           antlrcpp::downCast<If_statementContext *>(_localctx)->br_else_if = if_statement();
           break;
         }
 
         case TythonParser::SYM_BLOCK_START: {
-          setState(115);
+          setState(137);
           match(TythonParser::SYM_BLOCK_START);
-          setState(116);
+          setState(138);
           antlrcpp::downCast<If_statementContext *>(_localctx)->br_else = block();
           break;
         }
@@ -1097,7 +1222,7 @@ std::any TythonParser::ArgumentsContext::accept(tree::ParseTreeVisitor *visitor)
 
 TythonParser::ArgumentsContext* TythonParser::arguments() {
   ArgumentsContext *_localctx = _tracker.createInstance<ArgumentsContext>(_ctx, getState());
-  enterRule(_localctx, 22, TythonParser::RuleArguments);
+  enterRule(_localctx, 24, TythonParser::RuleArguments);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1108,17 +1233,17 @@ TythonParser::ArgumentsContext* TythonParser::arguments() {
     exitRule();
   });
   try {
-    setState(131);
+    setState(153);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 14, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(122);
+      setState(144);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if (_la == TythonParser::IDENTIFIER) {
-        setState(121);
+        setState(143);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
       }
@@ -1127,19 +1252,19 @@ TythonParser::ArgumentsContext* TythonParser::arguments() {
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(124);
+      setState(146);
       antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
       antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
-      setState(127); 
+      setState(149); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(125);
+        setState(147);
         match(TythonParser::SYM_ARG_SEPARATOR);
-        setState(126);
+        setState(148);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
-        setState(129); 
+        setState(151); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_ARG_SEPARATOR);
@@ -1197,7 +1322,7 @@ std::any TythonParser::ParametersContext::accept(tree::ParseTreeVisitor *visitor
 
 TythonParser::ParametersContext* TythonParser::parameters() {
   ParametersContext *_localctx = _tracker.createInstance<ParametersContext>(_ctx, getState());
-  enterRule(_localctx, 24, TythonParser::RuleParameters);
+  enterRule(_localctx, 26, TythonParser::RuleParameters);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1208,18 +1333,18 @@ TythonParser::ParametersContext* TythonParser::parameters() {
     exitRule();
   });
   try {
-    setState(143);
+    setState(165);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(134);
+      setState(156);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
-        ((1ULL << _la) & 32212255488) != 0)) {
-        setState(133);
+        ((1ULL << _la) & 128849020160) != 0)) {
+        setState(155);
         antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
         antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
       }
@@ -1228,19 +1353,19 @@ TythonParser::ParametersContext* TythonParser::parameters() {
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(136);
+      setState(158);
       antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
       antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
-      setState(139); 
+      setState(161); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(137);
+        setState(159);
         match(TythonParser::SYM_ARG_SEPARATOR);
-        setState(138);
+        setState(160);
         antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
         antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
-        setState(141); 
+        setState(163); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_ARG_SEPARATOR);
@@ -1302,7 +1427,7 @@ std::any TythonParser::Call_expressionContext::accept(tree::ParseTreeVisitor *vi
 
 TythonParser::Call_expressionContext* TythonParser::call_expression() {
   Call_expressionContext *_localctx = _tracker.createInstance<Call_expressionContext>(_ctx, getState());
-  enterRule(_localctx, 26, TythonParser::RuleCall_expression);
+  enterRule(_localctx, 28, TythonParser::RuleCall_expression);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1314,21 +1439,21 @@ TythonParser::Call_expressionContext* TythonParser::call_expression() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(146);
+    setState(168);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::KW_EXTERN) {
-      setState(145);
+      setState(167);
       match(TythonParser::KW_EXTERN);
     }
-    setState(148);
+    setState(170);
     match(TythonParser::IDENTIFIER);
-    setState(149);
+    setState(171);
     match(TythonParser::SYM_LPAR);
-    setState(150);
+    setState(172);
     parameters();
-    setState(151);
+    setState(173);
     match(TythonParser::SYM_RPAR);
    
   }
@@ -1443,8 +1568,8 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
   TythonParser::ExpressionContext *_localctx = _tracker.createInstance<ExpressionContext>(_ctx, parentState);
   TythonParser::ExpressionContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 28;
-  enterRecursionRule(_localctx, 28, TythonParser::RuleExpression, precedence);
+  size_t startState = 30;
+  enterRecursionRule(_localctx, 30, TythonParser::RuleExpression, precedence);
 
     
 
@@ -1458,15 +1583,15 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(160);
+    setState(182);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 19, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 22, _ctx)) {
     case 1: {
       _localctx = _tracker.createInstance<Lbl_call_expressionContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
 
-      setState(154);
+      setState(176);
       call_expression();
       break;
     }
@@ -1475,11 +1600,11 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_expression_parenthesesContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(155);
+      setState(177);
       match(TythonParser::SYM_LPAR);
-      setState(156);
+      setState(178);
       expression(0);
-      setState(157);
+      setState(179);
       match(TythonParser::SYM_RPAR);
       break;
     }
@@ -1488,7 +1613,7 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_atomicContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(159);
+      setState(181);
       atomic();
       break;
     }
@@ -1497,9 +1622,9 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(168);
+    setState(190);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 23, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
@@ -1509,17 +1634,17 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
         _localctx = newContext;
         newContext->lhs = previousContext;
         pushNewRecursionContext(newContext, startState, RuleExpression);
-        setState(162);
+        setState(184);
 
         if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-        setState(163);
+        setState(185);
         binary_operator();
-        setState(164);
+        setState(186);
         antlrcpp::downCast<Binary_expressionContext *>(_localctx)->rhs = expression(5); 
       }
-      setState(170);
+      setState(192);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 23, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -1563,7 +1688,7 @@ std::any TythonParser::Binary_operatorContext::accept(tree::ParseTreeVisitor *vi
 
 TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
   Binary_operatorContext *_localctx = _tracker.createInstance<Binary_operatorContext>(_ctx, getState());
-  enterRule(_localctx, 30, TythonParser::RuleBinary_operator);
+  enterRule(_localctx, 32, TythonParser::RuleBinary_operator);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1573,7 +1698,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
     exitRule();
   });
   try {
-    setState(174);
+    setState(196);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::SYM_NEQ:
@@ -1583,7 +1708,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_GT:
       case TythonParser::SYM_GTE: {
         enterOuterAlt(_localctx, 1);
-        setState(171);
+        setState(193);
         inequality_operator();
         break;
       }
@@ -1591,7 +1716,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_AND:
       case TythonParser::SYM_OR: {
         enterOuterAlt(_localctx, 2);
-        setState(172);
+        setState(194);
         logic_operator();
         break;
       }
@@ -1602,7 +1727,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_DIV:
       case TythonParser::SYM_EXP: {
         enterOuterAlt(_localctx, 3);
-        setState(173);
+        setState(195);
         arithmetic_operator();
         break;
       }
@@ -1666,7 +1791,7 @@ std::any TythonParser::Inequality_operatorContext::accept(tree::ParseTreeVisitor
 
 TythonParser::Inequality_operatorContext* TythonParser::inequality_operator() {
   Inequality_operatorContext *_localctx = _tracker.createInstance<Inequality_operatorContext>(_ctx, getState());
-  enterRule(_localctx, 32, TythonParser::RuleInequality_operator);
+  enterRule(_localctx, 34, TythonParser::RuleInequality_operator);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1678,10 +1803,10 @@ TythonParser::Inequality_operatorContext* TythonParser::inequality_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(176);
+    setState(198);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 2064384) != 0))) {
+      ((1ULL << _la) & 4128768) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -1728,7 +1853,7 @@ std::any TythonParser::Logic_operatorContext::accept(tree::ParseTreeVisitor *vis
 
 TythonParser::Logic_operatorContext* TythonParser::logic_operator() {
   Logic_operatorContext *_localctx = _tracker.createInstance<Logic_operatorContext>(_ctx, getState());
-  enterRule(_localctx, 34, TythonParser::RuleLogic_operator);
+  enterRule(_localctx, 36, TythonParser::RuleLogic_operator);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1740,7 +1865,7 @@ TythonParser::Logic_operatorContext* TythonParser::logic_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(178);
+    setState(200);
     _la = _input->LA(1);
     if (!(_la == TythonParser::SYM_AND
 
@@ -1803,7 +1928,7 @@ std::any TythonParser::Arithmetic_operatorContext::accept(tree::ParseTreeVisitor
 
 TythonParser::Arithmetic_operatorContext* TythonParser::arithmetic_operator() {
   Arithmetic_operatorContext *_localctx = _tracker.createInstance<Arithmetic_operatorContext>(_ctx, getState());
-  enterRule(_localctx, 36, TythonParser::RuleArithmetic_operator);
+  enterRule(_localctx, 38, TythonParser::RuleArithmetic_operator);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1815,10 +1940,10 @@ TythonParser::Arithmetic_operatorContext* TythonParser::arithmetic_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(180);
+    setState(202);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 260046848) != 0))) {
+      ((1ULL << _la) & 520093696) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -1865,7 +1990,7 @@ std::any TythonParser::AtomicContext::accept(tree::ParseTreeVisitor *visitor) {
 
 TythonParser::AtomicContext* TythonParser::atomic() {
   AtomicContext *_localctx = _tracker.createInstance<AtomicContext>(_ctx, getState());
-  enterRule(_localctx, 38, TythonParser::RuleAtomic);
+  enterRule(_localctx, 40, TythonParser::RuleAtomic);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1875,21 +2000,21 @@ TythonParser::AtomicContext* TythonParser::atomic() {
     exitRule();
   });
   try {
-    setState(184);
+    setState(206);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::INT_LIT:
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(182);
+        setState(204);
         constant();
         break;
       }
 
       case TythonParser::IDENTIFIER: {
         enterOuterAlt(_localctx, 2);
-        setState(183);
+        setState(205);
         match(TythonParser::IDENTIFIER);
         break;
       }
@@ -1941,7 +2066,7 @@ std::any TythonParser::ConstantContext::accept(tree::ParseTreeVisitor *visitor) 
 
 TythonParser::ConstantContext* TythonParser::constant() {
   ConstantContext *_localctx = _tracker.createInstance<ConstantContext>(_ctx, getState());
-  enterRule(_localctx, 40, TythonParser::RuleConstant);
+  enterRule(_localctx, 42, TythonParser::RuleConstant);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1953,10 +2078,10 @@ TythonParser::ConstantContext* TythonParser::constant() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(186);
+    setState(208);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 30064771072) != 0))) {
+      ((1ULL << _la) & 120259084288) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -1976,7 +2101,7 @@ TythonParser::ConstantContext* TythonParser::constant() {
 
 bool TythonParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicateIndex) {
   switch (ruleIndex) {
-    case 14: return expressionSempred(antlrcpp::downCast<ExpressionContext *>(context), predicateIndex);
+    case 15: return expressionSempred(antlrcpp::downCast<ExpressionContext *>(context), predicateIndex);
 
   default:
     break;

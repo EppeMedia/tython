@@ -22,67 +22,32 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Type.h"
 #include "include/visitor/SourceFileVisitor.h"
-#include "include/parser/TythonLexer.h"
-#include "include/parser/TythonParser.h"
+#include "grammar/generated/TythonLexer.h"
+#include "grammar/generated/TythonParser.h"
 #include <map>
 #include <system_error>
 #include <vector>
 #include "config.h"
 #include "include/ir/TythonBuilder.h"
+#include <filesystem>
 
 using namespace std;
 using namespace antlr4;
-using namespace llvm;
 using namespace llvm::sys;
 
-int main(int argc, char **argv) {
+map<string, const std::map<std::string, Value*>&> object_symbol_table; // { object_name, { function_name, function_value }}
 
-    const auto configuration = utils::getConfiguration(argc, argv);
+using namespace llvm;
 
-    if (configuration.help) {
-        cout << MSG_HELP << endl;
-        return 0;
-    }
+llvm::LLVMContext* llvmContext;
+std::string TargetTriple;
+TargetMachine* TheTargetMachine;
 
-    cout << "tython " << TYTHON_VERSION << endl;
+const DataLayout* datalayout;
 
-    vector<string> sourceFiles = configuration.src_files;
+int init_target() {
 
-    ifstream stream;
-
-    stream.open(sourceFiles[0]);
-
-    if (!stream.is_open()) {
-        throw CompileException("File \"" + sourceFiles[0] + "\" not found");
-    }
-
-    std::cout << "Compiling first stage..." << std::endl;
-
-    ANTLRInputStream input(stream);
-    TythonLexer lexer(&input);
-    CommonTokenStream tokens(&lexer);
-    TythonParser parser(&tokens);
-
-    TythonParser::ProgramContext* ast = parser.program();
-
-    // init  llvm
-    auto llvmContext = new llvm::LLVMContext();
-    auto module = new TythonModule("module", *llvmContext);
-
-    llvm::FunctionType* FT = llvm::FunctionType::get(llvm::Type::getVoidTy(*llvmContext), false);
-    llvm::Function* mainFunction = llvm::Function::Create(FT, llvm::Function::CommonLinkage, "main", module);
-
-    // Run compiler
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(*llvmContext, "entry", mainFunction);
-
-    TythonBuilder builder(module, block);
-
-    SourceFileVisitor sourceFileVisitor(module, &builder);
-    sourceFileVisitor.visitProgram(ast);
-
-    builder.CreateRetVoid();
-
-    // The following code allows us to compile the IR into C object files
+    llvmContext = new llvm::LLVMContext();
 
     InitializeAllTargetInfos();
     InitializeAllTargets();
@@ -90,8 +55,7 @@ int main(int argc, char **argv) {
     InitializeAllAsmParsers();
     InitializeAllAsmPrinters();
 
-    auto TargetTriple = sys::getDefaultTargetTriple();
-    module->setTargetTriple(TargetTriple);
+    TargetTriple = sys::getDefaultTargetTriple();
 
     std::string Error;
     auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
@@ -103,35 +67,104 @@ int main(int argc, char **argv) {
         errs() << Error;
         return 1;
     }
+
     auto CPU = "generic";
     auto Features = "";
 
     TargetOptions opt;
     auto RM = Optional<Reloc::Model>(Reloc::PIC_);
-    auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+    TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
 
-    auto datalayout = TheTargetMachine->createDataLayout();
-    module->setDataLayout(datalayout);
+    datalayout = new DataLayout(TheTargetMachine->createDataLayout());
 
-    auto object_filename = "tython.o";
+    return 0;
+}
+
+std::string build_sourcefile(const configuration_t* config, std::string& path) {
+
+    ifstream stream(path);
+
+    if (!stream.is_open()) {
+        throw CompileException("File \"" + path + "\" not found");
+    }
+
+    std::string objectname = utils::get_objectname(path);
+
+    std::cout << "Compiling first stage..." << std::endl;
+
+    ANTLRInputStream input(stream);
+    TythonLexer lexer(&input);
+    CommonTokenStream tokens(&lexer);
+    TythonParser parser(&tokens);
+
+    TythonParser::ProgramContext* ast = parser.program();
+
+    // init llvm
+    auto module = new TythonModule(objectname + "_module", *llvmContext);
+
+    // Run compiler
+    auto bb = BasicBlock::Create(*llvmContext);
+    TythonBuilder builder(module, bb);
+
+    SourceFileVisitor sourceFileVisitor(module, &builder, object_symbol_table);
+    sourceFileVisitor.visitProgram(ast);
+
+    builder.CreateRetVoid();
+
+    // update object_functions map
+    object_symbol_table.insert({ objectname, *module->listProcedures() });
+
+    module->setTargetTriple(TargetTriple);
+    module->setDataLayout(*datalayout);
+
+    std::string build_dir;
+
+    if (config->build_dir) {
+        build_dir = config->build_dir->value_or("build");
+    } else {
+        build_dir = "build";
+    }
+
+    if (sys::fs::exists(build_dir)) {
+
+        if (!sys::fs::is_directory(build_dir)) {
+
+            throw CompileException("Target build path " + build_dir + " is not a directory!");
+        }
+
+    } else {
+
+        auto errorcode = sys::fs::create_directories(build_dir);
+
+        if (errorcode) {
+            throw CompileException("Failed to write object file: " + errorcode.message());
+        }
+    }
+
+    const auto object_filename = build_dir + std::filesystem::path::preferred_separator + objectname + ".o";
+
     std::error_code EC;
     raw_fd_ostream dest(object_filename, EC, sys::fs::OF_None);
 
     if (EC) {
+
         errs() << "Could not open file: " << EC.message();
-        return 1;
+
+        throw CompileException("Could not open file: " + EC.message());
     }
 
     legacy::PassManager pass;
     auto FileType = llvm::CodeGenFileType::CGFT_ObjectFile;
 
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
-        errs() << "TheTargetMachine can't emit a file of this type";
-        return 1;
+
+        errs() << "TheTargetMachine can't emit a file of this type.";
+
+        throw CompileException("TheTargetMachine can't emit a file of this type.");
     }
 
     // avoid optimizations for debugging
-    if (!configuration.debug) {
+    if (!config->debug) {
         // loop invariant code motion (hoisting code to preheader)
         pass.add(createLICMPass());
         // Promote allocas to registers.
@@ -146,46 +179,142 @@ int main(int argc, char **argv) {
 
     pass.run(*module);
 
-    if (!configuration.emit_llvm.empty()) {
+    if (config->emit_llvm) {
+
+        auto llvm_ir_output_dir = build_dir + std::filesystem::path::preferred_separator + config->emit_llvm.value().value_or("ir");
+
+        if (sys::fs::exists(llvm_ir_output_dir)) {
+
+            if (!sys::fs::is_directory(llvm_ir_output_dir)) {
+
+                throw CompileException("Target path for emitting LLVM IR at " + llvm_ir_output_dir + " is not a directory!");
+            }
+
+        } else {
+
+            auto errorcode = sys::fs::create_directories(llvm_ir_output_dir);
+
+            if (errorcode) {
+
+                throw CompileException("Failed to write LLVM IR: " + errorcode.message());
+            }
+        }
+
+        const auto ir_filename = llvm_ir_output_dir + std::filesystem::path::preferred_separator + objectname + ".ll";
 
         std::error_code error;
-        raw_fd_ostream file(configuration.emit_llvm, error, sys::fs::OF_None);
+        raw_fd_ostream file(ir_filename, error, sys::fs::OF_None);
 
         if (error) {
 
             errs() << "Failed to write LLVM IR: " << error.message();
 
-            return error.value();
+            throw CompileException("Failed to write LLVM IR: " + error.message());
         }
 
-        module->print(file, nullptr, false, configuration.debug);
+        module->print(file, nullptr, false, config->debug.has_value());
 
         file.close();
 
-        std::cout << "Wrote LLVM IR to " << configuration.emit_llvm << std::endl;
+        if (config->verbose) {
+            std::cout << "Wrote LLVM IR to " << ir_filename << std::endl;
+        }
     }
 
     dest.close();
 
-    if (configuration.verbose) {
+    if (config->verbose) {
         std::cout << "Wrote " << object_filename << "\n";
+    }
+
+    return object_filename;
+}
+
+vector<string> build_directory(const configuration_t* config, std::string& path) {
+
+    vector<string> objectFiles;
+
+    // obtain list of .ty files in the specified directory
+    if (!std::filesystem::is_directory(path)) {
+        throw CompileException("Path " + path + " is not a directory!");
+    }
+
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+
+        if (entry.is_directory()) {
+            // recursively build all subdirectories
+            auto subdir = entry.path().string();
+            build_directory(config, subdir);
+        }
+
+        auto file_path = entry.path().string();
+
+        if (file_path.find(".ty")) { // todo: regex match
+
+            auto objectFile = build_sourcefile(config, file_path);
+            objectFiles.push_back(objectFile);
+        }
+    }
+
+    return objectFiles;
+}
+
+int main(int argc, char **argv) {
+
+    const auto configuration = utils::getConfiguration(argc, argv);
+
+    if (configuration.help) {
+
+        cout << MSG_HELP << endl;
+
+        return 0;
+    }
+
+    cout << "tython " << TYTHON_VERSION << endl;
+
+    if (!configuration.src_files) {
+
+        cerr << "Error: No source files provided!" << endl;
+        cout << MSG_HELP << endl;
+
+        return 1;
+    }
+
+    // initialize compilation target
+    init_target();
+
+    // build library
+    std::string std_dir = "tython_std";
+    vector<string> objectFiles = build_directory(&configuration, std_dir);
+
+    // build sources
+    vector<string> sourceFiles = configuration.src_files.value();
+    for (auto path : sourceFiles) {
+        auto objectname = build_sourcefile(&configuration, path);
+        objectFiles.push_back(objectname);
     }
 
     std::cout << "Linking objects and building executable..." << endl;
 
     std::string executable_filename;
 
-    if (!configuration.out.empty()) {
-        executable_filename = configuration.out;
+    if (configuration.out) {
+        executable_filename = configuration.out->value_or("exec");
     } else {
         executable_filename = "exec";
     }
 
-    std::string buildCommand = "clang -o " + executable_filename + " " + object_filename;
+    std::string buildCommand = "clang -o " + executable_filename;
 
-    for (auto &element : configuration.link_objects) {
-        buildCommand.append(" ");
-        buildCommand.append(element);
+    for (auto &objectFile : objectFiles) {
+        buildCommand.append(" " + objectFile);
+    }
+
+    if (configuration.link_objects) {
+
+        for (auto &element : configuration.link_objects.value()) {
+            buildCommand.append(" " + element);
+        }
     }
 
     if (configuration.verbose) {

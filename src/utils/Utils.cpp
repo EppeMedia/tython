@@ -19,18 +19,18 @@ namespace utils{
      * @param flags The flags to check for presence.
      * @return Returns true if any of the specified flags is present in the specified program arguments.
      */
-    static bool hasFlag(int argc, char** argv, const std::initializer_list<std::string>& flags) {
+    static optional<const std::string> hasFlag(int argc, char** argv, const std::initializer_list<std::string>& flags) {
 
         for (int i = 0; i < argc; ++i) {
             for (const string& flag: flags) {
 
                 if (argv[i] == flag) {
-                    return true;
+                    return { flag };
                 }
             }
         }
 
-        return false;
+        return {};
     }
 
     /**
@@ -41,7 +41,7 @@ namespace utils{
      * @param flag The flag to check for presence.
      * @return Returns true if the specified flag is present in the specified program arguments.
      */
-    static bool hasFlag(int argc, char** argv, const std::string& flag) {
+    static optional<const std::string> hasFlag(int argc, char** argv, const std::string& flag) {
         return hasFlag(argc, argv, {flag});
     }
 
@@ -56,7 +56,7 @@ namespace utils{
       * @param flag The flag for which to collect its argument
       * @return Returns the argument for this flag, or an empty string if there is no argument or the flag is not present in the program arguments.
       */
-    static string getFlagArgument(int argc, char** argv, const std::initializer_list<std::string>& flags) {
+    static optional<optional<string>> getFlagArgument(int argc, char** argv, const std::initializer_list<std::string>& flags) {
 
         // arguments start at index 1
         for (int i = 1; i < argc; ++i) {
@@ -66,24 +66,28 @@ namespace utils{
                 if (argv[i] == flag) {
 
                     if (i + 1 >= argc) {
+
                         spdlog::warn("No argument provided for flag {}", flag);
-                        return "";
+
+                        return optional<string>();
                     }
 
                     const std::string &arg = argv[i + 1];
 
                     // if the "argument" starts with a dash, we interpret it as the next flag; we warn that we expected to find an argument here.
                     if (arg[0] == '-') {
+
                         spdlog::warn("No argument is provided, but expected one for flag {}", flag);
-                        return "";
+
+                        return optional<string>();
                     }
 
-                    return arg;
+                    return { arg };
                 }
             }
         }
 
-        return "";
+        return {};
     }
 
     /**
@@ -95,7 +99,7 @@ namespace utils{
       * @param flag The flag for which to collect its argument
       * @return Returns the argument for this flag, or an empty string if there is no argument or the flag is not present in the program arguments.
       */
-    static string getFlagArgument(int argc, char** argv, const string& flag) {
+    static optional<optional<string>> getFlagArgument(int argc, char** argv, const string& flag, bool optional = false) {
         return getFlagArgument(argc, argv, { flag });
     }
 
@@ -110,7 +114,7 @@ namespace utils{
       * @param flag The flag for which to collect its arguments
       * @return Returns the arguments for this flag in-order, or an empty vector if there are no arguments or the flag is not present in the program arguments.
       */
-    static vector<std::string> getFlagArguments(int argc, char** argv, const std::initializer_list<std::string>& flags) {
+    static optional<vector<std::string>> getFlagArguments(int argc, char** argv, const std::initializer_list<std::string>& flags) {
 
         // arguments start at index 1
         for (int i = 1; i < argc; ++i) {
@@ -155,7 +159,7 @@ namespace utils{
       * @param flag The flag for which to collect its arguments
       * @return Returns the arguments for this flag in-order, or an empty vector if there are no arguments or the flag is not present in the program arguments.
       */
-    static vector<string> getFlagArguments(int argc, char** argv, const std::string& flag) {
+    static optional<vector<string>> getFlagArguments(int argc, char** argv, const std::string& flag) {
         return getFlagArguments(argc, argv, { flag });
     }
 
@@ -168,7 +172,11 @@ namespace utils{
       * @param argv The program arguments.
       * @return Returns the default program arguments in-order, or an empty vector if there are no default program arguments.
       */
-    static vector<string> getDefaultArguments(int argc, char** argv) {
+    static optional<vector<string>> getDefaultArguments(int argc, char** argv) {
+
+        if (argc < 1) {
+            return {};
+        }
 
         vector<string> arguments;
 
@@ -197,6 +205,7 @@ namespace utils{
             .src_files = getDefaultArguments(argc, argv),
             .help = hasFlag(argc, argv, { FLAG_HELP, FLAG_HELP_SHORT, FLAG_HELP_UNHELPFUL }),
             .verbose = hasFlag(argc, argv, { FLAG_VERBOSE, FLAG_VERBOSE_SHORT }),
+            .build_dir = getFlagArgument(argc, argv, { FLAG_BUILD_DIR, FLAG_BUILD_DIR_SHORT }),
             .out = getFlagArgument(argc, argv, { FLAG_OUTPUT, FLAG_OUTPUT_SHORT }),
             .link_objects = getFlagArguments(argc, argv, { FLAG_LINK_OBJECTS, FLAG_LINK_OBJECTS_SHORT }),
             .emit_llvm = getFlagArgument(argc, argv, FLAG_EMIT_LLVM),
@@ -251,24 +260,25 @@ namespace utils{
         return result;
     }
 
-    string extractProgramNameFromPath(string path){
-        if(path.find('/') == std::string::npos){
-            string result = path.substr(0, path.length()-2); // TODO: Bad way of getting rid of the file extension".o"...
-            return result;
+    std::string get_objectname(std::string& path) {
+
+        auto pathseparator_index = path.find_last_of('/');
+        auto fileextension_index = path.find(".ty", pathseparator_index);
+
+        if (fileextension_index == std::string::npos) {
+            spdlog::warn("Warning: expected file extension \".ty\" for file " + path + ". Assuming file is a valid Tython file regardless...");
         }
 
-        bool encounteredForwardslash = false;
-        for (int i = path.length() - 1; i >= 0; i--){
-            char currentChar = path[i];
-            if (std::strcmp(&currentChar, "/") == 0){
-                encounteredForwardslash = true;
-            }
-            if (encounteredForwardslash){
-                string filename = path.substr(i+1);
-                string result = filename.substr(0 ,filename.length()-2);
-                return result;
-            }
+        fileextension_index = path.find_last_of('.');
+
+        if (pathseparator_index == std::string::npos) {
+            return path.substr(0, fileextension_index);
         }
-        throw CompileException("Invalid path for program name");
+
+        const auto start_index = pathseparator_index + 1;
+        const auto n = fileextension_index - start_index;
+
+        return path.substr(start_index, n);
     }
+
 }

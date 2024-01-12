@@ -53,6 +53,8 @@ public:
      */
     void registerProcedure(llvm::Function* f, tython::Type return_type, const std::string& procedure_name);
 
+    const std::map<std::string, Value*> *listProcedures();
+
 };
 
 #endif
