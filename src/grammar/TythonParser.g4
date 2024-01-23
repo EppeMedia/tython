@@ -85,7 +85,7 @@ call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 expression          : lhs=expression binary_operator rhs=expression #binary_expression
                     | call_expression                               #lbl_call_expression
                     | SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
-                    | atomic                                        #lbl_atomic
+                    | rval                                          #lbl_rval
                     ;
 
 binary_operator     : inequality_operator | logic_operator | arithmetic_operator;
@@ -105,5 +105,12 @@ arithmetic_operator : SYM_PLUS
                     | SYM_DIV
                     | SYM_EXP;
 
-atomic              : constant | IDENTIFIER;
+lval                : IDENTIFIER                                #lbl_identifier
+                    | IDENTIFIER SYM_LSQ lval SYM_RSQ           #lbl_array_access
+                    | instance=lval (SYM_DOT attribute=lval)    #lbl_attribute_access
+                    ;
+
+rval                : constant
+                    | lval;
+
 constant            : INT_LIT | FLOAT_LIT | STR_LIT;

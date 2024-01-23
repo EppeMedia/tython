@@ -15,8 +15,8 @@ def print(arg):
 
     if (type == 0):
         extern printf("None")
-    if (type == 1):
-        extern printf("%ld\n", arg)
+    else if (type == 1):
+            extern printf("%ld\n", arg)
     else if (type == 2):
         extern printf("%f\n", arg)
     else if (type == 3):

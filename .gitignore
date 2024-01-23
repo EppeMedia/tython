@@ -12,8 +12,6 @@ _deps/
 cmake-build-debug/
 antlr4_runtime/
 .idea/
-gen/
-cmake/
 thirdparty/
 include/parser_temp/
 build.ninja

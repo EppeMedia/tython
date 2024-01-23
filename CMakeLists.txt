@@ -37,7 +37,7 @@ set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/antlr/antlr-4.11.1-c
 find_package(ANTLR REQUIRED)
 
 # Call macro to add lexer and grammar to your build dependencies.
-antlr_target(TythonLexer ${CMAKE_CURRENT_SOURCE_DIR}/grammar/TythonParser.g4 LEXER
+antlr_target(TythonLexer src/grammar/TythonParser.g4 LEXER
         PACKAGE build)
 
 # include generated files in project environment
@@ -45,11 +45,15 @@ include_directories(${ANTLR_TythonLexer_OUTPUT_DIR})
 
 # end configure ANTLR
 
-add_executable(tython main.cpp
-        grammar/generated/TythonLexer.h
-        grammar/generated/TythonLexer.cpp
-        grammar/generated/TythonParser.h
-        grammar/generated/TythonParser.cpp
+# runtime library
+add_subdirectory(lib)
+link_directories(${tython_SOURCE_DIR}/lib/src)
+
+add_executable(tython src/main.cpp
+        src/grammar/generated/TythonLexer.h
+        src/grammar/generated/TythonLexer.cpp
+        src/grammar/generated/TythonParser.h
+        src/grammar/generated/TythonParser.cpp
         include/lexer/TythonLexerBase.h
         src/lexer/TythonLexerBase.cpp
         include/visitor/SourceFileVisitor.h
@@ -70,4 +74,4 @@ add_executable(tython main.cpp
         include/model/Scope.h
         src/model/Scope.cpp)
 
-target_link_libraries(tython antlr4_shared ${llvm_libs} spdlog::spdlog)
+target_link_libraries(tython antlr4_shared ${llvm_libs} spdlog::spdlog tython_lib)

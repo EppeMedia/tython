@@ -12,6 +12,7 @@ void TythonBuilder::init() {
 
 void TythonBuilder::initFirstClassTypes() {
     llvm::Type* int8_t = llvm::Type::getInt8Ty(this->getContext());
+    llvm::Type* int64_t = llvm::Type::getInt64Ty(this->getContext());
     llvm::Type* int8ptr_t = llvm::Type::getInt8PtrTy(this->getContext());
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0); // opaque pointer type
 
@@ -64,6 +65,17 @@ void TythonBuilder::initFirstClassTypes() {
 
     auto unknownType = llvm::StructType::create(this->getContext(), unknown_types, "Value.Unknown");
     this->typeMap.insert({ tython::Type::UNKNOWN, unknownType });
+
+    llvm::ArrayRef<llvm::Type*> class_types = {
+            int8ptr_t,      // name
+            ptr_t,          // base (classType pointer)
+            ptr_t,          // fields (some valueType pointer)
+            int64_t,        // fields_length
+            // todo: functions
+    };
+
+    auto classType = llvm::StructType::create(this->getContext(), class_types, "Class");
+    this->typeMap.insert({tython::Type::CLASS, classType });
 }
 
 void TythonBuilder::initBuiltinFunctions() {
@@ -71,13 +83,14 @@ void TythonBuilder::initBuiltinFunctions() {
     // todo: this is only initializing the type(ptr) function at the moment
 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
-    this->nestScope();
 
     // function declarations are fully opaque; we only know that it may return something, and that it takes n variable arguments
     auto int8_type = llvm::IntegerType::getInt8Ty(this->getContext());
     const auto int64_type = llvm::IntegerType::getInt64Ty(this->getContext());
     auto ptr_type = llvm::PointerType::get(this->getContext(), 0);
     auto return_type = ptr_type;
+
+    this->nestScope();
 
     std::string name = "type";
 
@@ -144,7 +157,7 @@ llvm::Type *TythonBuilder::getLLVMType(tython::Type type) {
             return llvm::Type::getDoubleTy(this->getContext());
         case tython::STRING:
             return llvm::Type::getInt8PtrTy(this->getContext());
-        case tython::AGGREGATE:
+        case tython::CLASS:
             return llvm::PointerType::get(this->getContext(), 0);
         case tython::UNKNOWN:
             return llvm::PointerType::get(this->getContext(), 0);

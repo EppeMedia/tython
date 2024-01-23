@@ -1,8 +1,8 @@
 
-#include "../../include/lexer/TythonLexerBase.h"
+#include "../include/lexer/TythonLexerBase.h"
 
 
-// Generated from /home/manzi/repos/tython/grammar/TythonLexer.g4 by ANTLR 4.12.0
+// Generated from /home/manzi/repos/tython/src/grammar/TythonLexer.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -16,14 +16,14 @@ class  TythonLexer : public TythonLexerBase {
 public:
   enum {
     INDENT = 1, DEDENT = 2, KW_DEF = 3, KW_RETURN = 4, KW_IF = 5, KW_ELSE = 6, 
-    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, SYM_LPAR = 10, SYM_RPAR = 11, 
-    SYM_BLOCK_START = 12, SYM_ARG_SEPARATOR = 13, SYM_STMNT_DELIMITER = 14, 
-    SYM_ASSIGN = 15, SYM_NEQ = 16, SYM_LTE = 17, SYM_LT = 18, SYM_EQ = 19, 
-    SYM_GT = 20, SYM_GTE = 21, SYM_AND = 22, SYM_OR = 23, SYM_PLUS = 24, 
-    SYM_MINUS = 25, SYM_MULT = 26, SYM_DIV = 27, SYM_EXP = 28, SYM_DOT = 29, 
-    SYM_ELLIPS = 30, SYM_COMMENT = 31, SYM_COMMENT_START = 32, IDENTIFIER = 33, 
-    INT_LIT = 34, FLOAT_LIT = 35, STR_LIT = 36, TRUE_LIT = 37, FALSE_LIT = 38, 
-    NEWLINE = 39, WS = 40, SYM_COMMENT_END = 41, COMMENT_CONTENT = 42
+    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, KW_SELF = 10, SYM_LPAR = 11, 
+    SYM_RPAR = 12, SYM_LSQ = 13, SYM_RSQ = 14, SYM_BLOCK_START = 15, SYM_ARG_SEPARATOR = 16, 
+    SYM_STMNT_DELIMITER = 17, SYM_ASSIGN = 18, SYM_NEQ = 19, SYM_LTE = 20, 
+    SYM_LT = 21, SYM_EQ = 22, SYM_GT = 23, SYM_GTE = 24, SYM_AND = 25, SYM_OR = 26, 
+    SYM_PLUS = 27, SYM_MINUS = 28, SYM_MULT = 29, SYM_DIV = 30, SYM_EXP = 31, 
+    SYM_DOT = 32, SYM_ELLIPS = 33, SYM_COMMENT = 34, SYM_COMMENT_START = 35, 
+    IDENTIFIER = 36, INT_LIT = 37, FLOAT_LIT = 38, STR_LIT = 39, TRUE_LIT = 40, 
+    FALSE_LIT = 41, NEWLINE = 42, WS = 43, SYM_COMMENT_END = 44, COMMENT_CONTENT = 45
   };
 
   enum {

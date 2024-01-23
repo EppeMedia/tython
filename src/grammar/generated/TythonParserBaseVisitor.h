@@ -1,5 +1,5 @@
 
-// Generated from /home/manzi/repos/tython/grammar/TythonParser.g4 by ANTLR 4.12.0
+// Generated from /home/manzi/repos/tython/src/grammar/TythonParser.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -79,15 +79,15 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitLbl_rval(TythonParser::Lbl_rvalContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLbl_atomic(TythonParser::Lbl_atomicContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -107,7 +107,19 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitAtomic(TythonParser::AtomicContext *ctx) override {
+  virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_array_access(TythonParser::Lbl_array_accessContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRval(TythonParser::RvalContext *ctx) override {
     return visitChildren(ctx);
   }
 

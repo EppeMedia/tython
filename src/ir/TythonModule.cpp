@@ -11,6 +11,7 @@ void TythonModule::initialize() {
     llvm::Type* voidptr_t = llvm::PointerType::get(void_t, 0);
     llvm::Type* int8ptr_t = llvm::Type::getInt8PtrTy(this->getContext());
     llvm::Type* int32_t = llvm::Type::getInt32Ty(this->getContext());
+    llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
     // instantiate C functions
     llvm::FunctionType* printf_type = llvm::FunctionType::get(int32_t, { int8ptr_t }, true);
@@ -21,8 +22,13 @@ void TythonModule::initialize() {
     this->malloc_func = new llvm::FunctionCallee();
     *(this->malloc_func) = this->getOrInsertFunction("malloc", malloc_type);
 
+    llvm::FunctionType* get_attribute_type = llvm::FunctionType::get(ptr_t, { ptr_t, int8ptr_t }, false);
+    this->get_attribute_func = new llvm::FunctionCallee();
+    *(this->get_attribute_func) = this->getOrInsertFunction("__get__", get_attribute_type);
+
     registerProcedure((llvm::Function*)this->printf_func->getCallee(), tython::NONE, "printf");
     registerProcedure((llvm::Function*)this->malloc_func->getCallee(), tython::UNKNOWN, "malloc"); // we do currently not track the type of an opaque pointer type
+    registerProcedure((llvm::Function*)this->get_attribute_func->getCallee(), tython::UNKNOWN, "__get__"); // todo: should be of type Variable or Field_t
 }
 
 Value* TythonModule::findProcedure(const std::string& _procedure_name) {

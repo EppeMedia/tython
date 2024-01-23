@@ -17,6 +17,7 @@ class TythonModule : public llvm::Module {
 private:
     llvm::FunctionCallee* printf_func;
     llvm::FunctionCallee* malloc_func;
+    llvm::FunctionCallee* get_attribute_func;
 
     std::map<std::string, Value*> function_shadow_symbol_table;
 
@@ -34,6 +35,7 @@ public:
             llvm::Module(ModuleID, C),
             printf_func(nullptr),
             malloc_func(nullptr),
+            get_attribute_func(nullptr),
             function_shadow_symbol_table() {
         initialize();
     };

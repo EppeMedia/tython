@@ -1,5 +1,5 @@
 
-// Generated from /home/manzi/repos/tython/grammar/TythonParser.g4 by ANTLR 4.12.0
+// Generated from /home/manzi/repos/tython/src/grammar/TythonParser.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -51,11 +51,11 @@ public:
 
     virtual std::any visitBinary_expression(TythonParser::Binary_expressionContext *context) = 0;
 
+    virtual std::any visitLbl_rval(TythonParser::Lbl_rvalContext *context) = 0;
+
     virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *context) = 0;
 
     virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *context) = 0;
-
-    virtual std::any visitLbl_atomic(TythonParser::Lbl_atomicContext *context) = 0;
 
     virtual std::any visitBinary_operator(TythonParser::Binary_operatorContext *context) = 0;
 
@@ -65,7 +65,13 @@ public:
 
     virtual std::any visitArithmetic_operator(TythonParser::Arithmetic_operatorContext *context) = 0;
 
-    virtual std::any visitAtomic(TythonParser::AtomicContext *context) = 0;
+    virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *context) = 0;
+
+    virtual std::any visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *context) = 0;
+
+    virtual std::any visitLbl_array_access(TythonParser::Lbl_array_accessContext *context) = 0;
+
+    virtual std::any visitRval(TythonParser::RvalContext *context) = 0;
 
     virtual std::any visitConstant(TythonParser::ConstantContext *context) = 0;
 

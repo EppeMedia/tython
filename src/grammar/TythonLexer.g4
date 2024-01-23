@@ -45,7 +45,7 @@ tokens {
 }
 
 @header {
-#include "../../include/lexer/TythonLexerBase.h"
+#include "../include/lexer/TythonLexerBase.h"
 }
 
 // keywords
@@ -56,10 +56,13 @@ KW_ELSE             : 'else';
 KW_WHILE            : 'while';
 KW_EXTERN           : 'extern';
 KW_IMPORT           : 'import';
+KW_SELF             : 'self';
 
 // symbols
 SYM_LPAR            : '(' {this->openBrace();};
 SYM_RPAR            : ')' {this->closeBrace();};
+SYM_LSQ             : '[';
+SYM_RSQ             : ']';
 SYM_BLOCK_START     : ':';
 SYM_ARG_SEPARATOR   : ',';
 SYM_STMNT_DELIMITER : ';';

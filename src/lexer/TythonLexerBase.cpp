@@ -5,7 +5,7 @@
 // todo: license https://github.com/antlr/grammars-v4/tree/master/python/python3
 
 #include "../../include/lexer/TythonLexerBase.h"
-#include "../../grammar/generated/TythonParser.h"
+#include "../grammar/generated/TythonParser.h"
 #include <regex>
 
 using namespace antlr4;

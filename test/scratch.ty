@@ -5,5 +5,8 @@ def extern main():
     a = "Hello World!"
     b = 42
 
+    a = b
+
     print(a)
     print(b)
+# avoid leaking on return

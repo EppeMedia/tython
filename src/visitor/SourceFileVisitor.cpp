@@ -44,24 +44,42 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
     return nullptr;
 }
 
-std::any SourceFileVisitor::visitAtomic(TythonParser::AtomicContext *ctx) {
+std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) {
 
-    if (auto identifier = ctx->IDENTIFIER()) {
+    auto identifier = ctx->IDENTIFIER();
 
-        // fetch the identifier if it exists, otherwise throw exception
-        if (auto dataEntry = this->builder->current_scope->findDataEntry(identifier->getText())) {
+    // fetch the identifier if it exists, otherwise throw exception
+    if (auto dataEntry = this->builder->current_scope->findDataEntry(identifier->getText())) {
 //            return dataEntry->value; // todo: we can do this iff we know that the variable's value was declared in this same (function-level) scope! Note: it's a bit hard to distinguish a function level at the moment, we can restrict it to stricly "his scope" first.
 
-            auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
-            auto load = this->builder->CreateLoad(ptr_t, this->builder->CreateGetValuePtr(dataEntry));
-            return new Value(dataEntry->value->type, load);
-        }
-
-        throw CompileException("Unknown symbol " + identifier->getText());
+        auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+        auto load = this->builder->CreateLoad(ptr_t, this->builder->CreateGetValuePtr(dataEntry));
+        return new Value(dataEntry->value->type, load);
     }
 
-    // this is a constant atomic
-    return visitConstant(ctx->constant());
+    throw CompileException("Unknown symbol " + identifier->getText());
+}
+
+std::any SourceFileVisitor::visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *ctx) {
+
+    auto instance_value = any_cast<Value*>(visit(ctx->instance));
+    auto instance = this->builder->CreateGetContent(instance_value);
+
+    // get the attribute off the instance
+    auto name = ctx->attribute->getText();
+    auto attribute_name = this->builder->CreateGlobalString(name, name, 0, this->module);// todo: we're just not dealing with array indexing yet
+    auto get_f = this->module->findProcedure("__get__");
+    auto attribute = this->builder->CreateCall((llvm::Function*)get_f->content, { instance, attribute_name });
+
+    // attribute is of type Variable; get the value of it
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto one = llvm::ConstantInt::get(int32_t, 1);
+
+    auto content = this->builder->CreateGEP(this->builder->variableStructType, attribute, { zero, one });
+
+    return new Value(tython::Type::UNKNOWN, content);
 }
 
 std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
@@ -363,10 +381,6 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
     }
 
     return vars;
-}
-
-std::any SourceFileVisitor::visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) {
-    return visit(ctx->expression());
 }
 
 std::any SourceFileVisitor::visitBinary_expression(TythonParser::Binary_expressionContext *ctx) {

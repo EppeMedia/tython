@@ -1,5 +1,5 @@
 
-// Generated from /home/manzi/repos/tython/grammar/TythonParser.g4 by ANTLR 4.12.0
+// Generated from /home/manzi/repos/tython/src/grammar/TythonParser.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -13,14 +13,14 @@ class  TythonParser : public antlr4::Parser {
 public:
   enum {
     INDENT = 1, DEDENT = 2, KW_DEF = 3, KW_RETURN = 4, KW_IF = 5, KW_ELSE = 6, 
-    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, SYM_LPAR = 10, SYM_RPAR = 11, 
-    SYM_BLOCK_START = 12, SYM_ARG_SEPARATOR = 13, SYM_STMNT_DELIMITER = 14, 
-    SYM_ASSIGN = 15, SYM_NEQ = 16, SYM_LTE = 17, SYM_LT = 18, SYM_EQ = 19, 
-    SYM_GT = 20, SYM_GTE = 21, SYM_AND = 22, SYM_OR = 23, SYM_PLUS = 24, 
-    SYM_MINUS = 25, SYM_MULT = 26, SYM_DIV = 27, SYM_EXP = 28, SYM_DOT = 29, 
-    SYM_ELLIPS = 30, SYM_COMMENT = 31, SYM_COMMENT_START = 32, IDENTIFIER = 33, 
-    INT_LIT = 34, FLOAT_LIT = 35, STR_LIT = 36, TRUE_LIT = 37, FALSE_LIT = 38, 
-    NEWLINE = 39, WS = 40, SYM_COMMENT_END = 41, COMMENT_CONTENT = 42
+    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, KW_SELF = 10, SYM_LPAR = 11, 
+    SYM_RPAR = 12, SYM_LSQ = 13, SYM_RSQ = 14, SYM_BLOCK_START = 15, SYM_ARG_SEPARATOR = 16, 
+    SYM_STMNT_DELIMITER = 17, SYM_ASSIGN = 18, SYM_NEQ = 19, SYM_LTE = 20, 
+    SYM_LT = 21, SYM_EQ = 22, SYM_GT = 23, SYM_GTE = 24, SYM_AND = 25, SYM_OR = 26, 
+    SYM_PLUS = 27, SYM_MINUS = 28, SYM_MULT = 29, SYM_DIV = 30, SYM_EXP = 31, 
+    SYM_DOT = 32, SYM_ELLIPS = 33, SYM_COMMENT = 34, SYM_COMMENT_START = 35, 
+    IDENTIFIER = 36, INT_LIT = 37, FLOAT_LIT = 38, STR_LIT = 39, TRUE_LIT = 40, 
+    FALSE_LIT = 41, NEWLINE = 42, WS = 43, SYM_COMMENT_END = 44, COMMENT_CONTENT = 45
   };
 
   enum {
@@ -29,8 +29,8 @@ public:
     RuleCompound_statement = 8, RuleAssign_statement = 9, RuleReturn_statement = 10, 
     RuleIf_statement = 11, RuleArguments = 12, RuleParameters = 13, RuleCall_expression = 14, 
     RuleExpression = 15, RuleBinary_operator = 16, RuleInequality_operator = 17, 
-    RuleLogic_operator = 18, RuleArithmetic_operator = 19, RuleAtomic = 20, 
-    RuleConstant = 21
+    RuleLogic_operator = 18, RuleArithmetic_operator = 19, RuleLval = 20, 
+    RuleRval = 21, RuleConstant = 22
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -70,7 +70,8 @@ public:
   class Inequality_operatorContext;
   class Logic_operatorContext;
   class Arithmetic_operatorContext;
-  class AtomicContext;
+  class LvalContext;
+  class RvalContext;
   class ConstantContext; 
 
   class  ProgramContext : public antlr4::ParserRuleContext {
@@ -353,6 +354,15 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
+  class  Lbl_rvalContext : public ExpressionContext {
+  public:
+    Lbl_rvalContext(ExpressionContext *ctx);
+
+    RvalContext *rval();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  Lbl_call_expressionContext : public ExpressionContext {
   public:
     Lbl_call_expressionContext(ExpressionContext *ctx);
@@ -369,15 +379,6 @@ public:
     antlr4::tree::TerminalNode *SYM_LPAR();
     ExpressionContext *expression();
     antlr4::tree::TerminalNode *SYM_RPAR();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  Lbl_atomicContext : public ExpressionContext {
-  public:
-    Lbl_atomicContext(ExpressionContext *ctx);
-
-    AtomicContext *atomic();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -448,19 +449,68 @@ public:
 
   Arithmetic_operatorContext* arithmetic_operator();
 
-  class  AtomicContext : public antlr4::ParserRuleContext {
+  class  LvalContext : public antlr4::ParserRuleContext {
   public:
-    AtomicContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    LvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+   
+    LvalContext() = default;
+    void copyFrom(LvalContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
+
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Lbl_identifierContext : public LvalContext {
+  public:
+    Lbl_identifierContext(LvalContext *ctx);
+
+    antlr4::tree::TerminalNode *IDENTIFIER();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_attribute_accessContext : public LvalContext {
+  public:
+    Lbl_attribute_accessContext(LvalContext *ctx);
+
+    TythonParser::LvalContext *instance = nullptr;
+    TythonParser::LvalContext *attribute = nullptr;
+    std::vector<LvalContext *> lval();
+    LvalContext* lval(size_t i);
+    antlr4::tree::TerminalNode *SYM_DOT();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_array_accessContext : public LvalContext {
+  public:
+    Lbl_array_accessContext(LvalContext *ctx);
+
+    antlr4::tree::TerminalNode *IDENTIFIER();
+    antlr4::tree::TerminalNode *SYM_LSQ();
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_RSQ();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  LvalContext* lval();
+  LvalContext* lval(int precedence);
+  class  RvalContext : public antlr4::ParserRuleContext {
+  public:
+    RvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     ConstantContext *constant();
-    antlr4::tree::TerminalNode *IDENTIFIER();
+    LvalContext *lval();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
    
   };
 
-  AtomicContext* atomic();
+  RvalContext* rval();
 
   class  ConstantContext : public antlr4::ParserRuleContext {
   public:
@@ -481,6 +531,7 @@ public:
   bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
 
   bool expressionSempred(ExpressionContext *_localctx, size_t predicateIndex);
+  bool lvalSempred(LvalContext *_localctx, size_t predicateIndex);
 
   // By default the static state used to implement the parser is lazily initialized during the first
   // call to the constructor. You can call this function if you wish to initialize the static state

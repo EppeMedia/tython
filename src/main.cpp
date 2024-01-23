@@ -1,12 +1,11 @@
 #include <iostream>
-#include "include/visitor/SourceFileVisitor.h"
-#include "include/exception/CompileException.h"
-#include "include/utils/Utils.h"
+#include "../include/visitor/SourceFileVisitor.h"
+#include "../include/exception/CompileException.h"
+#include "../include/utils/Utils.h"
 #include "antlr4-runtime.h"
 #include <llvm/IR/BasicBlock.h>
-#include "include/ir/TythonModule.h"
+#include "../include/ir/TythonModule.h"
 #include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Function.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/FileSystem.h"
@@ -19,16 +18,11 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils.h"
 #include "llvm/ADT/Optional.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Type.h"
-#include "include/visitor/SourceFileVisitor.h"
 #include "grammar/generated/TythonLexer.h"
 #include "grammar/generated/TythonParser.h"
 #include <map>
 #include <system_error>
 #include <vector>
-#include "config.h"
-#include "include/ir/TythonBuilder.h"
 #include <filesystem>
 
 using namespace std;
@@ -158,9 +152,9 @@ std::string build_sourcefile(const configuration_t* config, std::string& path) {
 
     if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
 
-        errs() << "TheTargetMachine can't emit a file of this type.";
+        errs() << "The selected target cannot emit a file of this type.";
 
-        throw CompileException("TheTargetMachine can't emit a file of this type.");
+        throw CompileException("The selected target cannot emit a file of this type.");
     }
 
     // avoid optimizations for debugging

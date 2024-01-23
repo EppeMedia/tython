@@ -14,7 +14,7 @@ namespace tython {
         INTEGER,
         FP,
         STRING,
-        AGGREGATE,
+        CLASS,
         UNKNOWN,
     };
 }
