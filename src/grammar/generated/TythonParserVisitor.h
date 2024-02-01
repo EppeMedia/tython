@@ -67,10 +67,6 @@ public:
 
     virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *context) = 0;
 
-    virtual std::any visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *context) = 0;
-
-    virtual std::any visitLbl_array_access(TythonParser::Lbl_array_accessContext *context) = 0;
-
     virtual std::any visitRval(TythonParser::RvalContext *context) = 0;
 
     virtual std::any visitConstant(TythonParser::ConstantContext *context) = 0;

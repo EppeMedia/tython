@@ -198,13 +198,11 @@ namespace utils{
     }
 
     configuration_t getConfiguration(int argc, char** argv) {
-
-
-
         return configuration_t {
             .src_files = getDefaultArguments(argc, argv),
             .help = hasFlag(argc, argv, { FLAG_HELP, FLAG_HELP_SHORT, FLAG_HELP_UNHELPFUL }),
             .verbose = hasFlag(argc, argv, { FLAG_VERBOSE, FLAG_VERBOSE_SHORT }),
+            .main = getFlagArgument(argc, argv, { FLAG_MAIN, FLAG_MAIN_SHORT }),
             .build_dir = getFlagArgument(argc, argv, { FLAG_BUILD_DIR, FLAG_BUILD_DIR_SHORT }),
             .out = getFlagArgument(argc, argv, { FLAG_OUTPUT, FLAG_OUTPUT_SHORT }),
             .link_objects = getFlagArguments(argc, argv, { FLAG_LINK_OBJECTS, FLAG_LINK_OBJECTS_SHORT }),

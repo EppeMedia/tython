@@ -18,13 +18,13 @@ private:
 
     TythonModule* module;
     TythonBuilder* builder;
-    const std::map<std::string, const std::map<std::string, Value*>&>& external_object_symbol_table;
+    const std::map<std::string, const std::map<std::string, llvm::Function*>*>& external_object_symbol_table;
     std::set<std::string> imports;
 
 public:
 
-    SourceFileVisitor(TythonModule* bcModule, TythonBuilder* builder, const std::map<std::string, const std::map<std::string, Value*>&>& object_symbol_table) :
-            module(bcModule),
+    SourceFileVisitor(TythonModule* tythonModule, TythonBuilder* builder, const std::map<std::string, const std::map<std::string, llvm::Function*>*>& object_symbol_table) :
+            module(tythonModule),
             builder(builder),
             external_object_symbol_table(object_symbol_table),
             imports() {}
@@ -33,9 +33,7 @@ public:
 
     std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override;
 
-    // lval
     std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override;
-    std::any visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *ctx) override;
 
     std::any visitConstant(TythonParser::ConstantContext *ctx) override;
 
@@ -46,8 +44,8 @@ public:
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;
 
-    Value* visitExternCallExpression(TythonParser::Call_expressionContext *ctx);
-    Value* visitInternalCallExpression(TythonParser::Call_expressionContext *ctx);
+    llvm::Value* visitExternCallExpression(TythonParser::Call_expressionContext *ctx);
+    llvm::Value* visitInternalCallExpression(TythonParser::Call_expressionContext *ctx);
     std::vector<llvm::Value*> visitExternCallParameters(TythonParser::ParametersContext *ctx);
     std::vector<llvm::Value*> visitInternalCallParameters(TythonParser::ParametersContext *ctx);
 

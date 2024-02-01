@@ -8,12 +8,7 @@
 #include <inttypes.h>
 
 typedef struct object_t object;
-typedef struct type_t type;
-
-#define ObjectHead object obj_base;
-#define CollectionObjectHead collection_object collection_obj_base;
-
-#define AS_OBJECT(instance) ((object*)instance)
+typedef struct type_t type_object;
 
 typedef uint64_t size_t;
 

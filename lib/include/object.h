@@ -13,15 +13,27 @@
  */
 typedef struct object_t {
     struct object_t* identity;     // identities are immutable
-    type* type;             // types are immutable
+    type_object* type;             // types are immutable
 } object;
 
 /**
  * This is similar to CPython's PyVarObject. This struct describes the first X+Y bytes of collection objects (it is an extension of object).
  */
-typedef struct collection_object_t {
-    object obj;
+typedef struct sequence_object_t {
+    object obj_base;
     size_t size;
-} collection_object;
+} sequence_object;
+
+#define ObjectHead object obj_base;
+#define SequenceObjectHead sequence_object obj_base;
+
+#define AS_OBJECT(instance)     ((object*)instance)
+#define AS_SEQOBJECT(instance)  ((sequence_object*)instance)
+
+/**
+ * Prints the specified object to standard out.
+ * @param object The object to print.
+ */
+void print(object* object);
 
 #endif //TYTHON_OBJECT_H

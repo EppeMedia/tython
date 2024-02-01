@@ -29,7 +29,7 @@ using namespace std;
 using namespace antlr4;
 using namespace llvm::sys;
 
-map<string, const std::map<std::string, Value*>&> object_symbol_table; // { object_name, { function_name, function_value }}
+map<string, const std::map<std::string, llvm::Function*>*> object_symbol_table; // { object_name, { function_name, function_value }}
 
 using namespace llvm;
 
@@ -38,6 +38,8 @@ std::string TargetTriple;
 TargetMachine* TheTargetMachine;
 
 const DataLayout* datalayout;
+
+#define PRINT_INDENT "-- "
 
 int init_target() {
 
@@ -74,7 +76,7 @@ int init_target() {
     return 0;
 }
 
-std::string build_sourcefile(const configuration_t* config, std::string& path) {
+std::string build_sourcefile(const configuration_t* config, std::string& path, bool isMain = false) {
 
     ifstream stream(path);
 
@@ -84,7 +86,9 @@ std::string build_sourcefile(const configuration_t* config, std::string& path) {
 
     std::string objectname = utils::get_objectname(path);
 
-    std::cout << "Compiling first stage..." << std::endl;
+    if (config->verbose) {
+        std::cout << "Compiling source \"" << path << "\" to " << (isMain ? "entry " : "") << "module \"" << objectname << "\"" << endl;
+    }
 
     ANTLRInputStream input(stream);
     TythonLexer lexer(&input);
@@ -101,12 +105,28 @@ std::string build_sourcefile(const configuration_t* config, std::string& path) {
     TythonBuilder builder(module, bb);
 
     SourceFileVisitor sourceFileVisitor(module, &builder, object_symbol_table);
+
+    // module (or program) entry point
+    auto int32_type = llvm::Type::getInt32Ty(builder.getContext());
+    auto entry_function_type = llvm::FunctionType::get(int32_type, false);
+    auto entry_function_name = isMain ? "main" : "__module_entry__";
+    auto entry_function_linkage = isMain ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
+    auto entry_function = llvm::Function::Create(entry_function_type, entry_function_linkage, entry_function_name, module);
+    auto entry_function_bb = llvm::BasicBlock::Create(builder.getContext(), "entry", entry_function);
+
+    // all top-level instructions are inside a main procedure
+    builder.SetInsertPoint(entry_function_bb);
+
+    // descend into the source file
     sourceFileVisitor.visitProgram(ast);
 
-    builder.CreateRetVoid();
+    // finish up the main function
+    builder.SetInsertPoint(entry_function_bb);
+    auto zero = llvm::ConstantInt::get(int32_type, 0);
+    builder.CreateRet(zero);
 
-    // update object_functions map
-    object_symbol_table.insert({ objectname, *module->listProcedures() });
+    // update compilation unit - symbol table map
+    object_symbol_table.insert({ objectname, module->listProcedures() });
 
     module->setTargetTriple(TargetTriple);
     module->setDataLayout(*datalayout);
@@ -169,8 +189,6 @@ std::string build_sourcefile(const configuration_t* config, std::string& path) {
         pass.add(createReassociatePass());
     }
 
-    std::cout << "Compiling second stage..." << std::endl;
-
     pass.run(*module);
 
     if (config->emit_llvm) {
@@ -211,14 +229,14 @@ std::string build_sourcefile(const configuration_t* config, std::string& path) {
         file.close();
 
         if (config->verbose) {
-            std::cout << "Wrote LLVM IR to " << ir_filename << std::endl;
+            std::cout << PRINT_INDENT << "Wrote LLVM IR to \"" << ir_filename << "\"" << endl;
         }
     }
 
     dest.close();
 
     if (config->verbose) {
-        std::cout << "Wrote " << object_filename << "\n";
+        std::cout << PRINT_INDENT << "Wrote \"" << object_filename << "\"" << endl;
     }
 
     return object_filename;
@@ -281,10 +299,34 @@ int main(int argc, char **argv) {
     std::string std_dir = "tython_std";
     vector<string> objectFiles = build_directory(&configuration, std_dir);
 
-    // build sources
+    // obtain sources
     vector<string> sourceFiles = configuration.src_files.value();
+
+    // identify artefact entry point (if specified)
+    optional<optional<string>> entry_source_file_option = configuration.main;
+    string entry_source_path;
+
+    if (entry_source_file_option.has_value()){
+        // if the flag is present, it must be followed by a path
+        if (entry_source_file_option->has_value()) {
+
+            entry_source_path = entry_source_file_option->value();
+
+        } else {
+            throw CompileException("The artefact entry point option is missing a source path.");
+        }
+    }
+
+    // build sources
     for (auto path : sourceFiles) {
-        auto objectname = build_sourcefile(&configuration, path);
+        // todo: the '==' check can fail even if the paths resolve to the same inode (i.e. /home/myuser/source.ty != ~/source.ty)...
+        auto objectname = build_sourcefile(&configuration, path, path == entry_source_path);
+        objectFiles.push_back(objectname);
+    }
+
+    if (std::find(sourceFiles.begin(), sourceFiles.end(), entry_source_path) == sourceFiles.end()) {
+        // The entry point source file is not present in the specified source files, so it's not built yet. We build it now;
+        auto objectname = build_sourcefile(&configuration, entry_source_path, true);
         objectFiles.push_back(objectname);
     }
 

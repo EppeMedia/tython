@@ -4,315 +4,189 @@
 void TythonBuilder::init() {
 
     // create global scope
-    this->current_scope = new Scope();
+    this->current_namespace = new Namespace();
 
     initFirstClassTypes();
-    initBuiltinFunctions();
 }
 
 void TythonBuilder::initFirstClassTypes() {
-    llvm::Type* int8_t = llvm::Type::getInt8Ty(this->getContext());
+
     llvm::Type* int64_t = llvm::Type::getInt64Ty(this->getContext());
-    llvm::Type* int8ptr_t = llvm::Type::getInt8PtrTy(this->getContext());
-    llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0); // opaque pointer type
+    llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
-    // variable type
+    // object and typeobject scaffolding
 
-    llvm::ArrayRef<llvm::Type*> variable_types = {
-            int8ptr_t,  //name
-            ptr_t,      // value ptr
+    llvm::ArrayRef<llvm::Type*> object_types = {
+        ptr_t,      // identity
+        ptr_t,      // type object reference
     };
 
-    this->variableStructType = llvm::StructType::create(this->getContext(), variable_types, "Variable");
+    this->object_type = llvm::StructType::create(this->getContext(), object_types, "Object");
 
-    // primitive value types
+    llvm::ArrayRef<llvm::Type*> number_functions_types = {
+        ptr_t,      // to_bool  (function ptr)
+        ptr_t,      // to_int   (function ptr)
+        ptr_t,      // to_float (function ptr)
 
-    llvm::ArrayRef<llvm::Type*> int_types = {
-            int8_t,     // type
-            getLLVMType(tython::Type::INTEGER),    // content
+        ptr_t,      // cmp_eq   (function ptr)
     };
 
-    auto intType = llvm::StructType::create(this->getContext(), int_types, "Value.Int");
-    this->typeMap.insert({ tython::Type::INTEGER, intType });
+    this->number_functions_type = llvm::StructType::get(this->getContext(), number_functions_types, "Object.Number.Functions");
 
-    llvm::ArrayRef<llvm::Type*> fp_types = {
-            int8_t,     // type
-            getLLVMType(tython::Type::FP),    // content
+    llvm::ArrayRef<llvm::Type*> mapping_functions_types = {
+        ptr_t,      // length (function ptr)
+        ptr_t,      // subscript (function ptr)
     };
 
-    auto fpType = llvm::StructType::create(this->getContext(), fp_types, "Value.FP");
-    this->typeMap.insert({ tython::Type::FP, fpType });
+    const auto mapping_functions_type = llvm::StructType::get(this->getContext(), mapping_functions_types, "Object.Mapping.Functions");
 
-    llvm::ArrayRef<llvm::Type*> string_types = {
-            int8_t,     // type
-            getLLVMType(tython::Type::STRING),    // content
+    llvm::ArrayRef<llvm::Type*> typeobject_types = {
+
+        // ObjectHead
+        ptr_t,      // identity
+        ptr_t,      // type object reference
+        // End ObjectHead
+
+        ptr_t,      // base (parent type)
+        int64_t,    // instance size
+        int64_t,    // item size
+
+        ptr_t,      // alloc (function pointer)
+        ptr_t,      // seqalloc (function pointer)
+
+        ptr_t,      // rich compare (function pointer)
+        ptr_t,      // str (function pointer)
+
+        llvm::PointerType::get(number_functions_type, 0),      // number functions (struct pointer)
+        llvm::PointerType::get(mapping_functions_type, 0),      // mapping functions (struct pointer)
     };
 
-    auto stringType = llvm::StructType::create(this->getContext(), string_types, "Value.String");
-    this->typeMap.insert({ tython::Type::STRING, stringType });
-
-    llvm::ArrayRef<llvm::Type*> none_types = {
-            int8_t     // type
-    };
-
-    auto noneType = llvm::StructType::create(this->getContext(), none_types, "Value.None");
-    this->typeMap.insert({ tython::Type::NONE, noneType });
-
-    llvm::ArrayRef<llvm::Type*> unknown_types = {
-            int8_t,     // type
-            getLLVMType(tython::Type::UNKNOWN) // content
-    };
-
-    auto unknownType = llvm::StructType::create(this->getContext(), unknown_types, "Value.Unknown");
-    this->typeMap.insert({ tython::Type::UNKNOWN, unknownType });
-
-    llvm::ArrayRef<llvm::Type*> class_types = {
-            int8ptr_t,      // name
-            ptr_t,          // base (classType pointer)
-            ptr_t,          // fields (some valueType pointer)
-            int64_t,        // fields_length
-            // todo: functions
-    };
-
-    auto classType = llvm::StructType::create(this->getContext(), class_types, "Class");
-    this->typeMap.insert({tython::Type::CLASS, classType });
+    this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
 }
 
-void TythonBuilder::initBuiltinFunctions() {
-
-    // todo: this is only initializing the type(ptr) function at the moment
-
-    // create a new scope for this function's arguments. The body scope of the function will be nested in this.
-
-    // function declarations are fully opaque; we only know that it may return something, and that it takes n variable arguments
-    auto int8_type = llvm::IntegerType::getInt8Ty(this->getContext());
-    const auto int64_type = llvm::IntegerType::getInt64Ty(this->getContext());
-    auto ptr_type = llvm::PointerType::get(this->getContext(), 0);
-    auto return_type = ptr_type;
-
-    this->nestScope();
-
-    std::string name = "type";
-
-    llvm::FunctionType* ft = llvm::FunctionType::get(return_type, { ptr_type }, false);
-    auto fn = llvm::Function::Create(ft, llvm::GlobalValue::InternalLinkage, name, this->module);
-
-    this->module->registerProcedure(fn, tython::INTEGER, name);
-
-    auto old_bb = this->GetInsertBlock();
-
-    auto prologue = llvm::BasicBlock::Create(this->getContext(), "prologue", fn);
-    this->SetInsertPoint(prologue);
-
-    // arguments
-    auto arg = fn->getArg(0);
-
-    auto body = llvm::BasicBlock::Create(this->getContext(), "body", fn);
-    this->CreateBr(body);
-    this->SetInsertPoint(body);
-
-    this->nestScope();
-
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-
-    // function body
-    auto gep = this->CreateGEP(this->getValueStructType(tython::UNKNOWN), arg, { zero, zero });
-    auto load = this->CreateLoad(int8_type, gep);
-//    auto cast = this->CreateBitCast(load, int64_type);
-
-    auto result = this->CreateValue(tython::INTEGER, load, true);
-
-    this->popScope();
-
-    auto epilogue = llvm::BasicBlock::Create(this->getContext(), "epilogue", fn);
-    this->CreateBr(epilogue);
-    this->SetInsertPoint(epilogue);
-
-    // return the result
-    this->CreateRet(result->content);
-
-    // back to enclosing scope
-    this->popScope();
-
-    this->SetInsertPoint(old_bb);
+Namespace *TythonBuilder::nestNamespace() {
+    return this->current_namespace = new Namespace(this->current_namespace);
 }
 
-Scope *TythonBuilder::nestScope() {
-    return this->current_scope = new Scope(this->current_scope);
+Namespace *TythonBuilder::popNamespace() {
+    return this->current_namespace = this->current_namespace->parent;
 }
 
-Scope *TythonBuilder::popScope() {
-    return this->current_scope = this->current_scope->parent;
-}
-
-llvm::Type *TythonBuilder::getLLVMType(tython::Type type) {
-
-    switch (type) {
-        case tython::NONE:
-            return llvm::Type::getVoidTy(this->getContext());
-        case tython::INTEGER:
-            return llvm::IntegerType::getInt64Ty(this->getContext());
-        case tython::FP:
-            return llvm::Type::getDoubleTy(this->getContext());
-        case tython::STRING:
-            return llvm::Type::getInt8PtrTy(this->getContext());
-        case tython::CLASS:
-            return llvm::PointerType::get(this->getContext(), 0);
-        case tython::UNKNOWN:
-            return llvm::PointerType::get(this->getContext(), 0);
-    }
-
-    return llvm::Type::getVoidTy(this->getContext());
-}
-
-llvm::StructType *TythonBuilder::getValueStructType(tython::Type type) {
-    return this->typeMap.at(type);
-}
-
-llvm::Value *TythonBuilder::CreateGetValuePtr(Variable *dataEntry) {
+llvm::Value *TythonBuilder::CreateGetTypeObject(llvm::Value* object_instance) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
-    return this->CreateGEP(this->variableStructType, dataEntry->variable, { zero, one });
+    return this->CreateGEP(this->object_type, object_instance, {zero, one });
 }
 
-llvm::Value *TythonBuilder::CreateGetType(Variable *variable) {
-
-    auto value_ptr = CreateGetValuePtr(variable);
+llvm::Value *TythonBuilder::CreateGetNumberFunctions(llvm::Value *type_object) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto eight = llvm::ConstantInt::get(int32_t, 8);
 
-    auto gep = this->CreateGEP(this->getValueStructType(variable->value->type), value_ptr, { zero, zero });
-
-    return this->CreateLoad(this->getLLVMType(variable->value->type), gep);
+    return this->CreateGEP(this->typeobject_type, type_object, { zero, eight });
 }
 
-llvm::Value *TythonBuilder::CreateGetType(Value *value) {
+llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *object_instance) {
+    return (llvm::Value*)this->CreateCall(*this->module->object_is_truthy_func, { object_instance }, "object_is_truthy");
+}
+
+llvm::Value *TythonBuilder::CreateGetNumberToBool(llvm::Value *number_functions_struct) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto otra = llvm::ConstantInt::get(int32_t, 0);
 
-    auto gep = this->CreateGEP(this->getValueStructType(value->type), value->content, { zero, zero });
-
-    return this->CreateLoad(this->getLLVMType(value->type), gep);
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
 }
 
-llvm::Value *TythonBuilder::CreateGetContent(Value *value) {
+llvm::Value *TythonBuilder::CreateGetNumberToInt(llvm::Value *number_functions_struct) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto one = llvm::ConstantInt::get(int32_t, 1);
+    const auto otra = llvm::ConstantInt::get(int32_t, 1);
 
-    auto gep = this->CreateGEP(this->getValueStructType(value->type), value->content, { zero, one });
-
-    return this->CreateLoad(this->getLLVMType(value->type), gep);
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
 }
 
-Value *TythonBuilder::CreateValue(tython::Type type, llvm::Value* content, bool forceHeap) {
+llvm::Value *TythonBuilder::CreateGetNumberToFloat(llvm::Value *number_functions_struct) {
 
-    const auto ty = this->getValueStructType(type);
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
-    llvm::Value* alloc;
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto otra = llvm::ConstantInt::get(int32_t, 2);
 
-    if (this->current_scope->parent && !forceHeap) {
-        alloc = this->CreateAlloca(ty);
-    } else {
-        alloc = this->CreateMalloc(ty);
-    }
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
+}
 
-    // store the content in the alloc
-    const auto int8_t = llvm::IntegerType::getInt8Ty(this->getContext());
+llvm::Value *TythonBuilder::CreateGetNumberCmpEq(llvm::Value *number_functions_struct) {
+
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
-    auto type_ptr = this->CreateGEP(ty, alloc, { zero, zero });
-    auto typeValue = llvm::ConstantInt::get(int8_t, type);
-    this->CreateStore(typeValue, type_ptr);
-
-    auto content_ptr = this->CreateGEP(ty, alloc, { zero, one });
-
-    // if the size of what we are storing is smaller than the allocated size, we need to zero-initialize (reads of the memory are expecting the stated memory to be fully initialized)
-    auto target_type = this->getLLVMType(type);
-
-    if (target_type->getScalarSizeInBits() != content->getType()->getScalarSizeInBits()) {
-        auto content_type_size = llvm::ConstantInt::get(int32_t, target_type->getScalarSizeInBits() / 8);
-        this->CreateMemSetInline(content_ptr, llvm::MaybeAlign(0), zero, content_type_size, false);
-    }
-
-    this->CreateStore(content, content_ptr);
-
-    return new Value(type, alloc);
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, one});
 }
 
-Variable *TythonBuilder::CreateVariable(std::string &name) {
+static bool isNumberType(llvm::Value* v) {
+    auto t = v->getType();
+    return t->isIntegerTy() || t->isFloatTy() || t->isDoubleTy();
+}
 
-    if (this->current_scope->findDataEntry(name)) {
+llvm::Value* TythonBuilder::CreateFloatObject(llvm::Value* content) {
+
+    if (!isNumberType(content)) {
+        throw CompileException("Cannot construct a number object with anything other than a first-order number parameter (integral of floating-point).");
+    }
+
+    return (llvm::Value*)this->CreateCall(*this->module->number_create_func, { content }, "floatobject");
+}
+
+llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *length) {
+    return (llvm::Value*)this->CreateCall(*this->module->string_create_func, { cstr, length }, "stringobject");
+}
+
+llvm::Value *TythonBuilder::CreateObjectToString(llvm::Value *object) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto eight = llvm::ConstantInt::get(int32_t, 8);
+
+    const auto typeobject = this->CreateGetTypeObject(object);
+    // todo: we might need to load this
+    auto function_ptr = this->CreateGEP(this->typeobject_type, typeobject, { zero, eight });
+
+    // str is a unary function
+    auto function_type = llvm::FunctionType::get(this->object_type, { this->object_type }, false);
+
+    return (llvm::Value*)this->CreateCall(function_type, function_ptr, { object }, "str");
+}
+
+llvm::Value* TythonBuilder::CreateVariable(std::string &name) {
+
+    if (this->current_namespace->findVariable(name)) {
         throw CompileException("Attempt to create variable with existing name in scope!");
     }
 
     llvm::Value* alloc;
 
-    if (this->current_scope->parent) {
-        alloc = this->CreateAlloca(this->variableStructType, nullptr, name);
+    if (this->current_namespace->isGlobal()) {
+        llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->getPtrTy());
+        alloc = new llvm::GlobalVariable(*this->module, this->getPtrTy(), false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
     } else {
-        llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->variableStructType);
-        alloc = new llvm::GlobalVariable(*this->module, this->variableStructType, false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
+        alloc = this->CreateAlloca(this->getPtrTy(), nullptr, name);
     }
 
-    // todo: set name
-//    {
-//        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-//        const auto zero = llvm::ConstantInt::get(int32_t, 0);
-//        auto name_ptr = this->CreateGEP(this->variableStructType, alloc, {zero, zero});
-//        // create string literal character array
-//        auto charVector = std::vector<char>(name.begin(), name.end());
-//        charVector.push_back('\0'); // null-terminator
-//        // populate allocated char*
-//        auto bytes = llvm::ConstantDataArray::get(this->getContext(), charVector);
-//        this->CreateStore(bytes, name_ptr);
-//    }
+    this->current_namespace->registerVariable(name, alloc);
 
-    const auto variable = new Variable(name, alloc);
-
-    this->current_scope->registerDataEntry(variable);
-
-    return this->current_scope->findDataEntry(name);
-}
-
-llvm::Value* TythonBuilder::CreateMalloc(llvm::Type* type, unsigned int amount) {
-
-    // get size of type
-    auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-    auto type_width = this->module->getDataLayout().getTypeAllocSize(type).getFixedSize();
-
-    llvm::Value* reserve_size;
-
-    if (amount > 1) {
-        reserve_size = llvm::ConstantInt::get(int32_t, type_width * amount);
-    } else {
-        reserve_size = llvm::ConstantInt::get(int32_t, type_width);
-    }
-
-    auto f = this->module->malloc_func;
-
-    return this->CreateCall(*f, { reserve_size });
-}
-
-
-llvm::Value *TythonBuilder::CreateToString(Value *value) {
-    return nullptr;
-}
-
-llvm::Value* TythonBuilder::CreatePrintF(Value *value) {
-    return nullptr;
+    return this->current_namespace->findVariable(name);
 }

@@ -5,21 +5,22 @@
 #include <map>
 #include <string>
 #include "../../include/model/Variable.h"
-#include "../model/Scope.h"
+#include "../model/Namespace.h"
 
-#ifndef BCMODULE_H
-#define BCMODULE_H
+#ifndef TYTHON_MODULE_H
+#define TYTHON_MODULE_H
 
 class TythonModule : public llvm::Module {
 
     friend class TythonBuilder;
 
 private:
-    llvm::FunctionCallee* printf_func;
-    llvm::FunctionCallee* malloc_func;
-    llvm::FunctionCallee* get_attribute_func;
+    llvm::FunctionCallee* number_create_func;
+    llvm::FunctionCallee* string_create_func;
+    llvm::FunctionCallee* object_is_truthy_func;
+    llvm::FunctionCallee* tython_print_func;
 
-    std::map<std::string, Value*> function_shadow_symbol_table;
+    std::map<std::string, llvm::Function*> function_shadow_symbol_table;
 
 private:
 
@@ -33,9 +34,10 @@ public:
 
     TythonModule(llvm::StringRef ModuleID, llvm::LLVMContext& C):
             llvm::Module(ModuleID, C),
-            printf_func(nullptr),
-            malloc_func(nullptr),
-            get_attribute_func(nullptr),
+            number_create_func(nullptr),
+            string_create_func(nullptr),
+            tython_print_func(nullptr),
+            object_is_truthy_func(nullptr),
             function_shadow_symbol_table() {
         initialize();
     };
@@ -45,7 +47,7 @@ public:
      * @param procedure_name The name of the function to find.
      * @return Returns a pointer to the function with the specified name, or nullptr if no such function could be found.
      */
-    Value* findProcedure(const std::string& procedure_name);
+    llvm::Function* findProcedure(const std::string& procedure_name);
 
     /**
      * Registers a procedure (function) by its name, case-insensitive. Procedures can not be overloaded.
@@ -53,10 +55,14 @@ public:
      * @param return_type The expected return type of the function (may be tython::UNKNOWN).
      * @param procedure_name The name under which to register the procedure.
      */
-    void registerProcedure(llvm::Function* f, tython::Type return_type, const std::string& procedure_name);
+    void registerProcedure(llvm::Function* f, const std::string& procedure_name);
 
-    const std::map<std::string, Value*> *listProcedures();
+    /**
+     * Lists the procedures in the shadow procedure map.
+     * @return Returns copy of the procedures in the shadow procedure map.
+     */
+    std::map<std::string, llvm::Function*>* listProcedures();
 
 };
 
-#endif
+#endif // TYTHON_MODULE_H

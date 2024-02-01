@@ -6,21 +6,22 @@
 #define TYTHON_VARIABLE_H
 
 #include <string>
-#include <llvm/IR/DerivedTypes.h>
-#include "Value.h"
+#include <map>
+#include <llvm/IR/Value.h>
 
-class Variable {
+/**
+ * This is actually just a namespace entry (a name / variable pair).
+ */
+class Variable : public std::pair<std::string, llvm::Value*> {
 
 public:
 
-    Variable(std::string& name, llvm::Value* variable, Value* value = nullptr) :
-        name(name),
-        variable(variable),
-        value(value) {};
+    Variable(std::string& name, llvm::Value* llvm_value) :
+            name(name),
+            llvm_value(llvm_value){};
 
     std::string name;
-    Value* value;
-    llvm::Value* variable;
+    llvm::Value* llvm_value;
 
 };
 

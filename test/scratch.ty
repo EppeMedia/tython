@@ -1,12 +1,5 @@
 import io
 
-def extern main():
+test = 1.0
 
-    a = "Hello World!"
-    b = 42
-
-    a = b
-
-    print(a)
-    print(b)
-# avoid leaking on return
+hello(test)

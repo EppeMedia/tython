@@ -111,14 +111,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_attribute_access(TythonParser::Lbl_attribute_accessContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLbl_array_access(TythonParser::Lbl_array_accessContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitRval(TythonParser::RvalContext *ctx) override {
     return visitChildren(ctx);
   }

@@ -105,12 +105,12 @@ arithmetic_operator : SYM_PLUS
                     | SYM_DIV
                     | SYM_EXP;
 
-lval                : IDENTIFIER                                #lbl_identifier
-                    | IDENTIFIER SYM_LSQ lval SYM_RSQ           #lbl_array_access
-                    | instance=lval (SYM_DOT attribute=lval)    #lbl_attribute_access
-                    ;
-
 rval                : constant
                     | lval;
+
+lval                : IDENTIFIER                                #lbl_identifier
+//                    | IDENTIFIER SYM_LSQ lval SYM_RSQ           #lbl_array_access
+//                    | instance=lval (SYM_DOT attribute=lval)    #lbl_attribute_access
+                    ;
 
 constant            : INT_LIT | FLOAT_LIT | STR_LIT;

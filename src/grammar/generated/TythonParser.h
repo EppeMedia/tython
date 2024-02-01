@@ -471,33 +471,8 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
-  class  Lbl_attribute_accessContext : public LvalContext {
-  public:
-    Lbl_attribute_accessContext(LvalContext *ctx);
-
-    TythonParser::LvalContext *instance = nullptr;
-    TythonParser::LvalContext *attribute = nullptr;
-    std::vector<LvalContext *> lval();
-    LvalContext* lval(size_t i);
-    antlr4::tree::TerminalNode *SYM_DOT();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  Lbl_array_accessContext : public LvalContext {
-  public:
-    Lbl_array_accessContext(LvalContext *ctx);
-
-    antlr4::tree::TerminalNode *IDENTIFIER();
-    antlr4::tree::TerminalNode *SYM_LSQ();
-    LvalContext *lval();
-    antlr4::tree::TerminalNode *SYM_RSQ();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
   LvalContext* lval();
-  LvalContext* lval(int precedence);
+
   class  RvalContext : public antlr4::ParserRuleContext {
   public:
     RvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -531,7 +506,6 @@ public:
   bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
 
   bool expressionSempred(ExpressionContext *_localctx, size_t predicateIndex);
-  bool lvalSempred(LvalContext *_localctx, size_t predicateIndex);
 
   // By default the static state used to implement the parser is lazily initialized during the first
   // call to the constructor. You can call this function if you wish to initialize the static state

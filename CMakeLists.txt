@@ -47,31 +47,20 @@ include_directories(${ANTLR_TythonLexer_OUTPUT_DIR})
 
 # runtime library
 add_subdirectory(lib)
-link_directories(${tython_SOURCE_DIR}/lib/src)
+link_directories(${tython_lib_SOURCE_DIR}/include)
+
+include_directories(include)
+include_directories(${tython_lib_SOURCE_DIR}/include)
 
 add_executable(tython src/main.cpp
-        src/grammar/generated/TythonLexer.h
         src/grammar/generated/TythonLexer.cpp
-        src/grammar/generated/TythonParser.h
         src/grammar/generated/TythonParser.cpp
-        include/lexer/TythonLexerBase.h
         src/lexer/TythonLexerBase.cpp
-        include/visitor/SourceFileVisitor.h
         src/ir/TythonModule.cpp
-        include/exception/NotImplemented.h
-        include/exception/CompileException.h
         src/model/Variable.cpp
-        include/model/Variable.h
-        include/ir/TythonModule.h
-        include/exception/CompileException.h
-        include/utils/Utils.h
         src/utils/Utils.cpp
-        include/exception/CompileException.h
-        include/ir/TythonBuilder.h
         src/ir/TythonBuilder.cpp
         src/visitor/SourceFileVisitor.cpp
-        src/model/Value.cpp
-        include/model/Scope.h
-        src/model/Scope.cpp)
+        src/model/Namespace.cpp)
 
 target_link_libraries(tython antlr4_shared ${llvm_libs} spdlog::spdlog tython_lib)

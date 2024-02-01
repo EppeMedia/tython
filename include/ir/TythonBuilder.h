@@ -2,13 +2,12 @@
 // Created by manta on 11/10/22.
 //
 
-#ifndef CROSSOVER_BCBUILDER_H
-#define CROSSOVER_BCBUILDER_H
+#ifndef TYTHON_BUILDER_H
+#define TYTHON_BUILDER_H
 
 #include <llvm/IR/IRBuilder.h>
 #include "TythonModule.h"
-#include "../model/Value.h"
-#include "../model/Scope.h"
+#include "model/Namespace.h"
 #include <string>
 
 class TythonBuilder : public llvm::IRBuilder<> {
@@ -16,50 +15,116 @@ class TythonBuilder : public llvm::IRBuilder<> {
     friend class SourceFileVisitor;
 
 private:
-    llvm::StructType* variableStructType;
+
+    llvm::StructType* object_type;
+    llvm::StructType* typeobject_type;
+
+    /*
+     * Built-in type method structs
+     */
+    llvm::StructType* number_functions_type;
 
     void init();
     void initFirstClassTypes();
-    void initBuiltinFunctions();
 
-    Scope* nestScope();
-    Scope* popScope();
+    /**
+     * Creates a new namespace as a child of the current namespace, and updates the current namespace pointer.
+     * @return Returns the namespace pointer.
+     */
+    Namespace* nestNamespace();
 
-protected:
+    /**
+     * Climbs the namespace tree by one level, and updates the current namespace pointer.
+     * @return Returns the namespace pointer.
+     */
+    Namespace* popNamespace();
+
     TythonModule* module;
-    std::map<tython::Type, llvm::StructType*> typeMap;
-    Scope* current_scope;
+    Namespace* current_namespace;
 
 public:
-    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb), module(module), variableStructType(nullptr) {
+    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
+                                                                module(module),
+                                                                current_namespace(nullptr),
+                                                                object_type(nullptr),
+                                                                typeobject_type(nullptr),
+                                                                number_functions_type(nullptr) {
         init();
     };
 
-    llvm::Type* getLLVMType(tython::Type type);
-    llvm::StructType* getValueStructType(tython::Type type);
-    llvm::Value* CreateGetValuePtr(Variable* dataEntry);
-    llvm::Value* CreateGetContent(Value* value);
+    /**
+     * Creates a variable in the current namespace.
+     * @param name The name of the variable to create.
+     * @return Returns the newly created variable.
+     */
+    llvm::Value* CreateVariable(std::string& name);
 
     /**
-     * Generates code for obtaining a variable's current type enumerator
-     * @param variable The variable for which to generate the code.
-     * @return Returns a handle on the first-class integer value (i8) of the variable's current value.
+     * Generates the instructions to obtain a reference to the typeobject instance of the specified object instance.
+     * @param object_instance The object instance for which to get the typeobject reference.
+     * @return Returns a reference to the specified object's typeobject
      */
-    llvm::Value* CreateGetType(Variable* variable);
-    llvm::Value* CreateGetType(Value* value);
+    llvm::Value* CreateGetTypeObject(llvm::Value* object_instance);
 
-    Value* CreateValue(tython::Type type, llvm::Value* content, bool forceHeap = false);
-    Variable* CreateVariable(std::string& name);
+    /**
+     * Generates the instructions to obtain a reference to the specified typeobject's number_functions struct.
+     * @param type_object The typeobject for which to get the number_functions struct reference.
+     * @return Returns a reference to the specified typeobject's number_functions struct.
+     */
+    llvm::Value* CreateGetNumberFunctions(llvm::Value* type_object);
 
-    llvm::Value* CreateMalloc(llvm::Type* type, unsigned int amount = 1);
+    llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
 
-    llvm::Value* CreateToString(Value* value);
-    llvm::Value* CreatePrintF(Value* value);
+    /**
+     * Generates the instructions to obtain a reference to the specified number_functions struct's to_bool function.
+     * @param number_functions_struct The number_functions struct for which to obtain the to_bool function pointer.
+     * @return Returns a reference to the to_bool function pointer of the specified number_functions struct
+     */
+    llvm::Value* CreateGetNumberToBool(llvm::Value* number_functions_struct);
 
-    ~TythonBuilder() {
-//        delete valueStructType;
-    }
+    /**
+     * Generates the instructions to obtain a reference to the specified number_functions struct's to_int function.
+     * @param number_functions_struct The number_functions struct for which to obtain the to_int function pointer.
+     * @return Returns a reference to the to_int function pointer of the specified number_functions struct
+     */
+    llvm::Value* CreateGetNumberToInt(llvm::Value* number_functions_struct);
+
+    /**
+     * Generates the instructions to obtain a reference to the specified number_functions struct's to_float function.
+     * @param number_functions_struct The number_functions struct for which to obtain the to_float function pointer.
+     * @return Returns a reference to the to_float function pointer of the specified number_functions struct
+     */
+    llvm::Value* CreateGetNumberToFloat(llvm::Value* number_functions_struct);
+
+    /**
+     * Generates the instructions to obtain a reference to the specified number_functions struct's cmp_eq function.
+     * @param number_functions_struct The number_functions struct for which to obtain the cmp_eq function pointer.
+     * @return Returns a reference to the cmp_eq function pointer of the specified number_functions struct
+     */
+    llvm::Value* CreateGetNumberCmpEq(llvm::Value* number_functions_struct);
+
+    /**
+     * Generates the instructions to create a new number object instance for the specified floating-point value.
+     * @param content The floating-point value to create a number object for.
+     * @return Returns a reference to the new number object.
+     */
+    llvm::Value* CreateFloatObject(llvm::Value* content);
+
+    /**
+     * Generates the instructions to create a new string object for the specified c-style string reference.
+     * @param cstr The c-style string reference to create a string object for.
+     * @param length The lenght of the string object to create.
+     * @return Returns a reference to the new string object.
+     */
+    llvm::Value* CreateStringObject(llvm::Value* cstr, llvm::Value* length);
+
+    /**
+     * Generates the instructions to create a string object representation for the specified object instance.
+     * @param object The object instance for which to create a string representation.
+     * @return Returns a string object representation for the specified object instance.
+     */
+    llvm::Value* CreateObjectToString(llvm::Value* object);
 
 };
 
-#endif //CROSSOVER_BCBUILDER_H
+#endif // TYTHON_BUILDER_H
