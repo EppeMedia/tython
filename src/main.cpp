@@ -121,7 +121,6 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     sourceFileVisitor.visitProgram(ast);
 
     // finish up the main function
-    builder.SetInsertPoint(entry_function_bb);
     auto zero = llvm::ConstantInt::get(int32_type, 0);
     builder.CreateRet(zero);
 

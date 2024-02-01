@@ -133,7 +133,7 @@ llvm::Value *TythonBuilder::CreateGetNumberCmpEq(llvm::Value *number_functions_s
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto one = llvm::ConstantInt::get(int32_t, 1);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, one});
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, one });
 }
 
 static bool isNumberType(llvm::Value* v) {
@@ -141,13 +141,22 @@ static bool isNumberType(llvm::Value* v) {
     return t->isIntegerTy() || t->isFloatTy() || t->isDoubleTy();
 }
 
+llvm::Value *TythonBuilder::CreateIntObject(llvm::Value *content) {
+
+    if (!isNumberType(content)) {
+        throw CompileException("Cannot construct an integer object with anything other than a first-order integer.");
+    }
+
+    return (llvm::Value*)this->CreateCall(*this->module->int_create_func, { content }, "integerobject");
+}
+
 llvm::Value* TythonBuilder::CreateFloatObject(llvm::Value* content) {
 
     if (!isNumberType(content)) {
-        throw CompileException("Cannot construct a number object with anything other than a first-order number parameter (integral of floating-point).");
+        throw CompileException("Cannot construct a floating-point object with anything other than a first-order floating-point.");
     }
 
-    return (llvm::Value*)this->CreateCall(*this->module->number_create_func, { content }, "floatobject");
+    return (llvm::Value*)this->CreateCall(*this->module->float_create_func, { content }, "floatobject");
 }
 
 llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *length) {

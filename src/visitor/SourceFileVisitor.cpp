@@ -66,7 +66,7 @@ std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
         auto int64_t = llvm::IntegerType::getInt64Ty(this->module->getContext());
         auto v = llvm::ConstantInt::get(int64_t, raw, true);
 
-        return this->builder->CreateFloatObject(v);
+        return this->builder->CreateIntObject(v);
 
     } else if (ctx->FLOAT_LIT()) {
 

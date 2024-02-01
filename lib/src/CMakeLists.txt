@@ -8,4 +8,4 @@ ADD_LIBRARY(tython_lib STATIC
         object/integerobject.c
         object/floatobject.c
         object/stringobject.c
-        object/basicland.c)
+        bridge/basicland.c)

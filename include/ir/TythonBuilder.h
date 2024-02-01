@@ -104,9 +104,16 @@ public:
     llvm::Value* CreateGetNumberCmpEq(llvm::Value* number_functions_struct);
 
     /**
-     * Generates the instructions to create a new number object instance for the specified floating-point value.
-     * @param content The floating-point value to create a number object for.
-     * @return Returns a reference to the new number object.
+     * Generates the instructions to create a new integer object instance for the specified integer value.
+     * @param content The integer value to create an integer object for.
+     * @return Returns a reference to the new integer object.
+     */
+    llvm::Value* CreateIntObject(llvm::Value* content);
+
+    /**
+     * Generates the instructions to create a new float object instance for the specified floating-point value.
+     * @param content The floating-point value to create a float object for.
+     * @return Returns a reference to the new float object.
      */
     llvm::Value* CreateFloatObject(llvm::Value* content);
 

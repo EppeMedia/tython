@@ -1,5 +1,8 @@
 import io
 
-test = 1.0
+test = 1
 
-hello(test)
+if test:
+    hello(test)
+else:
+    print("No hello for you...")

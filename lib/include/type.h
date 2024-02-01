@@ -21,7 +21,7 @@
 #define TYTHON_CMP_OP_GT        4
 #define TYTHON_CMP_OP_GTE       5
 
-#define TYTHON_CMP_RES_ERR      -1
+#define TYTHON_CMP_RES_ERR      (-1)
 #define TYTHON_CMP_RES_FALSE    0
 #define TYTHON_CMP_RES_TRUE     1
 

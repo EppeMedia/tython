@@ -15,7 +15,8 @@ class TythonModule : public llvm::Module {
     friend class TythonBuilder;
 
 private:
-    llvm::FunctionCallee* number_create_func;
+    llvm::FunctionCallee* float_create_func;
+    llvm::FunctionCallee* int_create_func;
     llvm::FunctionCallee* string_create_func;
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* tython_print_func;
@@ -34,7 +35,8 @@ public:
 
     TythonModule(llvm::StringRef ModuleID, llvm::LLVMContext& C):
             llvm::Module(ModuleID, C),
-            number_create_func(nullptr),
+            float_create_func(nullptr),
+            int_create_func(nullptr),
             string_create_func(nullptr),
             tython_print_func(nullptr),
             object_is_truthy_func(nullptr),

@@ -20,6 +20,8 @@ object* float_create(double v) {
 
 static object* float_to_string(object* object) {
 
+    assert(IS_FLOAT(object));
+
     // determine length
     const int str_len = snprintf(NULL, 0, "%f", AS_FLOAT(object)->value);
 
@@ -33,11 +35,18 @@ static object* float_to_string(object* object) {
 }
 
 static object* float_cmp_eq(object* lhs, object* rhs) {
+
+    // todo: check types and convert if necessary
+    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
+
     return TO_FLOAT(AS_FLOAT(lhs)->value == AS_FLOAT(rhs)->value);
 }
 
 static object* float_to_bool(object* number) {
-    return TO_FLOAT(AS_FLOAT(number)->value != 0.0);
+
+    assert(IS_FLOAT(number));
+
+    return TO_INT(AS_FLOAT(number)->value != 0.0);
 }
 
 static object* float_rich_compare(object* lhs, object* rhs, int op) {

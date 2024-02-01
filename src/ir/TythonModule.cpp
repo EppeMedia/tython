@@ -7,19 +7,21 @@
 
 void TythonModule::initialize() {
 
-    llvm::Type* void_t = llvm::Type::getVoidTy(this->getContext());
-    llvm::Type* voidptr_t = llvm::PointerType::get(void_t, 0);
     llvm::Type* int32_t = llvm::Type::getInt32Ty(this->getContext());
     llvm::Type* int64_t = llvm::Type::getInt64Ty(this->getContext());
-    llvm::Type* int8ptr_t = llvm::Type::getInt8PtrTy(this->getContext());
+    llvm::Type* double_t = llvm::Type::getDoubleTy(this->getContext());
 
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
     // instantiate library functions
 
-    llvm::FunctionType* number_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false);
-    this->number_create_func = new llvm::FunctionCallee();
-    *(this->number_create_func) = this->getOrInsertFunction("float_create", number_create_type);
+    llvm::FunctionType* int_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false);
+    this->int_create_func = new llvm::FunctionCallee();
+    *(this->int_create_func) = this->getOrInsertFunction("int_create", int_create_type);
+
+    llvm::FunctionType* float_create_type = llvm::FunctionType::get(ptr_t, { double_t }, false);
+    this->float_create_func = new llvm::FunctionCallee();
+    *(this->float_create_func) = this->getOrInsertFunction("float_create", float_create_type);
 
     llvm::FunctionType* string_create_type = llvm::FunctionType::get(ptr_t, { ptr_t, int64_t }, false);
     this->string_create_func = new llvm::FunctionCallee();
