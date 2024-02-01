@@ -131,17 +131,18 @@ llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, in
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
-    const auto lhs_type = this->CreateGetTypeObject(lhs);
-    const auto load = this->CreateLoad(ptr_t, lhs_type);
-    const auto op_value = llvm::ConstantInt::get(int32_t, op);
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
     const auto seven = llvm::ConstantInt::get(int32_t, 7);
 
-    auto rich_cmp_ref = this->CreateGEP(this->typeobject_type, load, { zero, seven });
-    auto rich_cmp_f = this->CreateLoad(ptr_t, rich_cmp_ref);
+    auto rich_cmp_ref = this->CreateGEP(this->typeobject_type, lhs_type, { zero, seven });
 
+    auto rich_cmp_f = this->CreateLoad(ptr_t, rich_cmp_ref);
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+
+    const auto op_value = llvm::ConstantInt::get(int32_t, op);
 
     return this->CreateCall(function_type, rich_cmp_f, { lhs, rhs, op_value }, "rich_cmp");
 }

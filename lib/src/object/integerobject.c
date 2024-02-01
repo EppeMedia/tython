@@ -38,11 +38,17 @@ static object* int_to_bool(object* number) {
 
 static object* int_rich_compare(object* lhs, object* rhs, int op) {
 
-    // todo: check types are the same, or apply the necessary conversions
-    assert(IS_INT(lhs) && IS_INT(rhs));
+    assert(IS_INT(lhs));
+    long long lhs_value = AS_INT(lhs)->value;
 
-    long lhs_value = AS_INT(lhs)->value;
-    long rhs_value = AS_INT(rhs)->value;
+    assert(IS_FLOAT(rhs) || IS_INT(rhs));
+    long long rhs_value;
+
+    if (IS_FLOAT(rhs)) {
+        rhs_value = (long long)AS_FLOAT(rhs)->value;
+    } else if (IS_INT(rhs)) {
+        rhs_value = AS_INT(rhs)->value;
+    }
 
     NUMBER_RICH_COMPARE(lhs_value, rhs_value, op)
 }
