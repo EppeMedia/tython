@@ -3,6 +3,7 @@
 #include "../../include/exception/CompileException.h"
 #include "../../include/exception/NotImplemented.h"
 #include <regex>
+#include "type.h"
 
 std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statementContext *ctx) {
 
@@ -348,13 +349,8 @@ std::any SourceFileVisitor::visitBinary_expression(TythonParser::Binary_expressi
     auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
     auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    // obtain the magic function
-    auto binop_function_ptr = visitBinaryOperator(ctx->binary_operator(), lhs, rhs);
-
-    auto function_type = llvm::FunctionType::get(this->builder->object_type, { this->builder->object_type, this->builder->object_type }, false);
-
-    // the result of a binary expression is always an integer
-    return this->builder->CreateCall(function_type, binop_function_ptr, { lhs, rhs }, "binop");
+    // perform the binary operation
+    return visitBinaryOperator(ctx->binary_operator(), lhs, rhs);
 }
 
 llvm::Value* SourceFileVisitor::visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
@@ -368,25 +364,24 @@ llvm::Value* SourceFileVisitor::visitBinaryOperator(TythonParser::Binary_operato
 
 llvm::Value* SourceFileVisitor::visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
 
-    // look up the corresponding magic methods struct on the LHS object
-    const auto typeobject = this->builder->CreateGetTypeObject(lhs);
-    auto number_methods_struct = this->builder->CreateGetNumberFunctions(typeobject);
+    // determine which operation to perform
+    int op;
 
-    // determine which operation we should perform, and
-    // return a function pointer to that magic function (it is always a binary function)
-    if (ctx->SYM_EQ()) {
-        return this->builder->CreateGetNumberCmpEq(number_methods_struct);
-    } else if (ctx->SYM_NEQ()) {
-//        return this->builder->CreateICmpNE(lhs, rhs);
-    } else if (ctx->SYM_GT()) {
-//        return this->builder->CreateICmpSGT(lhs, rhs);
-    } else if (ctx->SYM_GTE()) {
-//        return this->builder->CreateICmpSGE(lhs, rhs);
+    if (ctx->SYM_LT()) {
+        op = TYTHON_CMP_OP_LT;
     } else if (ctx->SYM_LTE()) {
-//        return this->builder->CreateICmpSLE(lhs, rhs);
-    } else if (ctx->SYM_LT()) {
-//        return this->builder->CreateICmpSLT(lhs, rhs);
+        op = TYTHON_CMP_OP_LTE;
+    } else if (ctx->SYM_EQ()) {
+        op = TYTHON_CMP_OP_EQ;
+    } else if (ctx->SYM_NEQ()) {
+        op = TYTHON_CMP_OP_NEQ;
+    } else if (ctx->SYM_GT()) {
+        op = TYTHON_CMP_OP_GT;
+    } else if (ctx->SYM_GTE()) {
+        op = TYTHON_CMP_OP_GTE;
+    }  else {
+        throw NotImplemented("Unimplemented inequality operator \"" + ctx->getText() + "\"!");
     }
 
-    throw NotImplemented("Unimplemented inequality operator \"" + ctx->getText() + "\"!");
+    return this->builder->CreateRichCmp(lhs, rhs, op);
 }

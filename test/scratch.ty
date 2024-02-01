@@ -1,8 +1,8 @@
 import io
 
-test = 1
+test = 0
 
-if test:
-    hello(test)
+if test > 1:
+    print("Yes.")
 else:
-    print("No hello for you...")
+    print("Not.")

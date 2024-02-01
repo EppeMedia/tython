@@ -97,11 +97,13 @@ public:
     llvm::Value* CreateGetNumberToFloat(llvm::Value* number_functions_struct);
 
     /**
-     * Generates the instructions to obtain a reference to the specified number_functions struct's cmp_eq function.
-     * @param number_functions_struct The number_functions struct for which to obtain the cmp_eq function pointer.
-     * @return Returns a reference to the cmp_eq function pointer of the specified number_functions struct
+     * Generates the instructions to perform a rich comparison between to the specified objects.
+     * @param lhs The left-hand side of the comparison operation.
+     * @param rhs The right-hand side of the comparison operation.
+     * @param op The comparison operation to perform.
+     * @return Returns an integer object with the result of the comparison.
      */
-    llvm::Value* CreateGetNumberCmpEq(llvm::Value* number_functions_struct);
+    llvm::Value* CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op);
 
     /**
      * Generates the instructions to create a new integer object instance for the specified integer value.

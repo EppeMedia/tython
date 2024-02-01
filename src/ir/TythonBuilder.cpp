@@ -126,14 +126,24 @@ llvm::Value *TythonBuilder::CreateGetNumberToFloat(llvm::Value *number_functions
     return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
 }
 
-llvm::Value *TythonBuilder::CreateGetNumberCmpEq(llvm::Value *number_functions_struct) {
+llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto lhs_type = this->CreateGetTypeObject(lhs);
+    const auto load = this->CreateLoad(ptr_t, lhs_type);
+    const auto op_value = llvm::ConstantInt::get(int32_t, op);
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto one = llvm::ConstantInt::get(int32_t, 1);
+    const auto seven = llvm::ConstantInt::get(int32_t, 7);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, one });
+    auto rich_cmp_ref = this->CreateGEP(this->typeobject_type, load, { zero, seven });
+    auto rich_cmp_f = this->CreateLoad(ptr_t, rich_cmp_ref);
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+
+    return this->CreateCall(function_type, rich_cmp_f, { lhs, rhs, op_value }, "rich_cmp");
 }
 
 static bool isNumberType(llvm::Value* v) {
@@ -147,7 +157,7 @@ llvm::Value *TythonBuilder::CreateIntObject(llvm::Value *content) {
         throw CompileException("Cannot construct an integer object with anything other than a first-order integer.");
     }
 
-    return (llvm::Value*)this->CreateCall(*this->module->int_create_func, { content }, "integerobject");
+    return this->CreateCall(*this->module->int_create_func, { content }, "integerobject");
 }
 
 llvm::Value* TythonBuilder::CreateFloatObject(llvm::Value* content) {

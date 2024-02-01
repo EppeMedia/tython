@@ -22,8 +22,24 @@
 #define TYTHON_CMP_OP_GTE       5
 
 #define TYTHON_CMP_RES_ERR      (-1)
-#define TYTHON_CMP_RES_FALSE    0
-#define TYTHON_CMP_RES_TRUE     1
+
+#define NUMBER_RICH_COMPARE(lhs, rhs, op)                           \
+    switch (op) {                                                   \
+        case TYTHON_CMP_OP_LT:                                      \
+            return TO_INT(lhs < rhs);                               \
+        case TYTHON_CMP_OP_LTE:                                     \
+            return TO_INT(lhs <= rhs);                              \
+        case TYTHON_CMP_OP_EQ:                                      \
+            return TO_INT(lhs == rhs);                              \
+        case TYTHON_CMP_OP_NEQ:                                     \
+            return TO_INT(lhs != rhs);                              \
+        case TYTHON_CMP_OP_GTE:                                     \
+            return TO_INT(lhs >= rhs);                              \
+        case TYTHON_CMP_OP_GT:                                      \
+            return TO_INT(lhs > rhs);                               \
+        default:                                                    \
+            return TO_INT(TYTHON_CMP_RES_ERR);                      \
+    }
 
 /*
  * Function type defs
@@ -47,7 +63,7 @@ typedef object* (*seqalloc_f)(type_object*, size_t);
  * @param rhs The right-hand side of the comparison operation.
  * @param op The OP code of the operation.
  */
-typedef object* (*rich_compare)(object* lhs, object* rhs, int op);
+typedef object* (*rich_compare_f)(object* lhs, object* rhs, int op);
 
 /**
  * Representation functions convert the object into another object for presentation. An example is the str function which creates a string representing the object instance.
@@ -68,8 +84,6 @@ typedef struct number_functions_t {
     unary_f to_bool;
     unary_f to_int;
     unary_f to_float;
-
-    binary_f cmp_eq;
 } number_functions;
 
 /**
@@ -110,15 +124,15 @@ typedef struct type_t {
     /*
      * Built-in functions (ungrouped). These should be set for all types.
      */
-    rich_compare rich_compare;
+    rich_compare_f rich_compare;
     repr_f str;                     // the function that creates a string representation for an object instance.
 
     /*
      *  Built-in data operations. If not set, this type does not support that class of operations.
      */
-    number_functions* number_functions;
-    mapping_functions* mapping_functions;
-    sequence_functions* sequence_functions;
+    struct number_functions_t* number_functions;
+    struct mapping_functions_t* mapping_functions;
+    struct sequence_functions_t* sequence_functions;
 
 } type_object;
 

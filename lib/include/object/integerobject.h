@@ -13,7 +13,7 @@ extern type_object int_type;
 typedef struct int_object_t {
     ObjectHead
 
-    long value;
+    long long value;
 
 } int_object;
 
@@ -25,7 +25,7 @@ typedef struct int_object_t {
  * @param v The value to set the integer object instance to.
  * @return Returns a new integer object instance with its value set to {v}.
  */
-object* int_create(long v);
+object* int_create(long long v);
 
 #define TO_INT(value)    (int_create(value))
 

@@ -34,14 +34,6 @@ static object* float_to_string(object* object) {
     return string_create(str, str_len);
 }
 
-static object* float_cmp_eq(object* lhs, object* rhs) {
-
-    // todo: check types and convert if necessary
-    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
-
-    return TO_FLOAT(AS_FLOAT(lhs)->value == AS_FLOAT(rhs)->value);
-}
-
 static object* float_to_bool(object* number) {
 
     assert(IS_FLOAT(number));
@@ -54,14 +46,10 @@ static object* float_rich_compare(object* lhs, object* rhs, int op) {
     // todo: check types are the same, or apply the necessary conversions
     assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
 
-    switch (op) {
+    double lhs_value = AS_FLOAT(lhs)->value;
+    double rhs_value = AS_FLOAT(rhs)->value;
 
-        case TYTHON_CMP_OP_EQ:
-            return lhs->type->number_functions->cmp_eq(lhs, rhs);
-
-        default:
-            return TO_FLOAT(TYTHON_CMP_RES_ERR);
-    }
+    NUMBER_RICH_COMPARE(lhs_value, rhs_value, op)
 }
 
 static object* float_to_int(object* float_obj) {
@@ -81,7 +69,6 @@ static number_functions float_number_functions = {
     .to_bool            = &float_to_bool,
     .to_int             = &float_to_int,
     .to_float           = &identity,
-    .cmp_eq             = &float_cmp_eq
 } ;
 
 type_object float_type = {
