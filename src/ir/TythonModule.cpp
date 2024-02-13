@@ -27,6 +27,10 @@ void TythonModule::initialize() {
     this->string_create_func = new llvm::FunctionCallee();
     *(this->string_create_func) = this->getOrInsertFunction("string_create", string_create_type);
 
+    llvm::FunctionType* dict_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false);
+    this->dict_create_func = new llvm::FunctionCallee();
+    *(this->dict_create_func) = this->getOrInsertFunction("dict_create", dict_create_type);
+
     llvm::FunctionType* tython_print_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
     this->tython_print_func = new llvm::FunctionCallee();
     *(this->tython_print_func) = this->getOrInsertFunction("print", tython_print_type);

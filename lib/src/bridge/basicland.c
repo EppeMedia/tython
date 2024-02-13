@@ -3,9 +3,8 @@
 //
 
 #include <assert.h>
+#include "object/boolobject.h"
 #include "bridge/basicland.h"
-#include "type.h"
-#include "object/integerobject.h"
 
 bool object_is_truthy(object* obj) {
 
@@ -15,12 +14,12 @@ bool object_is_truthy(object* obj) {
 
         object* bool_obj = (*nf->to_bool)(obj);
 
-        assert(IS_INT(bool_obj));
+        assert(IS_BOOL(bool_obj));
 
-        return AS_INT(bool_obj)->value;
+        return AS_BOOL(bool_obj)->value;
     }
 
-    // todo: there are other ways an object can be truthy (i.e. a non-empty sequence object is truthy, a non-empty string is truthy...)
+    // todo: throw unsupported error
 
     return false;
 }

@@ -18,6 +18,8 @@ private:
     llvm::FunctionCallee* float_create_func;
     llvm::FunctionCallee* int_create_func;
     llvm::FunctionCallee* string_create_func;
+    llvm::FunctionCallee* dict_create_func;
+
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* tython_print_func;
 

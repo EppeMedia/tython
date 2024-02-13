@@ -27,8 +27,14 @@ typedef struct sequence_object_t {
 #define ObjectHead object obj_base;
 #define SequenceObjectHead sequence_object obj_base;
 
-#define AS_OBJECT(instance)     ((object*)instance)
-#define AS_SEQOBJECT(instance)  ((sequence_object*)instance)
+#define ObjectHeadInitType(type)        \
+    .obj_base = {                       \
+        .identity   = &type.obj_base,   \
+        .type       = &type_type        \
+    }                                   \
+
+#define AS_OBJECT(instance)     ((object*)(instance))
+#define AS_SEQOBJECT(instance)  ((sequence_object*)(instance))
 
 /**
  * Prints the specified object to standard out.

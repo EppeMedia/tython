@@ -18,7 +18,8 @@ typedef struct string_object_t {
 
 } string_object;
 
-#define AS_STRING(instance) ((string_object*)instance)
+#define IS_STRING(instance) (AS_OBJECT(instance)->type == &string_type)
+#define AS_STRING(instance) ((string_object*)(instance))
 
 /**
  * Creates a string object for the specified c-style string and length. At most {length} characters of {str} are copied.
@@ -35,5 +36,7 @@ object* string_create(const char* cstr, size_t length);
  * @return Returns a number object instance whose value is the length of the specified string.
  */
 object* string_length(object* str);
+
+#define TO_STRING(cstr, len) (string_create(cstr, len))
 
 #endif //TYTHON_STRINGOBJECT_H

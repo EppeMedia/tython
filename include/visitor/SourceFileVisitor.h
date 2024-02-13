@@ -34,8 +34,10 @@ public:
     std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override;
 
     std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override;
+    std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override;
 
-    std::any visitConstant(TythonParser::ConstantContext *ctx) override;
+    std::any visitLiteral(TythonParser::LiteralContext *ctx) override;
+    std::any visitDict_lit(TythonParser::Dict_litContext *ctx) override;
 
     std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
     std::any visitBlock(TythonParser::BlockContext *ctx) override;

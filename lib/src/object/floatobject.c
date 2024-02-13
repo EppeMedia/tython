@@ -8,6 +8,7 @@
 #include "object/floatobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
+#include "object/boolobject.h"
 
 object* float_create(double v) {
 
@@ -38,7 +39,7 @@ static object* float_to_bool(object* number) {
 
     assert(IS_FLOAT(number));
 
-    return TO_INT(AS_FLOAT(number)->value != 0.0);
+    return TO_BOOL(AS_FLOAT(number)->value != 0.0);
 }
 
 static object* float_rich_compare(object* lhs, object* rhs, int op) {
@@ -92,6 +93,7 @@ type_object float_type = {
 
     .rich_compare       = float_rich_compare,
     .str                = &float_to_string,
+    .hash               = &float_to_int,
 
     .number_functions   = &float_number_functions,
     .mapping_functions  = NULL,

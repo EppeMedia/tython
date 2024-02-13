@@ -4,8 +4,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "object/stringobject.h"
 #include "object/floatobject.h"
+#include "object/integerobject.h"
 
 object* string_create(const char* cstr, size_t length) {
 
@@ -40,15 +42,34 @@ object* string_length(object* str) {
     return float_create(length);
 }
 
+/**
+ * Adapted from djb2 by Dan Bernstein
+ */
+static object* string_hash(object* obj) {
+
+    assert(IS_STRING(obj));
+
+    string_object* string_obj = AS_STRING(obj);
+
+    unsigned long hash = 5381;
+
+    for (int i = 0; i < string_obj->length; ++i) {
+        hash = ((hash << 5) + hash) + string_obj->str[i]; /* hash * 33 + c */
+    }
+
+    return TO_INT(hash);
+}
+
 static object* identity(object* str) {
     return str;
 }
 
-sequence_functions string_sequence_functions = {
+static sequence_functions string_sequence_functions = {
     .length = &string_length,
 };
 
 type_object string_type = {
+
         .obj_base = {
                 .identity   = &string_type.obj_base,
                 .type       = &type_type,
@@ -63,6 +84,7 @@ type_object string_type = {
 
         .rich_compare       = NULL,                     // todo: implement
         .str                = &identity,
+        .hash               = &string_hash,
 
         .number_functions   = NULL,
         .mapping_functions  = NULL,

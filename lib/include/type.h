@@ -8,6 +8,14 @@
 #include "typedefs.h"
 #include "object.h"
 
+/**
+ * Type slots describe the field offset in the type struct.
+ * This is included in this header so that users of the library can used named offsets instead of magic numbers.
+ */
+#define TYTHON_TYPE_SLOT_RICH_COMPARE       7
+#define TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS   10
+#define TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS  11
+
 /*
  * The following OP codes are for rich comparisons between objects. This corresponds to infix boolean comparisons like '==', '!=', '>=', etc.<br>
  * <i><b>Note</b>: reminder that rich comparisons check value, <b>not identity</b>.</i><br>
@@ -91,7 +99,7 @@ typedef struct number_functions_t {
  */
 typedef struct mapping_functions_t {
     unary_f length;     // length of the map
-    binary_f subscript; // access by key
+    binary_f subscript; // (object* mapping_obj, object* key), access value by key
 } mapping_functions;
 
 /**
@@ -126,6 +134,7 @@ typedef struct type_t {
      */
     rich_compare_f rich_compare;
     repr_f str;                     // the function that creates a string representation for an object instance.
+    unary_f hash;                // takes an object instance of this type and returns a hash for it of type int_object
 
     /*
      *  Built-in data operations. If not set, this type does not support that class of operations.

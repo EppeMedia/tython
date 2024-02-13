@@ -41,11 +41,11 @@ options {
 
 program             : import_statement* (statement)+ EOF;
 
-import_statement    : KW_IMPORT import_path SYM_STMNT_DELIMITER? NEWLINE;
+import_statement    : KW_IMPORT import_path SYM_SEMCOL? NEWLINE;
 
 import_path         : IDENTIFIER (SYM_DOT IDENTIFIER)*;
 
-function_def        : KW_DEF KW_EXTERN? IDENTIFIER SYM_LPAR arguments SYM_ELLIPS? SYM_RPAR SYM_BLOCK_START
+function_def        : KW_DEF KW_EXTERN? IDENTIFIER SYM_LPAR arguments SYM_ELLIPS? SYM_RPAR SYM_COL
                         block;
 
 block               : simple_statements
@@ -58,27 +58,27 @@ simple_statement    : expression
                     | assign_statement
                     | return_statement;
 
-simple_statements   : simple_statement (SYM_STMNT_DELIMITER simple_statement)* SYM_STMNT_DELIMITER? NEWLINE;
+simple_statements   : simple_statement (SYM_SEMCOL simple_statement)* SYM_SEMCOL? NEWLINE;
 
 compound_statement  : if_statement
                     | function_def;
 
-assign_statement    : IDENTIFIER SYM_ASSIGN expression;
+assign_statement    : lval SYM_ASSIGN expression;
 return_statement    : KW_RETURN expression;
 
-if_statement        : KW_IF expression SYM_BLOCK_START
+if_statement        : KW_IF expression SYM_COL
                         br_if=block
                       (KW_ELSE (
                         br_else_if=if_statement
-                        | (SYM_BLOCK_START br_else=block)
+                        | (SYM_COL br_else=block)
                       )
                       )?;
 
 arguments           : args+=IDENTIFIER?
-                    | args+=IDENTIFIER (SYM_ARG_SEPARATOR args+=IDENTIFIER)+;
+                    | args+=IDENTIFIER (SYM_COMMA args+=IDENTIFIER)+;
 
 parameters          : params+=expression?
-                    | params+=expression (SYM_ARG_SEPARATOR params+=expression)+;
+                    | params+=expression (SYM_COMMA params+=expression)+;
 
 call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 
@@ -105,12 +105,16 @@ arithmetic_operator : SYM_PLUS
                     | SYM_DIV
                     | SYM_EXP;
 
-rval                : constant
+rval                : literal
                     | lval;
 
 lval                : IDENTIFIER                                #lbl_identifier
-//                    | IDENTIFIER SYM_LSQ lval SYM_RSQ           #lbl_array_access
+                    | IDENTIFIER SYM_LSQ expression SYM_RSQ     #lbl_key_access
 //                    | instance=lval (SYM_DOT attribute=lval)    #lbl_attribute_access
                     ;
 
-constant            : INT_LIT | FLOAT_LIT | STR_LIT;
+key_value_pair      : key=expression SYM_COL value=expression;
+
+dict_lit            : SYM_LBR (entries+=key_value_pair? | (entries+=key_value_pair? (SYM_COMMA entries+=key_value_pair)+)) SYM_RBR;
+
+literal             : INT_LIT | FLOAT_LIT | STR_LIT | dict_lit;

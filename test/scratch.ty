@@ -1,8 +1,15 @@
 import io
 
-test = "Hello world!"
+test = -1
 
 if test < 0:
     print("Yes.")
 else:
-    print("Not.")
+    print("No.")
+
+dict = {
+    "mkey": "mvalue",
+    "second_key": "second_value"
+}
+
+print(dict);

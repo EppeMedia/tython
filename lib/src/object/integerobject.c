@@ -8,6 +8,7 @@
 #include "object/integerobject.h"
 #include "object/stringobject.h"
 #include "object/floatobject.h"
+#include "object/boolobject.h"
 
 object* int_create(long long v) {
 
@@ -33,7 +34,7 @@ static object* int_to_string(object* object) {
 }
 
 static object* int_to_bool(object* number) {
-    return TO_INT(AS_INT(number)->value != 0);
+    return TO_BOOL(AS_INT(number)->value != 0);
 }
 
 static object* int_rich_compare(object* lhs, object* rhs, int op) {
@@ -87,6 +88,7 @@ type_object int_type = {
 
         .rich_compare       = &int_rich_compare,
         .str                = &int_to_string,
+        .hash               = &identity,
 
         .number_functions   = &int_number_functions,
         .mapping_functions  = NULL,

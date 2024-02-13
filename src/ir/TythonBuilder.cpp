@@ -1,5 +1,8 @@
 #include "../../include/ir/TythonBuilder.h"
 #include "../../include/exception/CompileException.h"
+#include "type.h"
+#include "object/dictobject.h"
+#include <cstddef>
 
 void TythonBuilder::init() {
 
@@ -38,7 +41,7 @@ void TythonBuilder::initFirstClassTypes() {
         ptr_t,      // subscript (function ptr)
     };
 
-    const auto mapping_functions_type = llvm::StructType::get(this->getContext(), mapping_functions_types, "Object.Mapping.Functions");
+    this->mapping_functions_type = llvm::StructType::get(this->getContext(), mapping_functions_types, "Object.Mapping.Functions");
 
     llvm::ArrayRef<llvm::Type*> typeobject_types = {
 
@@ -56,12 +59,20 @@ void TythonBuilder::initFirstClassTypes() {
 
         ptr_t,      // rich compare (function pointer)
         ptr_t,      // str (function pointer)
+        ptr_t,      // hash (function pointer)
 
         llvm::PointerType::get(number_functions_type, 0),      // number functions (struct pointer)
         llvm::PointerType::get(mapping_functions_type, 0),      // mapping functions (struct pointer)
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
+
+    llvm::ArrayRef<llvm::Type*> dict_entry_types = {
+        ptr_t,      // key reference
+        ptr_t       // value reference
+    };
+
+    this->dict_entry_type = llvm::StructType::create(this->getContext(), dict_entry_types, "DictEntry");
 }
 
 Namespace *TythonBuilder::nestNamespace() {
@@ -87,9 +98,19 @@ llvm::Value *TythonBuilder::CreateGetNumberFunctions(llvm::Value *type_object) {
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto eight = llvm::ConstantInt::get(int32_t, 8);
+    const auto slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS);
 
-    return this->CreateGEP(this->typeobject_type, type_object, { zero, eight });
+    return this->CreateGEP(this->typeobject_type, type_object, {zero, slot });
+}
+
+llvm::Value *TythonBuilder::CreateGetMappingFunctions(llvm::Value *type_object) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS);
+
+    return this->CreateGEP(this->typeobject_type, type_object, {zero, slot });
 }
 
 llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *object_instance) {
@@ -101,9 +122,9 @@ llvm::Value *TythonBuilder::CreateGetNumberToBool(llvm::Value *number_functions_
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto otra = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 0);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
 }
 
 llvm::Value *TythonBuilder::CreateGetNumberToInt(llvm::Value *number_functions_struct) {
@@ -111,9 +132,9 @@ llvm::Value *TythonBuilder::CreateGetNumberToInt(llvm::Value *number_functions_s
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto otra = llvm::ConstantInt::get(int32_t, 1);
+    const auto slot = llvm::ConstantInt::get(int32_t, 1);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
 }
 
 llvm::Value *TythonBuilder::CreateGetNumberToFloat(llvm::Value *number_functions_struct) {
@@ -121,9 +142,9 @@ llvm::Value *TythonBuilder::CreateGetNumberToFloat(llvm::Value *number_functions
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto otra = llvm::ConstantInt::get(int32_t, 2);
+    const auto slot = llvm::ConstantInt::get(int32_t, 2);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, { zero, otra });
+    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
 }
 
 llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op) {
@@ -135,9 +156,9 @@ llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, in
     const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto seven = llvm::ConstantInt::get(int32_t, 7);
+    const auto slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_RICH_COMPARE);
 
-    auto rich_cmp_ref = this->CreateGEP(this->typeobject_type, lhs_type, { zero, seven });
+    auto rich_cmp_ref = this->CreateGEP(this->typeobject_type, lhs_type, {zero, slot });
 
     auto rich_cmp_f = this->CreateLoad(ptr_t, rich_cmp_ref);
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
@@ -145,6 +166,29 @@ llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, in
     const auto op_value = llvm::ConstantInt::get(int32_t, op);
 
     return this->CreateCall(function_type, rich_cmp_f, { lhs, rhs, op_value }, "rich_cmp");
+}
+
+llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *key) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto object_type_ref = this->CreateGetTypeObject(object);
+    const auto object_type = this->CreateLoad(ptr_t, object_type_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto one = llvm::ConstantInt::get(int32_t, 1);
+    const auto mapping_functions_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS);
+
+    auto mapping_functions_ref = this->CreateGEP(this->typeobject_type, object_type, { zero, mapping_functions_slot });
+    auto mapping_functions = this->CreateLoad(ptr_t, mapping_functions_ref);
+
+    auto subscript_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, { zero, one });
+    auto subscript_f = this->CreateLoad(ptr_t, subscript_ref);
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+
+    return this->CreateCall(function_type, subscript_f, { object, key }, "rich_cmp");
 }
 
 static bool isNumberType(llvm::Value* v) {
@@ -209,4 +253,48 @@ llvm::Value* TythonBuilder::CreateVariable(std::string &name) {
     this->current_namespace->registerVariable(name, alloc);
 
     return this->current_namespace->findVariable(name);
+}
+
+llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<std::pair<llvm::Value *, llvm::Value *>> &entries) {
+
+    auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    auto f = this->module->dict_create_func;
+    auto dict_ref = this->CreateCall((llvm::Function*)f->getCallee(), { count }, "dict_create");
+
+    // steal the entries reference off of the dictionary object (todo: we could instead declare the struct type globally and use GEPs)
+    size_t offset = offsetof(dict_object, entries);
+    auto offset_value = llvm::ConstantInt::get(int64_t, offset);
+    auto ptr_loc = this->CreatePtrToInt(dict_ref, int64_t);
+    auto ptr_offset = this->CreateAdd(ptr_loc, offset_value, "entries_offset");
+    auto entries_ref = this->CreateIntToPtr(ptr_offset, ptr_t, "entries_ref");
+
+    auto entries_start = this->CreateLoad(ptr_t, entries_ref, "entry_start");
+    auto entries_start_int = this->CreatePtrToInt(entries_start, int64_t, "entry_start_int");
+
+    // stitch entries
+    for (int i = 0; i < entries.size(); ++i) {
+
+        // store the key and value
+        auto entry = entries.at(i);
+
+        size_t k_offset = (sizeof(dict_entry) * i) + offsetof(dict_entry, key);
+        auto k_offset_value = llvm::ConstantInt::get(int64_t, k_offset);
+        auto k_ptr_offset = this->CreateAdd(entries_start_int, k_offset_value, "key_offset");
+        auto k_ref = this->CreateIntToPtr(k_ptr_offset, ptr_t, "value_ref");
+
+        auto key_ptr = this->CreatePtrToInt(entry.first, int64_t, "key_ptr");
+        this->CreateStore(key_ptr, k_ref);
+
+        size_t v_offset = offsetof(dict_entry, value);
+        auto v_offset_value = llvm::ConstantInt::get(int64_t, v_offset);
+        auto v_ptr_offset = this->CreateAdd(k_ptr_offset, v_offset_value, "value_offset");
+        auto v_ref = this->CreateIntToPtr(v_ptr_offset, ptr_t, "value_ref");
+
+        auto value_ptr = this->CreatePtrToInt(entry.second, int64_t, "value_ptr");
+        this->CreateStore(value_ptr, v_ref);
+    }
+
+    return dict_ref;
 }

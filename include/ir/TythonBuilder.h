@@ -18,11 +18,13 @@ private:
 
     llvm::StructType* object_type;
     llvm::StructType* typeobject_type;
+    llvm::StructType* dict_entry_type;
 
     /*
      * Built-in type method structs
      */
     llvm::StructType* number_functions_type;
+    llvm::StructType* mapping_functions_type;
 
     void init();
     void initFirstClassTypes();
@@ -48,7 +50,8 @@ public:
                                                                 current_namespace(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
-                                                                number_functions_type(nullptr) {
+                                                                number_functions_type(nullptr),
+                                                                mapping_functions_type(nullptr) {
         init();
     };
 
@@ -72,6 +75,13 @@ public:
      * @return Returns a reference to the specified typeobject's number_functions struct.
      */
     llvm::Value* CreateGetNumberFunctions(llvm::Value* type_object);
+
+    /**
+     * Generates the instructions to obtain a reference to the specified typeobject's mapping_functions struct.
+     * @param type_object The typeobject for which to get the mapping_functions struct reference.
+     * @return Returns a reference to the specified typeobject's mapping_functions struct.
+     */
+    llvm::Value* CreateGetMappingFunctions(llvm::Value* type_object);
 
     llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
 
@@ -106,6 +116,14 @@ public:
     llvm::Value* CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op);
 
     /**
+     * Generates instructions to obtain the value associated with the specified key on the specified object.
+     * @param object The object on which to find the value associated with the specified key.
+     * @param key The key for which to find the associated value on the specified object.
+     * @return Returns a reference to the value associated with the specified key on the specified object.
+     */
+    llvm::Value* CreateSubscript(llvm::Value* object, llvm::Value* key);
+
+    /**
      * Generates the instructions to create a new integer object instance for the specified integer value.
      * @param content The integer value to create an integer object for.
      * @return Returns a reference to the new integer object.
@@ -133,6 +151,8 @@ public:
      * @return Returns a string object representation for the specified object instance.
      */
     llvm::Value* CreateObjectToString(llvm::Value* object);
+
+    llvm::Value* CreateDictLiteral(llvm::Value* count, std::vector<std::pair<llvm::Value*, llvm::Value*>>& entries);
 
 };
 

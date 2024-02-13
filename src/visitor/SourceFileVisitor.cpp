@@ -4,6 +4,7 @@
 #include "../../include/exception/NotImplemented.h"
 #include <regex>
 #include "type.h"
+#include "exception/UnkownSymbolException.h"
 
 std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statementContext *ctx) {
 
@@ -24,20 +25,31 @@ std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statement
 
 std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statementContext *ctx) {
 
+    llvm::Value* lhs;
+
+    try {
+
+        lhs = any_cast<llvm::Value*>(visit(ctx->lval()));
+
+    } catch (UnknownSymbolException& e) {
+
+        // todo: Note that, unlike most other uses, assignment is a defining operation (identifiers that do not exist are created)
+        // if a variable of this identifier is unknown, we try to create one on the fly
+
+        auto identifierContext = dynamic_cast<TythonParser::Lbl_identifierContext*>(ctx->lval());
+
+        if (identifierContext) {
+
+            string identifier = identifierContext->getText();
+            lhs = this->builder->CreateVariable(identifier);
+
+        } else {
+            // we can only create new object here if they are simple identifier names (i.e. not dictionary access or sequence access)
+            throw CompileException("Illegal left-hand identifier for implicit declaration \"" + ctx->lval()->children[0]->getText() + "\"");
+        }
+    }
 
     auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
-
-    // todo: this identifier resolution should be implemented in the specialized branches of lval.
-    // todo: Note that, unlike most other uses, assignment is a defining operation (identifiers that do not exist are created)
-    string identifier = ctx->IDENTIFIER()->getText();
-
-    // resolve identifier
-    auto lhs = this->builder->current_namespace->findVariable(identifier);
-
-    // if a variable of this identifier is unknown, we create one on the fly
-    if (!lhs) {
-        lhs = this->builder->CreateVariable(identifier);
-    }
 
     this->builder->CreateStore(rhs, lhs);
 
@@ -49,17 +61,34 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
     auto identifier = ctx->IDENTIFIER()->getText();
 
     // check if the identifier exists, otherwise throw an exception
-
     if (auto variable = this->builder->current_namespace->findVariable(identifier)) {
-        // this is a pointer to the variable. We load it to get a pointer to the object.
-        const auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
-        return (llvm::Value*)this->builder->CreateLoad(ptr_type, variable);
+
+        // variable is a pointer to the value object
+
+        if (dynamic_cast<TythonParser::RvalContext*>(ctx->parent)) {
+            // We need to load it to get a pointer to the variable's value object.
+            const auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
+            return (llvm::Value*)this->builder->CreateLoad(ptr_type, variable);
+        }
+
+        // else, this is an lval; the target is the variable, not the referenced value.
+        return variable;
     }
 
-    throw CompileException("Unknown symbol " + identifier);
+    throw UnknownSymbolException("Unknown symbol " + identifier);
 }
 
-std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
+std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) {
+
+    auto identifier = ctx->IDENTIFIER()->getText();
+    auto collection_object = this->builder->current_namespace->findVariable(identifier);
+
+    auto key = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    return this->builder->CreateSubscript(collection_object, key);
+}
+
+std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
     if (ctx->INT_LIT()) {
 
@@ -93,9 +122,33 @@ std::any SourceFileVisitor::visitConstant(TythonParser::ConstantContext *ctx) {
         auto length = llvm::ConstantInt::get(int32_t, clean.length());
 
         return this->builder->CreateStringObject(str, length);
+
+    } else if (ctx->dict_lit()) {
+
+        // delegate to the dictionary literal handler
+        return visit(ctx->dict_lit());
     }
 
     throw NotImplemented("Encountered unknown literal type. Language implementation and specification have probably diverged. Please contact the project maintainer.");
+}
+
+std::any SourceFileVisitor::visitDict_lit(TythonParser::Dict_litContext *ctx) {
+
+    std::vector<std::pair<llvm::Value*, llvm::Value*>> entries;
+    entries.reserve(ctx->entries.size());
+
+    for (auto& entry : ctx->entries) {
+
+        auto key = any_cast<llvm::Value*>(visit(entry->key));
+        auto value = any_cast<llvm::Value*>(visit(entry->value));
+
+        entries.emplace_back(key, value);
+    }
+
+    auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    auto entry_count = llvm::ConstantInt::get(int32_t, entries.size());
+
+    return this->builder->CreateDictLiteral(entry_count, entries);
 }
 
 std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext *ctx) {

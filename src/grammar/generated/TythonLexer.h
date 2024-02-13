@@ -17,13 +17,14 @@ public:
   enum {
     INDENT = 1, DEDENT = 2, KW_DEF = 3, KW_RETURN = 4, KW_IF = 5, KW_ELSE = 6, 
     KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, KW_SELF = 10, SYM_LPAR = 11, 
-    SYM_RPAR = 12, SYM_LSQ = 13, SYM_RSQ = 14, SYM_BLOCK_START = 15, SYM_ARG_SEPARATOR = 16, 
-    SYM_STMNT_DELIMITER = 17, SYM_ASSIGN = 18, SYM_NEQ = 19, SYM_LTE = 20, 
-    SYM_LT = 21, SYM_EQ = 22, SYM_GT = 23, SYM_GTE = 24, SYM_AND = 25, SYM_OR = 26, 
-    SYM_PLUS = 27, SYM_MINUS = 28, SYM_MULT = 29, SYM_DIV = 30, SYM_EXP = 31, 
-    SYM_DOT = 32, SYM_ELLIPS = 33, SYM_COMMENT = 34, SYM_COMMENT_START = 35, 
-    IDENTIFIER = 36, INT_LIT = 37, FLOAT_LIT = 38, STR_LIT = 39, TRUE_LIT = 40, 
-    FALSE_LIT = 41, NEWLINE = 42, WS = 43, SYM_COMMENT_END = 44, COMMENT_CONTENT = 45
+    SYM_RPAR = 12, SYM_LSQ = 13, SYM_RSQ = 14, SYM_LBR = 15, SYM_RBR = 16, 
+    SYM_COL = 17, SYM_SEMCOL = 18, SYM_COMMA = 19, SYM_STMNT_DELIMITER = 20, 
+    SYM_ASSIGN = 21, SYM_NEQ = 22, SYM_LTE = 23, SYM_LT = 24, SYM_EQ = 25, 
+    SYM_GT = 26, SYM_GTE = 27, SYM_AND = 28, SYM_OR = 29, SYM_PLUS = 30, 
+    SYM_MINUS = 31, SYM_MULT = 32, SYM_DIV = 33, SYM_EXP = 34, SYM_DOT = 35, 
+    SYM_ELLIPS = 36, SYM_COMMENT = 37, SYM_COMMENT_START = 38, IDENTIFIER = 39, 
+    INT_LIT = 40, FLOAT_LIT = 41, STR_LIT = 42, TRUE_LIT = 43, FALSE_LIT = 44, 
+    NEWLINE = 45, WS = 46, SYM_COMMENT_END = 47, COMMENT_CONTENT = 48
   };
 
   enum {
@@ -63,6 +64,10 @@ private:
   // Individual action functions triggered by action() above.
   void SYM_LPARAction(antlr4::RuleContext *context, size_t actionIndex);
   void SYM_RPARAction(antlr4::RuleContext *context, size_t actionIndex);
+  void SYM_LSQAction(antlr4::RuleContext *context, size_t actionIndex);
+  void SYM_RSQAction(antlr4::RuleContext *context, size_t actionIndex);
+  void SYM_LBRAction(antlr4::RuleContext *context, size_t actionIndex);
+  void SYM_RBRAction(antlr4::RuleContext *context, size_t actionIndex);
   void NEWLINEAction(antlr4::RuleContext *context, size_t actionIndex);
 
   // Individual semantic predicate functions triggered by sempred() above.

@@ -61,11 +61,15 @@ KW_SELF             : 'self';
 // symbols
 SYM_LPAR            : '(' {this->openBrace();};
 SYM_RPAR            : ')' {this->closeBrace();};
-SYM_LSQ             : '[';
-SYM_RSQ             : ']';
-SYM_BLOCK_START     : ':';
-SYM_ARG_SEPARATOR   : ',';
-SYM_STMNT_DELIMITER : ';';
+SYM_LSQ             : '[' {this->openBrace();};
+SYM_RSQ             : ']' {this->closeBrace();};
+SYM_LBR             : '{' {this->openBrace();};
+SYM_RBR             : '}' {this->closeBrace();};
+SYM_COL             : ':';
+SYM_SEMCOL          : ';';
+SYM_COMMA           : ',';
+
+SYM_STMNT_DELIMITER : SYM_SEMCOL;
 
 SYM_ASSIGN          : '=';
 

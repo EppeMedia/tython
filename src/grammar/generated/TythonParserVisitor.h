@@ -65,11 +65,17 @@ public:
 
     virtual std::any visitArithmetic_operator(TythonParser::Arithmetic_operatorContext *context) = 0;
 
-    virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *context) = 0;
-
     virtual std::any visitRval(TythonParser::RvalContext *context) = 0;
 
-    virtual std::any visitConstant(TythonParser::ConstantContext *context) = 0;
+    virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *context) = 0;
+
+    virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *context) = 0;
+
+    virtual std::any visitKey_value_pair(TythonParser::Key_value_pairContext *context) = 0;
+
+    virtual std::any visitDict_lit(TythonParser::Dict_litContext *context) = 0;
+
+    virtual std::any visitLiteral(TythonParser::LiteralContext *context) = 0;
 
 
 };

@@ -107,15 +107,27 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitRval(TythonParser::RvalContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual std::any visitConstant(TythonParser::ConstantContext *ctx) override {
+  virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitKey_value_pair(TythonParser::Key_value_pairContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitDict_lit(TythonParser::Dict_litContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLiteral(TythonParser::LiteralContext *ctx) override {
     return visitChildren(ctx);
   }
 
