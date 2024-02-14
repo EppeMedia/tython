@@ -58,7 +58,7 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
 
 std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) {
 
-    auto identifier = ctx->IDENTIFIER()->getText();
+    const auto identifier = ctx->IDENTIFIER()->getText();
 
     // check if the identifier exists, otherwise throw an exception
     if (auto variable = this->builder->current_namespace->findVariable(identifier)) {
@@ -81,11 +81,18 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) {
 
     auto identifier = ctx->IDENTIFIER()->getText();
-    auto collection_object = this->builder->current_namespace->findVariable(identifier);
+    auto sequence_ref = this->builder->current_namespace->findVariable(identifier);
+
+    if (!sequence_ref) {
+        throw UnknownSymbolException("Attempted key access on undefined sequence symbol \"" + identifier + "\"");
+    }
+
+    auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+    auto sequence_object = this->builder->CreateLoad(ptr_t, sequence_ref, "sequence_object");
 
     auto key = any_cast<llvm::Value*>(visit(ctx->expression()));
 
-    return this->builder->CreateSubscript(collection_object, key);
+    return this->builder->CreateSubscript(sequence_object, key);
 }
 
 std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {

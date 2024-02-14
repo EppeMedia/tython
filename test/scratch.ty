@@ -1,15 +1,16 @@
 import io
 
-test = -1
+test = 0
 
-if test < 0:
+if test:
     print("Yes.")
 else:
     print("No.")
 
 dict = {
-    "mkey": "mvalue",
-    "second_key": "second_value"
+        "mkey": "mvalue",
+        "second_key": "second_value"
 }
 
-print(dict);
+print(dict["mkey"])
+print(dict["second_key"])

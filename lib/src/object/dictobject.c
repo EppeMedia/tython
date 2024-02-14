@@ -98,6 +98,8 @@ static object* dict_subscript(object* obj, object* key) {
         }
     }
 
+    printf("Key not found!\r\n");
+
     return AS_OBJECT(NULL); // todo: implement and return None
 }
 
@@ -126,8 +128,8 @@ object* dict_create(size_t size) {
 }
 
 static mapping_functions dict_mapping_functions = {
-        .subscript  = &dict_subscript,
         .length     = &dict_length,
+        .subscript  = &dict_subscript,
 };
 
 type_object dict_type = {

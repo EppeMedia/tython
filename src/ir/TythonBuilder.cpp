@@ -62,7 +62,7 @@ void TythonBuilder::initFirstClassTypes() {
         ptr_t,      // hash (function pointer)
 
         llvm::PointerType::get(number_functions_type, 0),      // number functions (struct pointer)
-        llvm::PointerType::get(mapping_functions_type, 0),      // mapping functions (struct pointer)
+        ptr_t,      // mapping functions (struct pointer)
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
@@ -186,9 +186,9 @@ llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *ke
     auto subscript_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, { zero, one });
     auto subscript_f = this->CreateLoad(ptr_t, subscript_ref);
 
-    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
 
-    return this->CreateCall(function_type, subscript_f, { object, key }, "rich_cmp");
+    return this->CreateCall(function_type, subscript_f, { object, key }, "subscript");
 }
 
 static bool isNumberType(llvm::Value* v) {
