@@ -12,7 +12,7 @@
 #include "object/integerobject.h"
 
 static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
-    return TYTHON_FALSE; // todo: implement
+    return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.
 }
 
 static char* to_cstr(string_object* string_obj) {
@@ -98,8 +98,6 @@ static object* dict_subscript(object* obj, object* key) {
         }
     }
 
-    printf("Key not found!\r\n");
-
     return AS_OBJECT(NULL); // todo: implement and return None
 }
 
@@ -127,6 +125,21 @@ object* dict_create(size_t size) {
     return AS_OBJECT(dict_obj);
 }
 
+static object* dict_to_bool(object* obj) {
+
+    assert(IS_DICT(obj));
+
+    if (AS_DICT(obj)->size > 0) {
+        return TYTHON_TRUE;
+    }
+
+    return TYTHON_FALSE;
+}
+
+static number_functions dict_number_functions = {
+        .to_bool = &dict_to_bool
+};
+
 static mapping_functions dict_mapping_functions = {
         .length     = &dict_length,
         .subscript  = &dict_subscript,
@@ -149,7 +162,7 @@ type_object dict_type = {
         .rich_compare       = &dict_rich_compare,
         .str                = &dict_to_string,
 
-        .number_functions   = NULL,
+        .number_functions   = &dict_number_functions,
         .mapping_functions  = &dict_mapping_functions,
         .sequence_functions = NULL,
 };

@@ -132,9 +132,9 @@ typedef struct type_t {
     /*
      * Built-in functions (ungrouped). These should be set for all types.
      */
-    rich_compare_f rich_compare;
+    rich_compare_f rich_compare;    // the rich comparison function, which may allow for (in)equality checks and relative ordinance.
     repr_f str;                     // the function that creates a string representation for an object instance.
-    unary_f hash;                // takes an object instance of this type and returns a hash for it of type int_object
+    unary_f hash;                   // takes an object instance of this type and returns a hash for it of type int_object
 
     /*
      *  Built-in data operations. If not set, this type does not support that class of operations.

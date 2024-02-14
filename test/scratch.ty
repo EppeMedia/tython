@@ -12,5 +12,6 @@ dict = {
         "second_key": "second_value"
 }
 
-print(dict["mkey"])
-print(dict["second_key"])
+if dict:
+    print(dict["mkey"])
+    print(dict["second_key"])
