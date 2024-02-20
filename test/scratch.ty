@@ -1,6 +1,6 @@
 import io
 
-test = 0
+test = 1
 
 if test:
     print("Yes.")
@@ -15,3 +15,21 @@ dict = {
 if dict:
     print(dict["mkey"])
     print(dict["second_key"])
+
+arr = [
+    "one",
+    "two",
+    "three",
+    123,
+    [
+        "second list",
+        {
+            "and": "a dict!",
+            "list": ["a list in a dict in a list???"]
+        }
+    ],
+    "more stuff",
+    -3.1415
+]
+
+print(arr)

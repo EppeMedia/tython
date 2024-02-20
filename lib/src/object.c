@@ -5,6 +5,7 @@
 #include "object/stringobject.h"
 #include <stdio.h>
 #include <memory.h>
+#include <stdbool.h>
 
 void print(object* object) {
 
@@ -12,15 +13,15 @@ void print(object* object) {
     string_object* string_obj = AS_STRING(object->type->str(object));
 
     // get the content from the string object and terminate it with a null-character if necessary
-    int null = 0;
+    bool null = false;
 
     for (int i = 0; i < string_obj->length; ++i) {
         if (string_obj->str[i] == '\0') {
-            null = 1;
+            null = true;
         }
     }
 
-    unsigned long buf_size = null == 0 ? string_obj->length + 1 : string_obj->length;
+    unsigned long buf_size = null ? string_obj->length : string_obj->length + 1;
     char buf[buf_size];
 
     memcpy(buf, string_obj->str, string_obj->length);

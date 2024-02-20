@@ -9,4 +9,5 @@ ADD_LIBRARY(tython_lib STATIC
         object/stringobject.c
         object/boolobject.c
         object/dictobject.c
+        object/listobject.c
         bridge/basicland.c)

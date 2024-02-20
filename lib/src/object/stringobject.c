@@ -3,11 +3,25 @@
 //
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "object/stringobject.h"
 #include "object/floatobject.h"
 #include "object/integerobject.h"
+
+char* to_cstr(string_object* string_obj) {
+
+    if (string_obj->str[string_obj->length - 1] == '\0') {
+        char* cstr = malloc(string_obj->length * sizeof(char));
+        strcpy(cstr, string_obj->str);
+        return cstr;
+    }
+
+    char* cstr = malloc((string_obj->length + 1) * sizeof(char));
+    memcpy(cstr, string_obj->str, string_obj->length);
+    cstr[string_obj->length] = '\0';
+    return cstr;
+}
 
 object* string_create(const char* cstr, size_t length) {
 

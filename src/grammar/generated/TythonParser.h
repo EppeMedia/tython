@@ -31,7 +31,8 @@ public:
     RuleIf_statement = 11, RuleArguments = 12, RuleParameters = 13, RuleCall_expression = 14, 
     RuleExpression = 15, RuleBinary_operator = 16, RuleInequality_operator = 17, 
     RuleLogic_operator = 18, RuleArithmetic_operator = 19, RuleRval = 20, 
-    RuleLval = 21, RuleKey_value_pair = 22, RuleDict_lit = 23, RuleLiteral = 24
+    RuleLval = 21, RuleKey_value_pair = 22, RuleDict_lit = 23, RuleList_lit = 24, 
+    RuleLiteral = 25
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -75,6 +76,7 @@ public:
   class LvalContext;
   class Key_value_pairContext;
   class Dict_litContext;
+  class List_litContext;
   class LiteralContext; 
 
   class  ProgramContext : public antlr4::ParserRuleContext {
@@ -539,6 +541,26 @@ public:
 
   Dict_litContext* dict_lit();
 
+  class  List_litContext : public antlr4::ParserRuleContext {
+  public:
+    TythonParser::RvalContext *rvalContext = nullptr;
+    std::vector<RvalContext *> elements;
+    List_litContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *SYM_LSQ();
+    antlr4::tree::TerminalNode *SYM_RSQ();
+    std::vector<RvalContext *> rval();
+    RvalContext* rval(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> SYM_COMMA();
+    antlr4::tree::TerminalNode* SYM_COMMA(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  List_litContext* list_lit();
+
   class  LiteralContext : public antlr4::ParserRuleContext {
   public:
     LiteralContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -547,6 +569,7 @@ public:
     antlr4::tree::TerminalNode *FLOAT_LIT();
     antlr4::tree::TerminalNode *STR_LIT();
     Dict_litContext *dict_lit();
+    List_litContext *list_lit();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

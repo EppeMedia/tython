@@ -31,6 +31,10 @@ void TythonModule::initialize() {
     this->dict_create_func = new llvm::FunctionCallee();
     *(this->dict_create_func) = this->getOrInsertFunction("dict_create", dict_create_type);
 
+    llvm::FunctionType* list_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false); // todo: this and dict_create_types can be just seqalloc_types (and then these class member are no longer needed either)
+    this->list_create_func = new llvm::FunctionCallee();
+    *(this->list_create_func) = this->getOrInsertFunction("list_create", list_create_type);
+
     llvm::FunctionType* tython_print_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
     this->tython_print_func = new llvm::FunctionCallee();
     *(this->tython_print_func) = this->getOrInsertFunction("print", tython_print_type);

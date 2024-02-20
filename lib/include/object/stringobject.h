@@ -20,6 +20,7 @@ typedef struct string_object_t {
 
 #define IS_STRING(instance) (AS_OBJECT(instance)->type == &string_type)
 #define AS_STRING(instance) ((string_object*)(instance))
+#define GET_STRING(instance) (AS_STRING(instance->type->str(instance)))
 
 /**
  * Creates a string object for the specified c-style string and length. At most {length} characters of {str} are copied.
@@ -36,6 +37,13 @@ object* string_create(const char* cstr, size_t length);
  * @return Returns a number object instance whose value is the length of the specified string.
  */
 object* string_length(object* str);
+
+/**
+ * Utility function. Creates a (null-terminated) C-style string for the specified Tython string object.
+ * @param string_obj The string object to create a representation for.
+ * @return Returns a C-style string representation of the specified Tython string object.
+ */
+char* to_cstr(string_object* string_obj);
 
 #define TO_STRING(cstr, len) (string_create(cstr, len))
 

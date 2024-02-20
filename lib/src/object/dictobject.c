@@ -15,20 +15,6 @@ static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.
 }
 
-static char* to_cstr(string_object* string_obj) {
-
-    if (string_obj->str[string_obj->length - 1] == '\0') {
-        char* cstr = malloc(string_obj->length * sizeof(char));
-        strcpy(cstr, string_obj->str);
-        return cstr;
-    }
-
-    char* cstr = malloc((string_obj->length + 1) * sizeof(char));
-    memcpy(cstr, string_obj->str, string_obj->length);
-    cstr[string_obj->length] = '\0';
-    return cstr;
-}
-
 static object* dict_to_string(object* obj) {
 
     assert(IS_DICT(obj));
@@ -48,27 +34,26 @@ static object* dict_to_string(object* obj) {
         entries_string_length += AS_STRING(value_string)->length;
     }
 
-    // allocate memory for the final string, which includes two curly braces for the dict, a colon between each key and value, and a comma after each entry, ending with a null pointer
-    size_t separator_count = (dict_obj->size * 3) - 2; // the last entry is not followed by a comma and a space
-    size_t str_len = (entries_string_length * sizeof(char)) + 2 + (separator_count * sizeof(char)) + 1;
+    // allocate memory for the final string, which includes two curly braces for the dict, a colon and a space between each key and value, and a comma and space between each entry
+    size_t separator_count = (dict_obj->size * 4) - 2; // the last entry is not followed by a comma and a space
+    size_t str_len = (entries_string_length * sizeof(char)) + 2 + (separator_count * sizeof(char));
     char* string = malloc(str_len);
     string[0] = '{';
-    string[str_len - 2] = '}';
-    string[str_len - 1] = '\0';
+    string[str_len - 1] = '}';
 
     char* offset = string + 1;
     for (int i = 0; i < dict_obj->size; ++i) {
         dict_entry entry = dict_obj->entries[i];
 
         // copy the string representation of each entry
-        string_object* key_string = AS_STRING(entry.key->type->str(entry.key));
+        string_object* key_string = GET_STRING(entry.key);
         memcpy(offset, key_string->str, key_string->length);
         offset += key_string->length;
 
-        *offset = ':';
-        ++offset;
+        *offset++ = ':';
+        *offset++ = ' ';
 
-        string_object* value_string = AS_STRING(entry.value->type->str(entry.value));
+        string_object* value_string = GET_STRING(entry.value);
         memcpy(offset, value_string->str, value_string->length);
         offset += value_string->length;
 
@@ -110,7 +95,6 @@ static object* dict_length(object* obj) {
 
 object* dict_create(size_t size) {
 
-    // provision for the object header and entries
     dict_object* dict_obj = malloc(sizeof(dict_object));
 
     // initialize object header
@@ -157,7 +141,7 @@ type_object dict_type = {
 
         .base               = NULL,
         .instance_size      = sizeof(dict_object),
-        .item_size          = sizeof(dict_entry),   // todo: size of entry struct
+        .item_size          = sizeof(dict_entry),
 
         .rich_compare       = &dict_rich_compare,
         .str                = &dict_to_string,

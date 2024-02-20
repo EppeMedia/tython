@@ -38,6 +38,7 @@ public:
 
     std::any visitLiteral(TythonParser::LiteralContext *ctx) override;
     std::any visitDict_lit(TythonParser::Dict_litContext *ctx) override;
+    std::any visitList_lit(TythonParser::List_litContext *ctx) override;
 
     std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
     std::any visitBlock(TythonParser::BlockContext *ctx) override;

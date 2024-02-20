@@ -152,7 +152,21 @@ public:
      */
     llvm::Value* CreateObjectToString(llvm::Value* object);
 
+    /**
+     * Generates the instructions to create a dictionary object containing the {count} {entries}.
+     * @param count The number of entries the new dictionary should contain.
+     * @param entries The entries the dictionary should be initialized with.
+     * @return Returns a reference to the newly created dictionary object.
+     */
     llvm::Value* CreateDictLiteral(llvm::Value* count, std::vector<std::pair<llvm::Value*, llvm::Value*>>& entries);
+
+    /**
+     * Generates the instructions to create a list object containing the {count} {elements}.
+     * @param count The number of elements the new list should contain.
+     * @param elements The elements the list should be initialized with.
+     * @return Returns a reference to the newly created list object.
+     */
+    llvm::Value* CreateListLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
 
 };
 

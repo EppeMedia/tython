@@ -2,6 +2,7 @@
 #include "../../include/exception/CompileException.h"
 #include "type.h"
 #include "object/dictobject.h"
+#include "object/listobject.h"
 #include <cstddef>
 
 void TythonBuilder::init() {
@@ -282,7 +283,7 @@ llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<st
         size_t k_offset = (sizeof(dict_entry) * i) + offsetof(dict_entry, key);
         auto k_offset_value = llvm::ConstantInt::get(int64_t, k_offset);
         auto k_ptr_offset = this->CreateAdd(entries_start_int, k_offset_value, "key_offset");
-        auto k_ref = this->CreateIntToPtr(k_ptr_offset, ptr_t, "value_ref");
+        auto k_ref = this->CreateIntToPtr(k_ptr_offset, ptr_t, "key_ref");
 
         auto key_ptr = this->CreatePtrToInt(entry.first, int64_t, "key_ptr");
         this->CreateStore(key_ptr, k_ref);
@@ -297,4 +298,39 @@ llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<st
     }
 
     return dict_ref;
+}
+
+
+llvm::Value* TythonBuilder::CreateListLiteral(llvm::Value *count, std::vector<llvm::Value *> &elements) {
+
+    auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    auto f = this->module->list_create_func;
+    auto list_ref = this->CreateCall((llvm::Function*)f->getCallee(), {count }, "list_create");
+
+    // steal the elements reference off of the list object
+    size_t offset = offsetof(list_object, elements);
+    auto offset_value = llvm::ConstantInt::get(int64_t, offset);
+    auto ptr_loc = this->CreatePtrToInt(list_ref, int64_t);
+    auto ptr_offset = this->CreateAdd(ptr_loc, offset_value, "elements_offset");
+    auto entries_ref = this->CreateIntToPtr(ptr_offset, ptr_t, "elements_ref");
+
+    auto elements_start = this->CreateLoad(ptr_t, entries_ref, "elements_start");
+    auto elements_start_int = this->CreatePtrToInt(elements_start, int64_t, "elements_start_int");
+
+    for (int i = 0; i < elements.size(); ++i) {
+
+        // store the element
+        auto element = elements.at(i);
+
+        size_t e_offset = (sizeof(object*) * i);
+        auto e_offset_value = llvm::ConstantInt::get(int64_t, e_offset);
+        auto e_ptr_offset = this->CreateAdd(elements_start_int, e_offset_value, "element_offset");
+        auto e_ref = this->CreateIntToPtr(e_ptr_offset, ptr_t, "element_ref");
+
+        this->CreateStore(element, e_ref);
+    }
+
+    return list_ref;
 }

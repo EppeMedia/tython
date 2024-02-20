@@ -127,6 +127,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitList_lit(TythonParser::List_litContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLiteral(TythonParser::LiteralContext *ctx) override {
     return visitChildren(ctx);
   }

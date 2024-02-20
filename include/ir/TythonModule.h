@@ -19,6 +19,7 @@ private:
     llvm::FunctionCallee* int_create_func;
     llvm::FunctionCallee* string_create_func;
     llvm::FunctionCallee* dict_create_func;
+    llvm::FunctionCallee* list_create_func;
 
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* tython_print_func;
@@ -40,6 +41,8 @@ public:
             float_create_func(nullptr),
             int_create_func(nullptr),
             string_create_func(nullptr),
+            dict_create_func(nullptr),
+            list_create_func(nullptr),
             tython_print_func(nullptr),
             object_is_truthy_func(nullptr),
             function_shadow_symbol_table() {

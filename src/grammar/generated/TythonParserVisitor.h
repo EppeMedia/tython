@@ -75,6 +75,8 @@ public:
 
     virtual std::any visitDict_lit(TythonParser::Dict_litContext *context) = 0;
 
+    virtual std::any visitList_lit(TythonParser::List_litContext *context) = 0;
+
     virtual std::any visitLiteral(TythonParser::LiteralContext *context) = 0;
 
 

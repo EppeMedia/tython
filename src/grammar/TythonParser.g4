@@ -116,5 +116,6 @@ lval                : IDENTIFIER                                #lbl_identifier
 key_value_pair      : key=expression SYM_COL value=expression;
 
 dict_lit            : SYM_LBR (entries+=key_value_pair? | (entries+=key_value_pair? (SYM_COMMA entries+=key_value_pair)+)) SYM_RBR;
+list_lit            : SYM_LSQ (elements+=rval? | (elements+=rval? (SYM_COMMA elements+=rval)+)) SYM_RSQ;
 
-literal             : INT_LIT | FLOAT_LIT | STR_LIT | dict_lit;
+literal             : INT_LIT | FLOAT_LIT | STR_LIT | dict_lit | list_lit;
