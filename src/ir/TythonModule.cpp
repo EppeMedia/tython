@@ -38,7 +38,17 @@ void TythonModule::initialize() {
     llvm::FunctionType* tython_print_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
     this->tython_print_func = new llvm::FunctionCallee();
     *(this->tython_print_func) = this->getOrInsertFunction("print", tython_print_type);
-    registerProcedure((llvm::Function*)this->tython_print_func->getCallee(), "print"); // user accesable // todo: make a tython wrapper for this in the standard library module
+    registerProcedure((llvm::Function*)this->tython_print_func->getCallee(), "print"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_range_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, ptr_t }, false);
+    this->tython_range_func = new llvm::FunctionCallee();
+    *(this->tython_range_func) = this->getOrInsertFunction("range_create", tython_range_type);
+    registerProcedure((llvm::Function*)this->tython_range_func->getCallee(), "range"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_len_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+    this->tython_len_func = new llvm::FunctionCallee();
+    *(this->tython_len_func) = this->getOrInsertFunction("len", tython_range_type);
+    registerProcedure((llvm::Function*)this->tython_len_func->getCallee(), "len"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
     llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, true);
     this->object_is_truthy_func = new llvm::FunctionCallee();

@@ -5,6 +5,7 @@ ADD_LIBRARY(tython_lib STATIC
         object.c
         type.c
         object/integerobject.c
+        object/rangeobject.c
         object/floatobject.c
         object/stringobject.c
         object/boolobject.c

@@ -1,41 +1,43 @@
-#import io
-#
-#test = 1
-#
-#if test:
-#    print("Yes.")
-#else:
-#    print("No.")
-#
-#dict = {
-#        "mkey": "mvalue",
-#        "second_key": "second_value"
-#}
-#
-#if dict:
-#    print(dict["mkey"])
-#    print(dict["second_key"])
-#
-#arr = [
-#    "one",
-#    "two",
-#    "three",
-#    123,
-#    [
-#        "second list",
-#        {
-#            "and": "a dict!",
-#            "list": ["a list in a dict in a list???"]
-#        }
-#    ],
-#    "more stuff",
-#    -3.1415
-#]
-#
-#print(arr)
+import io
 
+test = 1
+
+if test:
+    print("Yes.")
+else:
+    print("No.")
+
+dict = {
+        "mkey": "mvalue",
+        "second_key": "second_value"
+}
+
+if dict:
+    print(dict["mkey"])
+    print(dict["second_key"])
+
+arr = [
+    "one",
+    "two",
+    "three",
+    123,
+    [
+        "second list",
+        {
+            "and": "a dict!",
+            "list": ["a list in a dict in a list in a list???"]
+        }
+    ],
+    "more stuff",
+    -3.1415
+]
+
+print(arr)
+print(len(arr))
+
+r = range(0, 10, 2)
 i = 0
 
-for i < 10:
-    print(i)
-    i = i + 1.5
+for i < len(r):
+    print(r[i])
+    i = i + 1

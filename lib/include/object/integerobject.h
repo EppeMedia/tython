@@ -17,8 +17,8 @@ typedef struct int_object_t {
 
 } int_object;
 
-#define IS_INT(instance) (instance->type == &int_type)
-#define AS_INT(instance) ((int_object*)instance)
+#define IS_INT(instance) ((instance)->type == &int_type)
+#define AS_INT(instance) ((int_object*)(instance))
 
 /**
  * Creates an integer object instance with the value set to {v}.

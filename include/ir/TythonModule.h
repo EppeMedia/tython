@@ -23,6 +23,8 @@ private:
 
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* tython_print_func;
+    llvm::FunctionCallee* tython_range_func;
+    llvm::FunctionCallee* tython_len_func;
 
     std::map<std::string, llvm::Function*> function_shadow_symbol_table;
 

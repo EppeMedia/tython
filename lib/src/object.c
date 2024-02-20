@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include <stdbool.h>
+#include <assert.h>
 
 void print(object* object) {
 
@@ -30,6 +31,16 @@ void print(object* object) {
     buf[buf_size - 1] = '\0';
 
     printf("%s\r\n", buf);
+}
+
+object* len(object* object) {
+
+    mapping_functions* mf = object->type->mapping_functions;
+
+    assert(mf && "Type error: attempted to call \"len\", but argument is not a mapping type!");
+    assert(mf->length && "Type error: the mapping type does not implement the length function.");
+
+    return mf->length(object);
 }
 
 // todo: instantiate a globally unique None object here
