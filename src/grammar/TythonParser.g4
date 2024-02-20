@@ -61,7 +61,8 @@ simple_statement    : expression
 simple_statements   : simple_statement (SYM_SEMCOL simple_statement)* SYM_SEMCOL? NEWLINE;
 
 compound_statement  : if_statement
-                    | function_def;
+                    | function_def
+                    | for_loop;
 
 assign_statement    : lval SYM_ASSIGN expression;
 return_statement    : KW_RETURN expression;
@@ -73,6 +74,9 @@ if_statement        : KW_IF expression SYM_COL
                         | (SYM_COL br_else=block)
                       )
                       )?;
+
+for_loop            : KW_FOR expression SYM_COL
+                        block;
 
 arguments           : args+=IDENTIFIER?
                     | args+=IDENTIFIER (SYM_COMMA args+=IDENTIFIER)+;

@@ -92,6 +92,9 @@ typedef struct number_functions_t {
     unary_f to_bool;
     unary_f to_int;
     unary_f to_float;
+
+    binary_f add; // adds one number to another
+    binary_f sub; // subtracts the right-hand argument from the first-hand argument
 } number_functions;
 
 /**

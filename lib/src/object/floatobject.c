@@ -65,17 +65,54 @@ static object* float_to_int(object* float_obj) {
 
     double v = AS_FLOAT(float_obj)->value;
 
-    return TO_INT((long)v);
+    return TO_INT((long long)v);
 }
 
 static object* identity(object* obj) {
     return obj;
 }
 
+static float_object* convert_to_float(object* obj) {
+
+    if (IS_FLOAT(obj)) {
+        return AS_FLOAT(obj);
+    }
+
+    number_functions* nfs = obj->type->number_functions;
+
+    // todo: type error
+    assert(nfs && nfs->to_float);
+
+    return AS_FLOAT(nfs->to_float(obj));
+}
+
+static object* float_add(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT(lhs_obj->value + rhs_obj->value);
+}
+
+static object* float_sub(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT(lhs_obj->value - rhs_obj->value);
+}
+
 static number_functions float_number_functions = {
     .to_bool            = &float_to_bool,
     .to_int             = &float_to_int,
     .to_float           = &identity,
+
+    .add                = &float_add,
+    .sub                = &float_sub,
 } ;
 
 type_object float_type = {

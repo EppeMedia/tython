@@ -53,6 +53,7 @@ KW_DEF              : 'def';
 KW_RETURN           : 'return';
 KW_IF               : 'if';
 KW_ELSE             : 'else';
+KW_FOR              : 'for';
 KW_WHILE            : 'while';
 KW_EXTERN           : 'extern';
 KW_IMPORT           : 'import';

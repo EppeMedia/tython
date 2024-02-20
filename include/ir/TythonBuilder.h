@@ -86,25 +86,12 @@ public:
     llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
 
     /**
-     * Generates the instructions to obtain a reference to the specified number_functions struct's to_bool function.
-     * @param number_functions_struct The number_functions struct for which to obtain the to_bool function pointer.
-     * @return Returns a reference to the to_bool function pointer of the specified number_functions struct
+     * Generates the instructions to numerically add two Tython objects.
+     * @param lhs The lhs object of the sum.
+     * @param rhs The rhs object of the sum.
+     * @return Returns a reference to the result of the sum of the specified lhs and rhs.
      */
-    llvm::Value* CreateGetNumberToBool(llvm::Value* number_functions_struct);
-
-    /**
-     * Generates the instructions to obtain a reference to the specified number_functions struct's to_int function.
-     * @param number_functions_struct The number_functions struct for which to obtain the to_int function pointer.
-     * @return Returns a reference to the to_int function pointer of the specified number_functions struct
-     */
-    llvm::Value* CreateGetNumberToInt(llvm::Value* number_functions_struct);
-
-    /**
-     * Generates the instructions to obtain a reference to the specified number_functions struct's to_float function.
-     * @param number_functions_struct The number_functions struct for which to obtain the to_float function pointer.
-     * @return Returns a reference to the to_float function pointer of the specified number_functions struct
-     */
-    llvm::Value* CreateGetNumberToFloat(llvm::Value* number_functions_struct);
+    llvm::Value* CreateTythonAdd(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
      * Generates the instructions to perform a rich comparison between to the specified objects.
@@ -144,13 +131,6 @@ public:
      * @return Returns a reference to the new string object.
      */
     llvm::Value* CreateStringObject(llvm::Value* cstr, llvm::Value* length);
-
-    /**
-     * Generates the instructions to create a string object representation for the specified object instance.
-     * @param object The object instance for which to create a string representation.
-     * @return Returns a string object representation for the specified object instance.
-     */
-    llvm::Value* CreateObjectToString(llvm::Value* object);
 
     /**
      * Generates the instructions to create a dictionary object containing the {count} {entries}.

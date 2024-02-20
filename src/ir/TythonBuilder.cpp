@@ -32,7 +32,8 @@ void TythonBuilder::initFirstClassTypes() {
         ptr_t,      // to_int   (function ptr)
         ptr_t,      // to_float (function ptr)
 
-        ptr_t,      // cmp_eq   (function ptr)
+        ptr_t,      // add      (function ptr)
+        ptr_t,      // sub      (function ptr)
     };
 
     this->number_functions_type = llvm::StructType::get(this->getContext(), number_functions_types, "Object.Number.Functions");
@@ -118,34 +119,26 @@ llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *object_instance) {
     return (llvm::Value*)this->CreateCall(*this->module->object_is_truthy_func, { object_instance }, "object_is_truthy");
 }
 
-llvm::Value *TythonBuilder::CreateGetNumberToBool(llvm::Value *number_functions_struct) {
+llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
     const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto slot = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 3);
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
-}
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
 
-llvm::Value *TythonBuilder::CreateGetNumberToInt(llvm::Value *number_functions_struct) {
+    const auto lhs_number_functions_ref = this->CreateGetNumberFunctions(lhs_type);
+    const auto lhs_number_functions = this->CreateLoad(ptr_t, lhs_number_functions_ref);
 
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    auto add_f_ref = this->CreateGEP(this->number_functions_type, lhs_number_functions, {zero, slot });
+    auto add_f = this->CreateLoad(ptr_t, add_f_ref, "add_f");
 
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto slot = llvm::ConstantInt::get(int32_t, 1);
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
-}
-
-llvm::Value *TythonBuilder::CreateGetNumberToFloat(llvm::Value *number_functions_struct) {
-
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto slot = llvm::ConstantInt::get(int32_t, 2);
-
-    return this->CreateGEP(this->number_functions_type, number_functions_struct, {zero, slot });
+    return this->CreateCall(function_type, add_f, { lhs, rhs }, "add");
 }
 
 llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op) {
@@ -219,23 +212,6 @@ llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *l
     return (llvm::Value*)this->CreateCall(*this->module->string_create_func, { cstr, length }, "stringobject");
 }
 
-llvm::Value *TythonBuilder::CreateObjectToString(llvm::Value *object) {
-
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto eight = llvm::ConstantInt::get(int32_t, 8);
-
-    const auto typeobject = this->CreateGetTypeObject(object);
-    // todo: we might need to load this
-    auto function_ptr = this->CreateGEP(this->typeobject_type, typeobject, { zero, eight });
-
-    // str is a unary function
-    auto function_type = llvm::FunctionType::get(this->object_type, { this->object_type }, false);
-
-    return (llvm::Value*)this->CreateCall(function_type, function_ptr, { object }, "str");
-}
-
 llvm::Value* TythonBuilder::CreateVariable(std::string &name) {
 
     if (this->current_namespace->findVariable(name)) {
@@ -299,7 +275,6 @@ llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<st
 
     return dict_ref;
 }
-
 
 llvm::Value* TythonBuilder::CreateListLiteral(llvm::Value *count, std::vector<llvm::Value *> &elements) {
 

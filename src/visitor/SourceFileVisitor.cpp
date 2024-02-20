@@ -245,6 +245,38 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
     return nullptr;
 }
 
+std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
+
+    llvm::Function* f = builder->GetInsertBlock()->getParent();
+
+    llvm::BasicBlock* br_pre = llvm::BasicBlock::Create(this->builder->getContext(), "pre_for", f, nullptr);
+    llvm::BasicBlock* br_for = llvm::BasicBlock::Create(this->builder->getContext(), "for", f, nullptr);
+    llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_for", f, nullptr);
+
+    this->builder->CreateBr(br_pre);
+    this->builder->SetInsertPoint(br_pre);
+
+    auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    auto test = this->builder->CreateObjectIsTruthy(expression_value); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    const auto zero = llvm::ConstantInt::get(int32_t, 0, true);
+
+    const auto check = this->builder->CreateICmpSGT(test, zero);
+
+    this->builder->CreateCondBr(check, br_for, br_end);
+
+    this->builder->SetInsertPoint(br_for);
+    visit(ctx->block());
+
+    this->builder->CreateBr(br_pre);
+
+    this->builder->SetInsertPoint(br_end);
+
+    return nullptr;
+}
+
 std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
 
     this->builder->nestNamespace();
@@ -442,6 +474,10 @@ llvm::Value* SourceFileVisitor::visitBinaryOperator(TythonParser::Binary_operato
         return visitInequalityOperator(ctx->inequality_operator(), lhs, rhs);
     }
 
+    if (ctx->arithmetic_operator()) {
+        return visitArithmeticOperator(ctx->arithmetic_operator(), lhs, rhs);
+    }
+
     throw NotImplemented("Unimplemented binary operator \"" + ctx->getText() + "\"!");
 }
 
@@ -467,4 +503,14 @@ llvm::Value* SourceFileVisitor::visitInequalityOperator(TythonParser::Inequality
     }
 
     return this->builder->CreateRichCmp(lhs, rhs, op);
+}
+
+llvm::Value *SourceFileVisitor::visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value *lhs,
+                                                        llvm::Value *rhs) {
+
+    if (ctx->SYM_PLUS()) {
+        return this->builder->CreateTythonAdd(lhs, rhs);
+    }
+
+    throw NotImplemented("Unimplemented arithmetic operator \"" + ctx->getText() + "\"!");
 }

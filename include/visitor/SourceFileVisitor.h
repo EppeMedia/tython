@@ -40,8 +40,12 @@ public:
     std::any visitDict_lit(TythonParser::Dict_litContext *ctx) override;
     std::any visitList_lit(TythonParser::List_litContext *ctx) override;
 
-    std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
     std::any visitBlock(TythonParser::BlockContext *ctx) override;
+
+    std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
+
+    std::any visitFor_loop(TythonParser::For_loopContext *ctx) override;
+
     std::any visitFunction_def(TythonParser::Function_defContext *ctx) override;
 
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
@@ -56,6 +60,7 @@ public:
 
     llvm::Value* visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
 
 };
 

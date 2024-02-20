@@ -13,26 +13,26 @@ class  TythonParser : public antlr4::Parser {
 public:
   enum {
     INDENT = 1, DEDENT = 2, KW_DEF = 3, KW_RETURN = 4, KW_IF = 5, KW_ELSE = 6, 
-    KW_WHILE = 7, KW_EXTERN = 8, KW_IMPORT = 9, KW_SELF = 10, SYM_LPAR = 11, 
-    SYM_RPAR = 12, SYM_LSQ = 13, SYM_RSQ = 14, SYM_LBR = 15, SYM_RBR = 16, 
-    SYM_COL = 17, SYM_SEMCOL = 18, SYM_COMMA = 19, SYM_STMNT_DELIMITER = 20, 
-    SYM_ASSIGN = 21, SYM_NEQ = 22, SYM_LTE = 23, SYM_LT = 24, SYM_EQ = 25, 
-    SYM_GT = 26, SYM_GTE = 27, SYM_AND = 28, SYM_OR = 29, SYM_PLUS = 30, 
-    SYM_MINUS = 31, SYM_MULT = 32, SYM_DIV = 33, SYM_EXP = 34, SYM_DOT = 35, 
-    SYM_ELLIPS = 36, SYM_COMMENT = 37, SYM_COMMENT_START = 38, IDENTIFIER = 39, 
-    INT_LIT = 40, FLOAT_LIT = 41, STR_LIT = 42, TRUE_LIT = 43, FALSE_LIT = 44, 
-    NEWLINE = 45, WS = 46, SYM_COMMENT_END = 47, COMMENT_CONTENT = 48
+    KW_FOR = 7, KW_WHILE = 8, KW_EXTERN = 9, KW_IMPORT = 10, KW_SELF = 11, 
+    SYM_LPAR = 12, SYM_RPAR = 13, SYM_LSQ = 14, SYM_RSQ = 15, SYM_LBR = 16, 
+    SYM_RBR = 17, SYM_COL = 18, SYM_SEMCOL = 19, SYM_COMMA = 20, SYM_STMNT_DELIMITER = 21, 
+    SYM_ASSIGN = 22, SYM_NEQ = 23, SYM_LTE = 24, SYM_LT = 25, SYM_EQ = 26, 
+    SYM_GT = 27, SYM_GTE = 28, SYM_AND = 29, SYM_OR = 30, SYM_PLUS = 31, 
+    SYM_MINUS = 32, SYM_MULT = 33, SYM_DIV = 34, SYM_EXP = 35, SYM_DOT = 36, 
+    SYM_ELLIPS = 37, SYM_COMMENT = 38, SYM_COMMENT_START = 39, IDENTIFIER = 40, 
+    INT_LIT = 41, FLOAT_LIT = 42, STR_LIT = 43, TRUE_LIT = 44, FALSE_LIT = 45, 
+    NEWLINE = 46, WS = 47, SYM_COMMENT_END = 48, COMMENT_CONTENT = 49
   };
 
   enum {
     RuleProgram = 0, RuleImport_statement = 1, RuleImport_path = 2, RuleFunction_def = 3, 
     RuleBlock = 4, RuleStatement = 5, RuleSimple_statement = 6, RuleSimple_statements = 7, 
     RuleCompound_statement = 8, RuleAssign_statement = 9, RuleReturn_statement = 10, 
-    RuleIf_statement = 11, RuleArguments = 12, RuleParameters = 13, RuleCall_expression = 14, 
-    RuleExpression = 15, RuleBinary_operator = 16, RuleInequality_operator = 17, 
-    RuleLogic_operator = 18, RuleArithmetic_operator = 19, RuleRval = 20, 
-    RuleLval = 21, RuleKey_value_pair = 22, RuleDict_lit = 23, RuleList_lit = 24, 
-    RuleLiteral = 25
+    RuleIf_statement = 11, RuleFor_loop = 12, RuleArguments = 13, RuleParameters = 14, 
+    RuleCall_expression = 15, RuleExpression = 16, RuleBinary_operator = 17, 
+    RuleInequality_operator = 18, RuleLogic_operator = 19, RuleArithmetic_operator = 20, 
+    RuleRval = 21, RuleLval = 22, RuleKey_value_pair = 23, RuleDict_lit = 24, 
+    RuleList_lit = 25, RuleLiteral = 26
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -64,6 +64,7 @@ public:
   class Assign_statementContext;
   class Return_statementContext;
   class If_statementContext;
+  class For_loopContext;
   class ArgumentsContext;
   class ParametersContext;
   class Call_expressionContext;
@@ -220,6 +221,7 @@ public:
     virtual size_t getRuleIndex() const override;
     If_statementContext *if_statement();
     Function_defContext *function_def();
+    For_loopContext *for_loop();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -279,6 +281,22 @@ public:
   };
 
   If_statementContext* if_statement();
+
+  class  For_loopContext : public antlr4::ParserRuleContext {
+  public:
+    For_loopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *KW_FOR();
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *SYM_COL();
+    BlockContext *block();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  For_loopContext* for_loop();
 
   class  ArgumentsContext : public antlr4::ParserRuleContext {
   public:

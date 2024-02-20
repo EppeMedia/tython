@@ -43,6 +43,8 @@ public:
 
     virtual std::any visitIf_statement(TythonParser::If_statementContext *context) = 0;
 
+    virtual std::any visitFor_loop(TythonParser::For_loopContext *context) = 0;
+
     virtual std::any visitArguments(TythonParser::ArgumentsContext *context) = 0;
 
     virtual std::any visitParameters(TythonParser::ParametersContext *context) = 0;

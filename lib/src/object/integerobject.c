@@ -67,10 +67,51 @@ static object* int_to_float(object* int_obj) {
     return TO_FLOAT((double)v);
 }
 
+static int_object* convert_to_int(object* obj) {
+
+    if (IS_INT(obj)) {
+        return AS_INT(obj);
+    }
+
+    number_functions* nfs = obj->type->number_functions;
+
+    // todo: type error
+    assert(nfs && nfs->to_int);
+
+    return AS_INT(nfs->to_int(obj));
+}
+
+static object* int_add(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value + rhs_obj->value);
+}
+
+static object* int_sub(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs) && IS_INT(rhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value - rhs_obj->value);
+}
+
 static number_functions int_number_functions = {
         .to_bool            = &int_to_bool,
         .to_int             = &identity,
         .to_float           = &int_to_float,
+
+        .add                = &int_add,
+        .sub                = &int_sub,
 } ;
 
 type_object int_type = {
@@ -94,4 +135,3 @@ type_object int_type = {
         .mapping_functions  = NULL,
         .sequence_functions = NULL,                     // not a sequence type
 };
-
