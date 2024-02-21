@@ -97,16 +97,18 @@ SYM_ELLIPS          : '...';
 SYM_COMMENT         : '#' ~[\r\n]* -> skip;
 SYM_COMMENT_START   : '/*' -> pushMode(comment_block), skip;
 
+// identifier-like literals
+TRUE_LIT            : 'true';
+FALSE_LIT           : 'false';
+NONE_LIT            : 'None';
 
 // references
 IDENTIFIER          : ([a-zA-Z] | '_')+([a-zA-Z0-9] | '_')*;
 
-// literals
+// non-identifier-like literals
 INT_LIT             : '-'?[0-9]+;
 FLOAT_LIT           : INT_LIT? '.' [0-9]+;
 STR_LIT             : '"' ~'"'+ '"';
-TRUE_LIT            : 'true';
-FALSE_LIT           : 'false';
 
 NEWLINE             : ({this->atStartOfInput()}? WS | ( '\r'? '\n' | '\r' | '\f') WS?) {this->onNewLine();};
 WS                  : [ \t]+ -> channel(HIDDEN);

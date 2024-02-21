@@ -20,8 +20,9 @@ public:
     SYM_LT = 26, SYM_EQ = 27, SYM_GT = 28, SYM_GTE = 29, SYM_AND = 30, SYM_OR = 31, 
     SYM_PLUS = 32, SYM_MINUS = 33, SYM_MULT = 34, SYM_DIV = 35, SYM_EXP = 36, 
     SYM_DOT = 37, SYM_ELLIPS = 38, SYM_COMMENT = 39, SYM_COMMENT_START = 40, 
-    IDENTIFIER = 41, INT_LIT = 42, FLOAT_LIT = 43, STR_LIT = 44, TRUE_LIT = 45, 
-    FALSE_LIT = 46, NEWLINE = 47, WS = 48, SYM_COMMENT_END = 49, COMMENT_CONTENT = 50
+    TRUE_LIT = 41, FALSE_LIT = 42, NONE_LIT = 43, IDENTIFIER = 44, INT_LIT = 45, 
+    FLOAT_LIT = 46, STR_LIT = 47, NEWLINE = 48, WS = 49, SYM_COMMENT_END = 50, 
+    COMMENT_CONTENT = 51
   };
 
   enum {
@@ -588,6 +589,7 @@ public:
     antlr4::tree::TerminalNode *INT_LIT();
     antlr4::tree::TerminalNode *FLOAT_LIT();
     antlr4::tree::TerminalNode *STR_LIT();
+    antlr4::tree::TerminalNode *NONE_LIT();
     Dict_litContext *dict_lit();
     List_litContext *list_lit();
 

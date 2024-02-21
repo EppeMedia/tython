@@ -129,11 +129,11 @@ static object* list_create_iterator(object* obj) {
     return AS_OBJECT(it);
 }
 
-static number_functions dict_number_functions = {
+static number_functions list_number_functions = {
         .to_bool = &list_to_bool
 };
 
-static mapping_functions dict_mapping_functions = {
+static mapping_functions list_mapping_functions = {
         .length     = &list_length,
         .subscript  = &list_subscript,
 };
@@ -155,8 +155,8 @@ type_object list_type = {
         .rich_compare       = &list_rich_compare,
         .str                = &list_to_string,
 
-        .number_functions   = &dict_number_functions,
-        .mapping_functions  = &dict_mapping_functions,
+        .number_functions   = &list_number_functions,
+        .mapping_functions  = &list_mapping_functions,
         .sequence_functions = NULL,
 
         .create_iterator    = &list_create_iterator,

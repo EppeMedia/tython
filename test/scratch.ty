@@ -52,3 +52,42 @@ for k in range(3, 5, 1):
 
 for k in ["hi", "there", {"key": "value"}, "world!"]:
     print(k)
+
+print("---------------------")
+print("** Doing fibonacci **")
+print("---------------------")
+
+def Fibonacci(n):
+
+    # Check if input is 0 then it will
+    # print incorrect input
+    if n < 0:
+        print("Incorrect input")
+
+    # Check if n is 0
+    # then it will return 0
+    if n == 0:
+        return 0
+
+    # Check if n is 1,2
+    # it will return 1
+    if n == 1:
+        return 1
+    if n == 2:
+        return 1
+
+    return Fibonacci(n - 1) + Fibonacci(n - 2)
+
+# Driver Program
+print(Fibonacci(9))
+
+def foo(a):
+    print(a)
+
+r = foo("Hello World!")
+print(r)
+
+if r == None:
+    print("R is None :)")
+if r != None:
+    print("Big sad...")

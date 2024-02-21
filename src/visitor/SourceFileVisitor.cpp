@@ -130,6 +130,10 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
         return this->builder->CreateStringObject(str, length);
 
+    } else if (ctx->NONE_LIT()) {
+
+        return this->builder->none_object_instance;
+
     } else if (ctx->dict_lit()) {
 
         // delegate to the dictionary literal handler
@@ -331,9 +335,8 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
     this->builder->nestNamespace();
 
-    // function declarations are fully opaque; we only know that it may return something, and that it takes n variable arguments
-    // todo: check if there is any returns, then return (variable) ptr type, otherwise return void.
-    auto return_type = llvm::Type::getVoidTy(this->builder->getContext());
+    // function declarations are fully opaque; we only know that it will return an object (may be None), and that it takes either at most n, or a variable number of arguments
+    auto return_type = llvm::PointerType::get(this->builder->object_type, 0);
     auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
 
     std::vector<llvm::Type*> arg_types;
@@ -347,7 +350,6 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     llvm::FunctionType* ft = llvm::FunctionType::get(return_type, arg_types, isVarArgs);
     auto fn = llvm::Function::Create(ft, llvm::GlobalValue::CommonLinkage, identifier, this->module);
 
-    // todo: this return type should depend on any return statements in the content of the body
     this->module->registerProcedure(fn, identifier);
 
     auto old_bb = this->builder->GetInsertBlock();
@@ -363,14 +365,16 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
 
     visitBlock(ctx->block());
 
-    auto epilogue = llvm::BasicBlock::Create(this->builder->getContext(), "epilogue", fn);
-    this->builder->CreateBr(epilogue);
-    this->builder->SetInsertPoint(epilogue);
-
-    // todo: currently, the block is always "epilogue", and that block has no content a all (the check below is trivially true)
-    // check if we have a return statement
+    // check if we do not have a return statement
     if (!this->builder->GetInsertBlock()->getTerminator()) {
-        this->builder->CreateRetVoid();
+
+        // create implicit return None
+
+        auto epilogue = llvm::BasicBlock::Create(this->builder->getContext(), "epilogue", fn);
+        this->builder->CreateBr(epilogue);
+        this->builder->SetInsertPoint(epilogue);
+
+        this->builder->CreateRet(this->builder->none_object_instance);
     }
 
     this->builder->popNamespace();
@@ -378,6 +382,13 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     this->builder->SetInsertPoint(old_bb);
 
     return nullptr;
+}
+
+std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statementContext *ctx) {
+
+    const auto ret_val = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    return this->builder->CreateRet(ret_val);
 }
 
 std::any SourceFileVisitor::visitCall_expression(TythonParser::Call_expressionContext *ctx) {
@@ -546,6 +557,10 @@ llvm::Value *SourceFileVisitor::visitArithmeticOperator(TythonParser::Arithmetic
 
     if (ctx->SYM_PLUS()) {
         return this->builder->CreateTythonAdd(lhs, rhs);
+    }
+
+    if (ctx->SYM_MINUS()) {
+        return this->builder->CreateTythonSub(lhs, rhs);
     }
 
     throw NotImplemented("Unimplemented arithmetic operator \"" + ctx->getText() + "\"!");

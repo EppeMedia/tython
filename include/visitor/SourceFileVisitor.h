@@ -47,6 +47,7 @@ public:
     std::any visitFor_loop(TythonParser::For_loopContext *ctx) override;
 
     std::any visitFunction_def(TythonParser::Function_defContext *ctx) override;
+    std::any visitReturn_statement(TythonParser::Return_statementContext *ctx) override;
 
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;

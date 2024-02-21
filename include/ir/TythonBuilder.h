@@ -26,6 +26,8 @@ private:
     llvm::StructType* number_functions_type;
     llvm::StructType* mapping_functions_type;
 
+    llvm::Value* none_object_instance;
+
     void init();
     void initFirstClassTypes();
 
@@ -50,8 +52,10 @@ public:
                                                                 current_namespace(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
+                                                                dict_entry_type(nullptr),
                                                                 number_functions_type(nullptr),
-                                                                mapping_functions_type(nullptr) {
+                                                                mapping_functions_type(nullptr),
+                                                                none_object_instance(nullptr) {
         init();
     };
 
@@ -92,6 +96,14 @@ public:
      * @return Returns a reference to the result of the sum of the specified lhs and rhs.
      */
     llvm::Value* CreateTythonAdd(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
+ * Generates the instructions to numerically subtract two Tython objects.
+ * @param lhs The lhs object of the subtraction.
+ * @param rhs The rhs object of the subtraction.
+ * @return Returns a reference to the result of the subtraction of the specified lhs and rhs.
+ */
+    llvm::Value* CreateTythonSub(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
      * Generates the instructions to perform a rich comparison between to the specified objects.

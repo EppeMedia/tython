@@ -79,6 +79,9 @@ void TythonBuilder::initFirstClassTypes() {
     };
 
     this->dict_entry_type = llvm::StructType::create(this->getContext(), dict_entry_types, "DictEntry");
+
+    // external symbols (fields)
+    this->none_object_instance = new llvm::GlobalVariable(*this->module, this->object_type, true, llvm::GlobalValue::ExternalLinkage, nullptr, "none_instance", nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, true);
 }
 
 Namespace *TythonBuilder::nestNamespace() {
@@ -143,6 +146,29 @@ llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
     return this->CreateCall(function_type, add_f, { lhs, rhs }, "add");
+}
+
+
+llvm::Value *TythonBuilder::CreateTythonSub(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 4);
+
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
+
+    const auto lhs_number_functions_ref = this->CreateGetNumberFunctions(lhs_type);
+    const auto lhs_number_functions = this->CreateLoad(ptr_t, lhs_number_functions_ref);
+
+    auto add_f_ref = this->CreateGEP(this->number_functions_type, lhs_number_functions, {zero, slot });
+    auto add_f = this->CreateLoad(ptr_t, add_f_ref, "sub_f");
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
+
+    return this->CreateCall(function_type, add_f, { lhs, rhs }, "sub");
 }
 
 llvm::Value *TythonBuilder::CreateGetIterator(llvm::Value *sequence) {
