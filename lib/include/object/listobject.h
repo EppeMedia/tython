@@ -11,7 +11,6 @@
 extern type_object list_type;
 
 typedef struct list_object_t {
-
     ObjectHead;
 
     size_t size;
@@ -19,8 +18,21 @@ typedef struct list_object_t {
 
 } list_object;
 
+extern type_object list_iterator_type;
+
+typedef struct list_iterator_object_t {
+    ObjectHead;
+
+    object* idx;
+    list_object* list_obj;
+
+} list_iterator_object;
+
 #define IS_LIST(obj) (AS_OBJECT(obj)->type == &list_type)
 #define AS_LIST(obj) ((list_object*)(obj))
+
+#define IS_LIST_ITERATOR(obj) (AS_OBJECT(obj)->type == &list_iterator_type)
+#define AS_LIST_ITERATOR(obj) ((list_iterator_object*)(obj))
 
 /**
  * Creates a new list object, provisioning for {size} elements.

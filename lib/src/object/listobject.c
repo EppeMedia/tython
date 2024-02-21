@@ -115,6 +115,20 @@ static object* list_to_bool(object* obj) {
     return TYTHON_FALSE;
 }
 
+static object* list_create_iterator(object* obj) {
+
+    assert(IS_LIST(obj));
+
+    list_object* list_obj = AS_LIST(obj);
+
+    list_iterator_object* it = AS_LIST_ITERATOR(list_iterator_type.alloc(&list_iterator_type));
+
+    it->idx = TO_INT(0);
+    it->list_obj = list_obj;
+
+    return AS_OBJECT(it);
+}
+
 static number_functions dict_number_functions = {
         .to_bool = &list_to_bool
 };
@@ -144,4 +158,67 @@ type_object list_type = {
         .number_functions   = &dict_number_functions,
         .mapping_functions  = &dict_mapping_functions,
         .sequence_functions = NULL,
+
+        .create_iterator    = &list_create_iterator,
 };
+
+static object* list_iterator_next(object* obj) {
+
+    assert(IS_LIST_ITERATOR(obj));
+
+    list_iterator_object* it = AS_LIST_ITERATOR(obj);
+
+    if (AS_INT(it->idx)->value >= it->list_obj->size) {
+        // this iterator has run off the end
+        return NULL; // todo: None?
+    }
+
+    object* e = list_subscript(AS_OBJECT(it->list_obj), it->idx);
+
+    // increment index
+    it->idx = TO_INT(AS_INT(it->idx)->value + 1);
+
+    return e;
+}
+
+static object* list_iterator_to_bool(object* obj) {
+
+    assert(IS_LIST_ITERATOR(obj));
+
+    list_iterator_object* it = AS_LIST_ITERATOR(obj);
+
+    if (AS_INT(it->idx)->value >= it->list_obj->size) {
+        return TYTHON_FALSE;
+    }
+
+    return TYTHON_TRUE;
+}
+
+static number_functions list_iterator_number_functions = {
+        .to_bool            = &list_iterator_to_bool,
+};
+
+type_object list_iterator_type = {
+        .obj_base = {
+                .identity   = &list_iterator_type.obj_base,
+                .type       = &type_type,
+        },
+
+        .alloc              = &default_alloc,
+        .seqalloc           = NULL,
+
+        .base               = NULL,
+        .instance_size      = sizeof(list_iterator_object),
+        .item_size          = 0,                        // not a sequence type
+
+        .rich_compare       = NULL,
+        .str                = NULL,
+        .hash               = NULL,
+
+        .number_functions   = &list_iterator_number_functions,
+        .mapping_functions  = NULL,
+        .sequence_functions = NULL,                     // not a sequence type
+
+        .iterator_next      = &list_iterator_next,
+};
+
