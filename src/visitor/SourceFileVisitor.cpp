@@ -253,23 +253,59 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     llvm::BasicBlock* br_for = llvm::BasicBlock::Create(this->builder->getContext(), "for", f, nullptr);
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_for", f, nullptr);
 
-    this->builder->CreateBr(br_pre);
-    this->builder->SetInsertPoint(br_pre);
+    if (ctx->KW_IN()) {
 
-    auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
+        // create or obtain the induction variable
+        const auto it_name = ctx->IDENTIFIER()->getText();
+        llvm::Value* it_var;
 
-    auto test = this->builder->CreateObjectIsTruthy(expression_value); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+        if (!(it_var = this->builder->current_namespace->findVariable(it_name))) {
+            it_var = this->builder->CreateVariable(it_name);
+        }
 
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
-    const auto zero = llvm::ConstantInt::get(int32_t, 0, true);
+        // obtain an iterator for the iterable
+        const auto iterable = any_cast<llvm::Value*>(visit(ctx->expression()));
+        const auto it = this->builder->CreateGetIterator(iterable);
 
-    const auto check = this->builder->CreateICmpSGT(test, zero);
+        // start pre header
+        this->builder->CreateBr(br_pre);
+        this->builder->SetInsertPoint(br_pre);
 
-    this->builder->CreateCondBr(check, br_for, br_end);
+        // test the iterator state, not the iterator value (which often starts at zero, which would be falsy)
+        auto test = this->builder->CreateObjectIsTruthy(it); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+
+        // increment iterator, obtains stale value
+        auto it_value = this->builder->CallIteratorNext(it);
+
+        // bind the stale iterator value to the induction variable
+        this->builder->CreateStore(it_value, it_var);
+
+        const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+        const auto zero = llvm::ConstantInt::get(int32_t, 0, true);
+
+        const auto check = this->builder->CreateICmpSGT(test, zero);
+
+        this->builder->CreateCondBr(check, br_for, br_end);
+
+    } else {
+
+        this->builder->CreateBr(br_pre);
+        this->builder->SetInsertPoint(br_pre);
+
+        auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+        auto test = this->builder->CreateObjectIsTruthy(expression_value); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+
+        const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+        const auto zero = llvm::ConstantInt::get(int32_t, 0, true);
+
+        const auto check = this->builder->CreateICmpSGT(test, zero);
+
+        this->builder->CreateCondBr(check, br_for, br_end);
+    }
 
     this->builder->SetInsertPoint(br_for);
     visit(ctx->block());
-
     this->builder->CreateBr(br_pre);
 
     this->builder->SetInsertPoint(br_end);

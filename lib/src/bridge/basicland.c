@@ -3,23 +3,23 @@
 //
 
 #include <assert.h>
+#include <stdio.h>
 #include "object/boolobject.h"
 #include "bridge/basicland.h"
 
 bool object_is_truthy(object* obj) {
 
-    const number_functions* nf = obj->type->number_functions;
-
-    if (nf && nf->to_bool) {
-
-        object* bool_obj = (*nf->to_bool)(obj);
-
-        assert(IS_BOOL(bool_obj));
-
-        return AS_BOOL(bool_obj)->value;
+    if (!obj) {
+        return false;
     }
 
-    // todo: throw unsupported error
+    const number_functions* nf = obj->type->number_functions;
 
-    return false;
+    assert(nf && nf->to_bool && "Type error: boolean conversion not implemented on this type!");
+
+    object* bool_obj = (*nf->to_bool)(obj);
+
+    assert(IS_BOOL(bool_obj));
+
+    return AS_BOOL(bool_obj)->value;
 }

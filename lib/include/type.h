@@ -15,6 +15,8 @@
 #define TYTHON_TYPE_SLOT_RICH_COMPARE       7
 #define TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS   10
 #define TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS  11
+#define TYTHON_TYPE_SLOT_ITERATOR_CREATE    13
+#define TYTHON_TYPE_SLOT_ITERATOR_NEXT      14
 
 /*
  * The following OP codes are for rich comparisons between objects. This corresponds to infix boolean comparisons like '==', '!=', '>=', etc.<br>
@@ -145,6 +147,12 @@ typedef struct type_t {
     struct number_functions_t* number_functions;
     struct mapping_functions_t* mapping_functions;
     struct sequence_functions_t* sequence_functions;
+
+    /**
+     * Iterator functions.
+     */
+    unary_f create_iterator;        // creates an iterator for this type
+    unary_f iterator_next;          // the iterator increment function, if this type is an iterator
 
 } type_object;
 

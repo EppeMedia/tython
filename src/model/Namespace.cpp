@@ -14,7 +14,7 @@ llvm::Value* Namespace::findVariable(const std::string& name) {
     return nullptr;
 }
 
-void Namespace::registerVariable(std::string& name, llvm::Value* value) {
+void Namespace::registerVariable(const std::string& name, llvm::Value* value) {
 
     if (findVariable(name)) {
         throw CompileException("Attempt to register variable with existing name in scope!");

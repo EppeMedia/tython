@@ -60,7 +60,7 @@ public:
      * @param name The name of the variable to create.
      * @return Returns the newly created variable.
      */
-    llvm::Value* CreateVariable(std::string& name);
+    llvm::Value* CreateVariable(const std::string& name);
 
     /**
      * Generates the instructions to obtain a reference to the typeobject instance of the specified object instance.
@@ -109,6 +109,20 @@ public:
      * @return Returns a reference to the value associated with the specified key on the specified object.
      */
     llvm::Value* CreateSubscript(llvm::Value* object, llvm::Value* key);
+
+    /**
+     * Generates the instructions to obtain a reference to a new iterator for the specified sequence object reference.
+     * @param sequence The sequence to obtain a new iterator for.
+     * @return Returns a reference to a new iterator of the specified sequence.
+     */
+    llvm::Value* CreateGetIterator(llvm::Value* sequence);
+
+    /**
+     * Generates the instructions to increment the specified iterator reference.
+     * @param it The iterator to increment.
+     * @return Returns the (stale) value of the iterator before the increment.
+     */
+    llvm::Value* CallIteratorNext(llvm::Value* it);
 
     /**
      * Generates the instructions to create a new integer object instance for the specified integer value.

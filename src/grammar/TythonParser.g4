@@ -75,7 +75,7 @@ if_statement        : KW_IF expression SYM_COL
                       )
                       )?;
 
-for_loop            : KW_FOR expression SYM_COL
+for_loop            : KW_FOR (IDENTIFIER KW_IN)? expression SYM_COL
                         block;
 
 arguments           : args+=IDENTIFIER?
@@ -114,7 +114,6 @@ rval                : literal
 
 lval                : IDENTIFIER                                #lbl_identifier
                     | IDENTIFIER SYM_LSQ expression SYM_RSQ     #lbl_key_access
-//                    | instance=lval (SYM_DOT attribute=lval)    #lbl_attribute_access
                     ;
 
 key_value_pair      : key=expression SYM_COL value=expression;

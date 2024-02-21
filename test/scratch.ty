@@ -41,3 +41,11 @@ i = 0
 for i < len(r):
     print(r[i])
     i = i + 1
+
+print("-------")
+
+for k in r:
+    print(k)
+
+for k in range(3, 5, 1):
+    print(k)

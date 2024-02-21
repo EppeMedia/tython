@@ -65,6 +65,10 @@ void TythonBuilder::initFirstClassTypes() {
 
         llvm::PointerType::get(number_functions_type, 0),      // number functions (struct pointer)
         ptr_t,      // mapping functions (struct pointer)
+        ptr_t,      // sequence functions
+
+        ptr_t,      // create iterator (unary function pointer)
+        ptr_t,      // iterator next (unary function pointer)
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
@@ -141,6 +145,44 @@ llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) 
     return this->CreateCall(function_type, add_f, { lhs, rhs }, "add");
 }
 
+llvm::Value *TythonBuilder::CreateGetIterator(llvm::Value *sequence) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto seq_type_ref = this->CreateGetTypeObject(sequence);
+    const auto seq_type = this->CreateLoad(ptr_t, seq_type_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_ITERATOR_CREATE);
+
+    auto it_create_ref = this->CreateGEP(this->typeobject_type, seq_type, {zero, slot });
+
+    auto it_create_f = this->CreateLoad(ptr_t, it_create_ref);
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+
+    return this->CreateCall(function_type, it_create_f, { sequence }, "it_create");
+}
+
+llvm::Value *TythonBuilder::CallIteratorNext(llvm::Value *it) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto it_type_ref = this->CreateGetTypeObject(it);
+    const auto it_type = this->CreateLoad(ptr_t, it_type_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_ITERATOR_NEXT);
+
+    auto it_next_ref = this->CreateGEP(this->typeobject_type, it_type, {zero, slot });
+
+    auto it_next_f = this->CreateLoad(ptr_t, it_next_ref);
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, int32_t }, false);
+
+    return this->CreateCall(function_type, it_next_f, { it }, "it_next");
+}
+
 llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
@@ -212,7 +254,7 @@ llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *l
     return (llvm::Value*)this->CreateCall(*this->module->string_create_func, { cstr, length }, "stringobject");
 }
 
-llvm::Value* TythonBuilder::CreateVariable(std::string &name) {
+llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
     if (this->current_namespace->findVariable(name)) {
         throw CompileException("Attempt to create variable with existing name in scope!");

@@ -50,7 +50,7 @@ void TythonModule::initialize() {
     *(this->tython_len_func) = this->getOrInsertFunction("len", tython_range_type);
     registerProcedure((llvm::Function*)this->tython_len_func->getCallee(), "len"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
-    llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, true);
+    llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, false);
     this->object_is_truthy_func = new llvm::FunctionCallee();
     *(this->object_is_truthy_func) = this->getOrInsertFunction("object_is_truthy", object_is_truthy_type);
 }

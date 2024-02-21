@@ -19,8 +19,25 @@ typedef struct range_object_t {
 
 } range_object;
 
-#define IS_RANGE(instance) (instance->type == &range_type)
-#define AS_RANGE(instance) ((range_object*)instance)
+extern type_object range_iterator_type;
+
+/**
+ * This is the iterator object for ranges.
+ */
+typedef struct range_iterator_object_t {
+    ObjectHead
+
+    object* start;
+    object* step;
+    object* length;
+
+} range_iterator_object;
+
+#define IS_RANGE(instance) ((instance)->type == &range_type)
+#define AS_RANGE(instance) ((range_object*)(instance))
+
+#define IS_RANGE_ITERATOR(instance) ((instance)->type == &range_iterator_type)
+#define AS_RANGE_ITERATOR(instance) ((range_iterator_object*)(instance))
 
 /**
  * Creates an range object instance with its parameters set to the specified start, end and step size.

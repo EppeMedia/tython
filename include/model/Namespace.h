@@ -27,7 +27,7 @@ public:
      * @param name The name of the variable.
      * @param value The value associated with the name.
      */
-    void registerVariable(std::string& name, llvm::Value* value);
+    void registerVariable(const std::string& name, llvm::Value* value);
 
     [[nodiscard]] bool isGlobal() const;
 
