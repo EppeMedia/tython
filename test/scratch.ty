@@ -92,10 +92,12 @@ if r == None:
 if r != None:
     print("Big sad...")
 
-tup = (test, arr, "This is the last element")
+tup = (0, test, arr, "This is the last element")
 
 print(tup)
 print(tup[-1])
 
 for e in tup:
     print(e)
+    if e == 1:
+        break

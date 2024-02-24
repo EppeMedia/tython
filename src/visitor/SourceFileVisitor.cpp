@@ -280,6 +280,8 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     llvm::BasicBlock* br_for = llvm::BasicBlock::Create(this->builder->getContext(), "for", f, nullptr);
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_for", f, nullptr);
 
+    this->builder->nestNamespace(TYTHON_NAMESPACE_FLAG_LOOP)->exit = br_end;
+
     if (ctx->KW_IN()) {
 
         // create or obtain the induction variable
@@ -337,6 +339,8 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
     this->builder->SetInsertPoint(br_end);
 
+    this->builder->popNamespace();
+
     return nullptr;
 }
 
@@ -349,6 +353,26 @@ std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
     this->builder->popNamespace();
 
     return nullptr;
+}
+
+std::any SourceFileVisitor::visitBreak_statement(TythonParser::Break_statementContext *ctx) {
+
+    // identify parent loop
+    Namespace* ns = this->builder->current_namespace;
+    while (ns && !ns->isLoop()) {
+        ns = ns->parent;
+    }
+
+    if (ns) {
+        // check if this loop has a valid exit block
+        if (!ns->exit) {
+            throw CompileException("Illegal state: break in a loop with no exit!");
+        }
+
+        return this->builder->CreateBr(ns->exit);
+    }
+
+    throw CompileException("Break statement outside loop definition.");
 }
 
 std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext *ctx) {

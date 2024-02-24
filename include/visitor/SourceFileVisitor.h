@@ -46,6 +46,7 @@ public:
     std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
 
     std::any visitFor_loop(TythonParser::For_loopContext *ctx) override;
+    std::any visitBreak_statement(TythonParser::Break_statementContext *ctx) override;
 
     std::any visitFunction_def(TythonParser::Function_defContext *ctx) override;
     std::any visitReturn_statement(TythonParser::Return_statementContext *ctx) override;

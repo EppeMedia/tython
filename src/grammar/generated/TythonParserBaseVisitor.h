@@ -55,6 +55,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitBreak_statement(TythonParser::Break_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitReturn_statement(TythonParser::Return_statementContext *ctx) override {
     return visitChildren(ctx);
   }

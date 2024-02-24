@@ -84,8 +84,8 @@ void TythonBuilder::initFirstClassTypes() {
     this->none_object_instance = new llvm::GlobalVariable(*this->module, this->object_type, true, llvm::GlobalValue::ExternalLinkage, nullptr, "none_instance", nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, true);
 }
 
-Namespace *TythonBuilder::nestNamespace() {
-    return this->current_namespace = new Namespace(this->current_namespace);
+Namespace *TythonBuilder::nestNamespace(unsigned int flags) {
+    return this->current_namespace = new Namespace(this->current_namespace, flags);
 }
 
 Namespace *TythonBuilder::popNamespace() {

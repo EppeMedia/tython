@@ -39,6 +39,8 @@ public:
 
     virtual std::any visitAssign_statement(TythonParser::Assign_statementContext *context) = 0;
 
+    virtual std::any visitBreak_statement(TythonParser::Break_statementContext *context) = 0;
+
     virtual std::any visitReturn_statement(TythonParser::Return_statementContext *context) = 0;
 
     virtual std::any visitIf_statement(TythonParser::If_statementContext *context) = 0;

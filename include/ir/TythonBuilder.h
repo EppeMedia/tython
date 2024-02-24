@@ -35,7 +35,7 @@ private:
      * Creates a new namespace as a child of the current namespace, and updates the current namespace pointer.
      * @return Returns the namespace pointer.
      */
-    Namespace* nestNamespace();
+    Namespace* nestNamespace(unsigned int flags = 0x0);
 
     /**
      * Climbs the namespace tree by one level, and updates the current namespace pointer.

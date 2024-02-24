@@ -5,15 +5,23 @@
 #include <string>
 #include "Variable.h"
 
+#define TYTHON_NAMESPACE_FLAG_LOOP 0x1
+
 class Namespace{
 
 private:
     std::map<std::string, llvm::Value*> variable_shadow_symbol_table;
-
+    unsigned int flags;
 public:
 
     Namespace* parent;
-    explicit Namespace(Namespace* parent = nullptr) : parent(parent), variable_shadow_symbol_table() {};
+    llvm::BasicBlock* exit;
+
+    explicit Namespace(Namespace* parent = nullptr, unsigned int flags = 0x0) :
+        parent(parent),
+        variable_shadow_symbol_table(),
+        flags(flags),
+        exit(nullptr) {};
 
     /**
      * Finds a variable by its name, case-insensitive.
@@ -30,6 +38,8 @@ public:
     void registerVariable(const std::string& name, llvm::Value* value);
 
     [[nodiscard]] bool isGlobal() const;
+
+    [[nodiscard]] bool isLoop() const;
 
 };
 

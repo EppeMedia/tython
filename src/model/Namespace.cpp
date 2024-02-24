@@ -26,3 +26,7 @@ void Namespace::registerVariable(const std::string& name, llvm::Value* value) {
 bool Namespace::isGlobal() const {
     return !this->parent;
 }
+
+bool Namespace::isLoop() const {
+    return this->flags & TYTHON_NAMESPACE_FLAG_LOOP;
+}
