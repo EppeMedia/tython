@@ -143,6 +143,11 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
         // delegate to the list literal handler
         return visit(ctx->list_lit());
+
+    } else if (ctx->tuple_lit()) {
+
+        // delegate to the tuple literal handler
+        return visit(ctx->tuple_lit());
     }
 
     throw NotImplemented("Encountered unknown literal type. Language implementation and specification have probably diverged. Please contact the project maintainer.");
@@ -183,6 +188,24 @@ std::any SourceFileVisitor::visitList_lit(TythonParser::List_litContext *ctx) {
     auto entry_count = llvm::ConstantInt::get(int32_t, elements.size());
 
     return this->builder->CreateListLiteral(entry_count, elements);
+}
+
+std::any SourceFileVisitor::visitTuple_lit(TythonParser::Tuple_litContext *ctx) {
+
+    std::vector<llvm::Value*> elements;
+    elements.reserve(ctx->elements.size());
+
+    for (auto& element : ctx->elements) {
+
+        auto v = any_cast<llvm::Value*>(visit(element));
+
+        elements.push_back(v);
+    }
+
+    auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    auto entry_count = llvm::ConstantInt::get(int32_t, elements.size());
+
+    return this->builder->CreateTupleLiteral(entry_count, elements);
 }
 
 std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext *ctx) {

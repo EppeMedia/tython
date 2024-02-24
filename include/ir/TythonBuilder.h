@@ -174,6 +174,14 @@ public:
      */
     llvm::Value* CreateListLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
 
+    /**
+     * Generates the instructions to create a tuple object containing the {count} {elements}.
+     * @param count The number of elements the new tuple should contain.
+     * @param elements The elements the tuple should be initialized with.
+     * @return Returns a reference to the newly created tuple object.
+     */
+    llvm::Value* CreateTupleLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
+
 };
 
 #endif // TYTHON_BUILDER_H

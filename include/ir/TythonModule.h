@@ -20,6 +20,7 @@ private:
     llvm::FunctionCallee* string_create_func;
     llvm::FunctionCallee* dict_create_func;
     llvm::FunctionCallee* list_create_func;
+    llvm::FunctionCallee* tuple_create_func;
 
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* tython_print_func;

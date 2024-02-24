@@ -4,7 +4,6 @@
 
 #include <stddef.h>
 #include <assert.h>
-#include <malloc.h>
 #include <memory.h>
 #include <stdlib.h>
 #include "object/listobject.h"
@@ -221,4 +220,3 @@ type_object list_iterator_type = {
 
         .iterator_next      = &list_iterator_next,
 };
-

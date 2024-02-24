@@ -135,6 +135,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitTuple_lit(TythonParser::Tuple_litContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLiteral(TythonParser::LiteralContext *ctx) override {
     return visitChildren(ctx);
   }

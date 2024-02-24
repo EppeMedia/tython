@@ -12,5 +12,6 @@ ADD_LIBRARY(tython_lib STATIC
         object/boolobject.c
         object/dictobject.c
         object/listobject.c
+        object/tupleobject.c
         function/userfunctions.c
         bridge/basicland.c)
