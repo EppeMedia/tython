@@ -354,16 +354,16 @@ int main(int argc, char **argv) {
     }
 
     if (configuration.verbose) {
-        std::cout << buildCommand << std::endl;
+        std::cout << "-- " << buildCommand << std::endl;
     }
 
     auto result = utils::exec(buildCommand);
 
     if (configuration.verbose) {
-        std::cout << "Linking done." << std::endl;
+        std::cout << "Build done." << std::endl;
     }
 
-    std::cout << "Compilation successful. Wrote executable to file " << executable_filename << std::endl;
+    std::cout << "Created binary \"" << executable_filename << "\"." << std::endl;
 
     return 0;
 }

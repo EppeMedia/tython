@@ -243,7 +243,9 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
 
         visit(ctx->br_if);
 
-        this->builder->CreateBr(br_end);
+        if (!br_true->getTerminator()) {
+            this->builder->CreateBr(br_end);
+        }
     }
 
     { // if_else
@@ -253,7 +255,9 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
             visit(ctx->br_else_if);
         }
 
-        this->builder->CreateBr(br_end);
+        if (!br_else_if->getTerminator()) {
+            this->builder->CreateBr(br_end);
+        }
     }
 
     { // else
@@ -264,7 +268,9 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
             visit(ctx->br_else);
         }
 
-        this->builder->CreateBr(br_end);
+        if (!br_else->getTerminator()) {
+            this->builder->CreateBr(br_end);
+        }
     }
 
     this->builder->SetInsertPoint(br_end);
@@ -334,6 +340,41 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     }
 
     this->builder->SetInsertPoint(br_for);
+    visit(ctx->block());
+    this->builder->CreateBr(br_pre);
+
+    this->builder->SetInsertPoint(br_end);
+
+    this->builder->popNamespace();
+
+    return nullptr;
+}
+
+std::any SourceFileVisitor::visitWhile_loop(TythonParser::While_loopContext *ctx) {
+
+    llvm::Function* f = builder->GetInsertBlock()->getParent();
+
+    llvm::BasicBlock* br_pre = llvm::BasicBlock::Create(this->builder->getContext(), "pre_while", f, nullptr);
+    llvm::BasicBlock* br_while = llvm::BasicBlock::Create(this->builder->getContext(), "while", f, nullptr);
+    llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_while", f, nullptr);
+
+    this->builder->nestNamespace(TYTHON_NAMESPACE_FLAG_LOOP)->exit = br_end;
+
+    this->builder->CreateBr(br_pre);
+    this->builder->SetInsertPoint(br_pre);
+
+    auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    auto test = this->builder->CreateObjectIsTruthy(expression_value); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    const auto zero = llvm::ConstantInt::get(int32_t, 0, true);
+
+    const auto check = this->builder->CreateICmpSGT(test, zero);
+
+    this->builder->CreateCondBr(check, br_while, br_end);
+
+    this->builder->SetInsertPoint(br_while);
     visit(ctx->block());
     this->builder->CreateBr(br_pre);
 

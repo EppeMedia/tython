@@ -92,6 +92,8 @@ if r == None:
 if r != None:
     print("Big sad...")
 
+print("--- Tuples")
+
 tup = (0, test, arr, "This is the last element")
 
 print(tup)
@@ -99,5 +101,42 @@ print(tup[-1])
 
 for e in tup:
     print(e)
+
+print("--- While loops")
+c = 0
+while c < 3:
+    print(tup[c])
+    c = c + 1
+
+print("--- Breaks")
+
+for e in tup:
+    print(e)
     if e == 1:
         break
+
+print("DEBUG HERE")
+c = 0
+while c < 3:
+    print(c)
+    if c == 1:
+        print("breaking...")
+        break
+    c = c + 1
+
+d = 0
+while d != 42:
+    print("outer")
+    while d < 3:
+        break
+        print("inner")
+        d = d + 1
+        if d == 2:
+            print("breaking inner...")
+            d = 39
+            break
+    d = d + 1
+
+for i in range(0, 100, 1):
+    print("hi")
+    break

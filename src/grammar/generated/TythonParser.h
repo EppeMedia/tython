@@ -30,10 +30,11 @@ public:
     RuleBlock = 4, RuleStatement = 5, RuleSimple_statement = 6, RuleSimple_statements = 7, 
     RuleCompound_statement = 8, RuleAssign_statement = 9, RuleBreak_statement = 10, 
     RuleReturn_statement = 11, RuleIf_statement = 12, RuleFor_loop = 13, 
-    RuleArguments = 14, RuleParameters = 15, RuleCall_expression = 16, RuleExpression = 17, 
-    RuleBinary_operator = 18, RuleInequality_operator = 19, RuleLogic_operator = 20, 
-    RuleArithmetic_operator = 21, RuleRval = 22, RuleLval = 23, RuleKey_value_pair = 24, 
-    RuleDict_lit = 25, RuleList_lit = 26, RuleTuple_lit = 27, RuleLiteral = 28
+    RuleWhile_loop = 14, RuleArguments = 15, RuleParameters = 16, RuleCall_expression = 17, 
+    RuleExpression = 18, RuleBinary_operator = 19, RuleInequality_operator = 20, 
+    RuleLogic_operator = 21, RuleArithmetic_operator = 22, RuleRval = 23, 
+    RuleLval = 24, RuleKey_value_pair = 25, RuleDict_lit = 26, RuleList_lit = 27, 
+    RuleTuple_lit = 28, RuleLiteral = 29
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -67,6 +68,7 @@ public:
   class Return_statementContext;
   class If_statementContext;
   class For_loopContext;
+  class While_loopContext;
   class ArgumentsContext;
   class ParametersContext;
   class Call_expressionContext;
@@ -226,6 +228,7 @@ public:
     If_statementContext *if_statement();
     Function_defContext *function_def();
     For_loopContext *for_loop();
+    While_loopContext *while_loop();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -316,6 +319,22 @@ public:
   };
 
   For_loopContext* for_loop();
+
+  class  While_loopContext : public antlr4::ParserRuleContext {
+  public:
+    While_loopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *KW_WHILE();
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *SYM_COL();
+    BlockContext *block();
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  While_loopContext* while_loop();
 
   class  ArgumentsContext : public antlr4::ParserRuleContext {
   public:

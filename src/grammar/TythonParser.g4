@@ -63,7 +63,8 @@ simple_statements   : simple_statement (SYM_SEMCOL simple_statement)* SYM_SEMCOL
 
 compound_statement  : if_statement
                     | function_def
-                    | for_loop;
+                    | for_loop
+                    | while_loop;
 
 assign_statement    : lval SYM_ASSIGN expression;
 break_statement     : KW_BREAK;
@@ -78,6 +79,9 @@ if_statement        : KW_IF expression SYM_COL
                       )?;
 
 for_loop            : KW_FOR (IDENTIFIER KW_IN)? expression SYM_COL
+                        block;
+
+while_loop          : KW_WHILE expression SYM_COL
                         block;
 
 arguments           : args+=IDENTIFIER?

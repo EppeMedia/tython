@@ -71,6 +71,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitWhile_loop(TythonParser::While_loopContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitArguments(TythonParser::ArgumentsContext *ctx) override {
     return visitChildren(ctx);
   }

@@ -47,6 +47,8 @@ public:
 
     virtual std::any visitFor_loop(TythonParser::For_loopContext *context) = 0;
 
+    virtual std::any visitWhile_loop(TythonParser::While_loopContext *context) = 0;
+
     virtual std::any visitArguments(TythonParser::ArgumentsContext *context) = 0;
 
     virtual std::any visitParameters(TythonParser::ParametersContext *context) = 0;
