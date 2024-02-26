@@ -8,7 +8,7 @@
 void TythonBuilder::init() {
 
     // create global scope
-    this->current_namespace = new Namespace();
+    this->current_context = new class Context();
 
     initFirstClassTypes();
 }
@@ -73,23 +73,16 @@ void TythonBuilder::initFirstClassTypes() {
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
 
-    llvm::ArrayRef<llvm::Type*> dict_entry_types = {
-        ptr_t,      // key reference
-        ptr_t       // value reference
-    };
-
-    this->dict_entry_type = llvm::StructType::create(this->getContext(), dict_entry_types, "DictEntry");
-
     // external symbols (fields)
     this->none_object_instance = new llvm::GlobalVariable(*this->module, this->object_type, true, llvm::GlobalValue::ExternalLinkage, nullptr, "none_instance", nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, true);
 }
 
-Namespace *TythonBuilder::nestNamespace(unsigned int flags) {
-    return this->current_namespace = new Namespace(this->current_namespace, flags);
+Context *TythonBuilder::nestContext(unsigned int flags) {
+    return this->current_context = new class Context(this->current_context, flags);
 }
 
-Namespace *TythonBuilder::popNamespace() {
-    return this->current_namespace = this->current_namespace->parent;
+Context *TythonBuilder::popContext() {
+    return this->current_context = this->current_context->parent;
 }
 
 llvm::Value *TythonBuilder::CreateGetTypeObject(llvm::Value* object_instance) {
@@ -282,22 +275,22 @@ llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *l
 
 llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
-    if (this->current_namespace->findVariable(name)) {
+    if (this->current_context->findVariable(name)) {
         throw CompileException("Attempt to create variable with existing name in scope!");
     }
 
     llvm::Value* alloc;
 
-    if (this->current_namespace->isGlobal()) {
+    if (this->current_context->isGlobal()) {
         llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->getPtrTy());
         alloc = new llvm::GlobalVariable(*this->module, this->getPtrTy(), false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
     } else {
         alloc = this->CreateAlloca(this->getPtrTy(), nullptr, name);
     }
 
-    this->current_namespace->registerVariable(name, alloc);
+    this->current_context->registerVariable(name, alloc);
 
-    return this->current_namespace->findVariable(name);
+    return this->current_context->findVariable(name);
 }
 
 llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<std::pair<llvm::Value *, llvm::Value *>> &entries) {

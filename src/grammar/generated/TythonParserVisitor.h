@@ -59,9 +59,17 @@ public:
 
     virtual std::any visitLbl_rval(TythonParser::Lbl_rvalContext *context) = 0;
 
+    virtual std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *context) = 0;
+
+    virtual std::any visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *context) = 0;
+
+    virtual std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *context) = 0;
+
     virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *context) = 0;
 
     virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *context) = 0;
+
+    virtual std::any visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *context) = 0;
 
     virtual std::any visitBinary_operator(TythonParser::Binary_operatorContext *context) = 0;
 

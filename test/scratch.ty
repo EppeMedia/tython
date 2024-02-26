@@ -128,10 +128,9 @@ d = 0
 while d != 42:
     print("outer")
     while d < 3:
-        break
         print("inner")
         d = d + 1
-        if d == 2:
+        if d == 3:
             print("breaking inner...")
             d = 39
             break
@@ -140,3 +139,21 @@ while d != 42:
 for i in range(0, 100, 1):
     print("hi")
     break
+
+print("--- Shorthand increment/decrement")
+
+i = 0
+while i++ < 3:
+    print("+ dot")
+
+i = 0
+while ++i < 3:
+    print("+ dash")
+
+i = 3
+while i-- > 0:
+    print("- dot")
+
+i = 3
+while --i > 0:
+    print("- dash")

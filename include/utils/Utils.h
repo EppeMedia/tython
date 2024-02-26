@@ -9,26 +9,10 @@
 #include <map>
 #include <vector>
 #include "../../config.h"
-#include "../model/Variable.h"
 
 using namespace std;
 
 namespace utils {
-
-    /**
-     * auxilliary function used to generate nested substructs recursively
-     * @param ancestorsPtr
-     * @param structure
-     * @return the string of structs
-     */
-    string generateSubStruct(string* ancestorsPtr, Variable* structure);
-
-    /**
-     * main function for generating structs, creates a cpp header file with generated structs based on the provided
-     * DataTree vector
-     * @param symbol_table
-     */
-    std::string generateStructs(const std::string& source, const map<string, Variable*>& symbol_table, const std::string& program_id);
 
     /**
      * Parse the program arguments into a configuration_t struct.

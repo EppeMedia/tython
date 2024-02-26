@@ -19,10 +19,10 @@ public:
     SYM_COMMA = 22, SYM_STMNT_DELIMITER = 23, SYM_ASSIGN = 24, SYM_NEQ = 25, 
     SYM_LTE = 26, SYM_LT = 27, SYM_EQ = 28, SYM_GT = 29, SYM_GTE = 30, SYM_AND = 31, 
     SYM_OR = 32, SYM_PLUS = 33, SYM_MINUS = 34, SYM_MULT = 35, SYM_DIV = 36, 
-    SYM_EXP = 37, SYM_DOT = 38, SYM_ELLIPS = 39, SYM_COMMENT = 40, SYM_COMMENT_START = 41, 
-    TRUE_LIT = 42, FALSE_LIT = 43, NONE_LIT = 44, IDENTIFIER = 45, INT_LIT = 46, 
-    FLOAT_LIT = 47, STR_LIT = 48, NEWLINE = 49, WS = 50, SYM_COMMENT_END = 51, 
-    COMMENT_CONTENT = 52
+    SYM_EXP = 37, SYM_INC = 38, SYM_DEC = 39, SYM_DOT = 40, SYM_ELLIPS = 41, 
+    SYM_COMMENT = 42, SYM_COMMENT_START = 43, TRUE_LIT = 44, FALSE_LIT = 45, 
+    NONE_LIT = 46, IDENTIFIER = 47, INT_LIT = 48, FLOAT_LIT = 49, STR_LIT = 50, 
+    NEWLINE = 51, WS = 52, SYM_COMMENT_END = 53, COMMENT_CONTENT = 54
   };
 
   enum {
@@ -424,6 +424,36 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
+  class  Lbl_inc_prefixContext : public ExpressionContext {
+  public:
+    Lbl_inc_prefixContext(ExpressionContext *ctx);
+
+    antlr4::tree::TerminalNode *SYM_INC();
+    LvalContext *lval();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lcl_dec_suffixContext : public ExpressionContext {
+  public:
+    Lcl_dec_suffixContext(ExpressionContext *ctx);
+
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_DEC();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_inc_suffixContext : public ExpressionContext {
+  public:
+    Lbl_inc_suffixContext(ExpressionContext *ctx);
+
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_INC();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  Lbl_call_expressionContext : public ExpressionContext {
   public:
     Lbl_call_expressionContext(ExpressionContext *ctx);
@@ -440,6 +470,16 @@ public:
     antlr4::tree::TerminalNode *SYM_LPAR();
     ExpressionContext *expression();
     antlr4::tree::TerminalNode *SYM_RPAR();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lcl_dec_prefixContext : public ExpressionContext {
+  public:
+    Lcl_dec_prefixContext(ExpressionContext *ctx);
+
+    antlr4::tree::TerminalNode *SYM_DEC();
+    LvalContext *lval();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };

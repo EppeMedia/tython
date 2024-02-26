@@ -9,7 +9,7 @@
 
 using namespace std;
 
-namespace utils{
+namespace utils {
 
     /**
      * Check program arguments for presence of the specified flags.

@@ -1,23 +1,25 @@
-#ifndef TYTHON_NAMESPACE_H
-#define TYTHON_NAMESPACE_H
+#ifndef TYTHON_CONTEXT_H
+#define TYTHON_CONTEXT_H
 
 #include <map>
 #include <string>
-#include "Variable.h"
+#include <llvm/IR/Value.h>
 
-#define TYTHON_NAMESPACE_FLAG_LOOP 0x1
+#define TYTHON_CONTEXT_FLAG_LOOP        (0x1U) // set if this is the top-level context of a loop
+#define TYTHON_CONTEXT_FLAG_LEX_BLOCK   (0x2U) // a lexical block is pretty much a node in a control-flow graph
+#define TYTHON_CONTEXT_FLAG_COMPLETE    (0x4U) // a context is complete iff it is a lexical block and it is terminated
 
-class Namespace{
+class Context {
 
 private:
     std::map<std::string, llvm::Value*> variable_shadow_symbol_table;
     unsigned int flags;
-public:
 
-    Namespace* parent;
+public:
+    Context* parent;
     llvm::BasicBlock* exit;
 
-    explicit Namespace(Namespace* parent = nullptr, unsigned int flags = 0x0) :
+    explicit Context(Context* parent = nullptr, unsigned int flags = 0x0) :
         parent(parent),
         variable_shadow_symbol_table(),
         flags(flags),
@@ -41,7 +43,12 @@ public:
 
     [[nodiscard]] bool isLoop() const;
 
+    [[nodiscard]] bool isLexicalBlock() const;
+
+    void setComplete();
+    [[nodiscard]] bool isComplete() const;
+
 };
 
 
-#endif //TYTHON_NAMESPACE_H
+#endif //TYTHON_CONTEXT_H

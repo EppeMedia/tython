@@ -92,6 +92,9 @@ SYM_MULT            : '*';
 SYM_DIV             : '/';
 SYM_EXP             : '**';
 
+SYM_INC             : '++';
+SYM_DEC             : '--';
+
 SYM_DOT             : '.';
 SYM_ELLIPS          : '...';
 

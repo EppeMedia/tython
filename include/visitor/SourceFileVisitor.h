@@ -10,6 +10,13 @@
 #include "../../include/ir/TythonBuilder.h"
 #include <any>
 
+#define ASSERT_LEXICAL_BLOCK_CONTEXT \
+    do {                           \
+        assert(this->builder->current_context); \
+        assert(this->builder->current_context->isLexicalBlock()); \
+    } while (0);
+
+
 using namespace std;
 
 class SourceFileVisitor : public TythonParserBaseVisitor {
@@ -42,6 +49,8 @@ public:
     std::any visitTuple_lit(TythonParser::Tuple_litContext *ctx) override;
 
     std::any visitBlock(TythonParser::BlockContext *ctx) override;
+    std::any visitSimple_statement(TythonParser::Simple_statementContext *ctx) override;
+    std::any visitCompound_statement(TythonParser::Compound_statementContext *ctx) override;
 
     std::any visitIf_statement(TythonParser::If_statementContext *ctx) override;
 
@@ -65,6 +74,11 @@ public:
     llvm::Value* visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
+
+    std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) override;
+    std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *ctx) override;
+    std::any visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) override;
+    std::any visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *ctx) override;
 
 };
 

@@ -7,7 +7,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include "TythonModule.h"
-#include "model/Namespace.h"
+#include "model/Context.h"
 #include <string>
 
 class TythonBuilder : public llvm::IRBuilder<> {
@@ -18,7 +18,6 @@ private:
 
     llvm::StructType* object_type;
     llvm::StructType* typeobject_type;
-    llvm::StructType* dict_entry_type;
 
     /*
      * Built-in type method structs
@@ -32,27 +31,26 @@ private:
     void initFirstClassTypes();
 
     /**
-     * Creates a new namespace as a child of the current namespace, and updates the current namespace pointer.
-     * @return Returns the namespace pointer.
+     * Creates a new context as a child of the current context, and updates the current context pointer.
+     * @return Returns the context pointer.
      */
-    Namespace* nestNamespace(unsigned int flags = 0x0);
+    class Context* nestContext(unsigned int flags = 0x0);
 
     /**
-     * Climbs the namespace tree by one level, and updates the current namespace pointer.
-     * @return Returns the namespace pointer.
+     * Climbs the context tree by one level, and updates the current context pointer.
+     * @return Returns the context pointer.
      */
-    Namespace* popNamespace();
+    class Context* popContext();
 
     TythonModule* module;
-    Namespace* current_namespace;
+    class Context* current_context;
 
 public:
     TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
                                                                 module(module),
-                                                                current_namespace(nullptr),
+                                                                current_context(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
-                                                                dict_entry_type(nullptr),
                                                                 number_functions_type(nullptr),
                                                                 mapping_functions_type(nullptr),
                                                                 none_object_instance(nullptr) {
@@ -60,7 +58,7 @@ public:
     };
 
     /**
-     * Creates a variable in the current namespace.
+     * Creates a variable in the current context.
      * @param name The name of the variable to create.
      * @return Returns the newly created variable.
      */

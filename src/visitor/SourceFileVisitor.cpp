@@ -61,7 +61,7 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
     const auto identifier = ctx->IDENTIFIER()->getText();
 
     // check if the identifier exists, otherwise throw an exception
-    if (auto variable = this->builder->current_namespace->findVariable(identifier)) {
+    if (auto variable = this->builder->current_context->findVariable(identifier)) {
 
         // variable is a pointer to the value object
 
@@ -81,7 +81,7 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) {
 
     auto identifier = ctx->IDENTIFIER()->getText();
-    auto sequence_ref = this->builder->current_namespace->findVariable(identifier);
+    auto sequence_ref = this->builder->current_context->findVariable(identifier);
 
     if (!sequence_ref) {
         throw UnknownSymbolException("Attempted key access on undefined sequence symbol \"" + identifier + "\"");
@@ -286,7 +286,7 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     llvm::BasicBlock* br_for = llvm::BasicBlock::Create(this->builder->getContext(), "for", f, nullptr);
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_for", f, nullptr);
 
-    this->builder->nestNamespace(TYTHON_NAMESPACE_FLAG_LOOP)->exit = br_end;
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_LOOP | TYTHON_CONTEXT_FLAG_LEX_BLOCK)->exit = br_end;
 
     if (ctx->KW_IN()) {
 
@@ -294,7 +294,7 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
         const auto it_name = ctx->IDENTIFIER()->getText();
         llvm::Value* it_var;
 
-        if (!(it_var = this->builder->current_namespace->findVariable(it_name))) {
+        if (!(it_var = this->builder->current_context->findVariable(it_name))) {
             it_var = this->builder->CreateVariable(it_name);
         }
 
@@ -345,7 +345,7 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
     this->builder->SetInsertPoint(br_end);
 
-    this->builder->popNamespace();
+    this->builder->popContext();
 
     return nullptr;
 }
@@ -358,7 +358,7 @@ std::any SourceFileVisitor::visitWhile_loop(TythonParser::While_loopContext *ctx
     llvm::BasicBlock* br_while = llvm::BasicBlock::Create(this->builder->getContext(), "while", f, nullptr);
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_while", f, nullptr);
 
-    this->builder->nestNamespace(TYTHON_NAMESPACE_FLAG_LOOP)->exit = br_end;
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_LOOP | TYTHON_CONTEXT_FLAG_LEX_BLOCK)->exit = br_end;
 
     this->builder->CreateBr(br_pre);
     this->builder->SetInsertPoint(br_pre);
@@ -380,37 +380,63 @@ std::any SourceFileVisitor::visitWhile_loop(TythonParser::While_loopContext *ctx
 
     this->builder->SetInsertPoint(br_end);
 
-    this->builder->popNamespace();
+    this->builder->popContext();
 
     return nullptr;
 }
 
 std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
 
-    this->builder->nestNamespace();
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_LEX_BLOCK);
 
     TythonParserBaseVisitor::visitBlock(ctx);
 
-    this->builder->popNamespace();
+    this->builder->popContext();
 
     return nullptr;
 }
 
-std::any SourceFileVisitor::visitBreak_statement(TythonParser::Break_statementContext *ctx) {
+std::any SourceFileVisitor::visitSimple_statement(TythonParser::Simple_statementContext *ctx) {
 
-    // identify parent loop
-    Namespace* ns = this->builder->current_namespace;
-    while (ns && !ns->isLoop()) {
-        ns = ns->parent;
+    if (this->builder->current_context->isComplete()) {
+        throw CompileException("Unreachable statement at line " + std::to_string(ctx->getStart()->getLine()) + "!");
     }
 
-    if (ns) {
+    return TythonParserBaseVisitor::visitSimple_statement(ctx);
+}
+
+std::any SourceFileVisitor::visitCompound_statement(TythonParser::Compound_statementContext *ctx) {
+
+    if (this->builder->current_context->isComplete()) {
+        throw CompileException("Unreachable statement at line " + std::to_string(ctx->getStart()->getLine()) + "!");
+    }
+
+    return TythonParserBaseVisitor::visitCompound_statement(ctx);
+}
+
+std::any SourceFileVisitor::visitBreak_statement(TythonParser::Break_statementContext *ctx) {
+
+    ASSERT_LEXICAL_BLOCK_CONTEXT
+
+    // identify parent loop
+    Context* context = this->builder->current_context;
+    while (context && !context->isLoop()) {
+        context = context->parent;
+    }
+
+    if (context) {
         // check if this loop has a valid exit block
-        if (!ns->exit) {
+        if (!context->exit) {
             throw CompileException("Illegal state: break in a loop with no exit!");
         }
 
-        return this->builder->CreateBr(ns->exit);
+        if (!context->isLexicalBlock()) {
+            throw CompileException("Illegal state: break in a loop outside a lexical block!");
+        }
+
+        this->builder->current_context->setComplete();
+
+        return this->builder->CreateBr(context->exit);
     }
 
     throw CompileException("Break statement outside loop definition.");
@@ -421,7 +447,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     auto identifier = ctx->IDENTIFIER()->getText();
 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
-    this->builder->nestNamespace();
+    this->builder->nestContext();
 
     // function declarations are fully opaque; we only know that it will return an object (may be None), and that it takes either at most n, or a variable number of arguments
     auto return_type = llvm::PointerType::get(this->builder->object_type, 0);
@@ -465,7 +491,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
         this->builder->CreateRet(this->builder->none_object_instance);
     }
 
-    this->builder->popNamespace();
+    this->builder->popContext();
 
     this->builder->SetInsertPoint(old_bb);
 
@@ -474,7 +500,11 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
 
 std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statementContext *ctx) {
 
+    ASSERT_LEXICAL_BLOCK_CONTEXT
+
     const auto ret_val = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    this->builder->current_context->setComplete();
 
     return this->builder->CreateRet(ret_val);
 }
@@ -652,4 +682,94 @@ llvm::Value *SourceFileVisitor::visitArithmeticOperator(TythonParser::Arithmetic
     }
 
     throw NotImplemented("Unimplemented arithmetic operator \"" + ctx->getText() + "\"!");
+}
+
+std::any SourceFileVisitor::visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) {
+
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
+
+    // get lval
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
+
+    const auto one = llvm::ConstantInt::get(int64_t, 1, true);
+
+    const auto one_val = this->builder->CreateIntObject(one);
+
+    // add and return the sum
+    auto const sum = this->builder->CreateTythonAdd(lval, one_val);
+    this->builder->CreateStore(sum, lval_ref);
+
+    return sum;
+}
+
+std::any SourceFileVisitor::visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *ctx) {
+
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
+
+    // get lval
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
+
+    const auto zero = llvm::ConstantInt::get(int64_t, 0, true);
+    const auto one = llvm::ConstantInt::get(int64_t, 1, true);
+
+    const auto zero_val = this->builder->CreateIntObject(zero);
+    const auto one_val = this->builder->CreateIntObject(one);
+
+    // keep a copy of the old value
+    auto const old = this->builder->CreateTythonAdd(lval, zero_val); // handy trick
+
+    // add and return the sum
+    auto const sum = this->builder->CreateTythonAdd(lval, one_val);
+    this->builder->CreateStore(sum, lval_ref);
+
+    return old;
+}
+
+std::any SourceFileVisitor::visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) {
+
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
+
+    // get lval
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
+
+    const auto one = llvm::ConstantInt::get(int64_t, 1, true);
+
+    const auto one_val = this->builder->CreateIntObject(one);
+
+    // add and return the diff
+    auto const dif = this->builder->CreateTythonSub(lval, one_val);
+    this->builder->CreateStore(dif, lval_ref);
+
+    return dif;
+}
+
+std::any SourceFileVisitor::visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *ctx) {
+
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
+
+    // get lval
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
+
+    const auto zero = llvm::ConstantInt::get(int64_t, 0, true);
+    const auto one = llvm::ConstantInt::get(int64_t, 1, true);
+
+    const auto zero_val = this->builder->CreateIntObject(zero);
+    const auto one_val = this->builder->CreateIntObject(one);
+
+    // keep a copy of the old value
+    auto const old = this->builder->CreateTythonAdd(lval, zero_val); // handy trick
+
+    // add and return the diff
+    auto const dif = this->builder->CreateTythonSub(lval, one_val);
+    this->builder->CreateStore(dif, lval_ref);
+
+    return old;
 }

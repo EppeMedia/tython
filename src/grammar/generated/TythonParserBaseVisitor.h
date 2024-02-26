@@ -95,11 +95,27 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) override {
     return visitChildren(ctx);
   }
 

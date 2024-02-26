@@ -1,6 +1,6 @@
 // Copyright (c) 2023 by Manzi Aimé Ntagengerwa
 
-// Recognition of substantial portions
+// Recognition of substantial portions:
 
 /*
  * The MIT License (MIT)
@@ -96,6 +96,10 @@ expression          : lhs=expression binary_operator rhs=expression #binary_expr
                     | call_expression                               #lbl_call_expression
                     | SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
                     | rval                                          #lbl_rval
+                    | SYM_INC lval                                  #lbl_inc_prefix
+                    | lval SYM_INC                                  #lbl_inc_suffix
+                    | SYM_DEC lval                                  #lcl_dec_prefix
+                    | lval SYM_DEC                                  #lcl_dec_suffix
                     ;
 
 binary_operator     : inequality_operator | logic_operator | arithmetic_operator;

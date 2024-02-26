@@ -57,10 +57,9 @@ add_executable(tython src/main.cpp
         src/grammar/generated/TythonParser.cpp
         src/lexer/TythonLexerBase.cpp
         src/ir/TythonModule.cpp
-        src/model/Variable.cpp
         src/utils/Utils.cpp
         src/ir/TythonBuilder.cpp
         src/visitor/SourceFileVisitor.cpp
-        src/model/Namespace.cpp)
+        src/model/Context.cpp)
 
 target_link_libraries(tython antlr4_shared ${llvm_libs} spdlog::spdlog tython_lib)

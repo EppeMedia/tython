@@ -4,8 +4,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include <map>
 #include <string>
-#include "../../include/model/Variable.h"
-#include "../model/Namespace.h"
+#include "../model/Context.h"
 
 #ifndef TYTHON_MODULE_H
 #define TYTHON_MODULE_H
