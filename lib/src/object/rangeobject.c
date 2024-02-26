@@ -43,12 +43,13 @@ static object* range_to_string(object* object) {
                            + snprintf(NULL, 0, "%lld", range_obj->step);
 
     // allocate string buffer ("range" + braces + commas + spaces)
-    char* str = malloc((fields_len * sizeof(char)) + ((5 + 2 + 2 + 2) * sizeof(char)));
+    const int str_len = fields_len + (5 + 2 + 2 + 2);
+    char* str = malloc(str_len * sizeof(char));
 
     // fill string
     sprintf(str, "range(%lld, %lld, %lld)", range_obj->start, range_obj->end, range_obj->step);
 
-    return string_create(str, fields_len);
+    return string_create(str, str_len);
 }
 
 static object* range_to_bool(object* object) {

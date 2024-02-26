@@ -2,8 +2,9 @@
 // Created by manzi on 21/02/24.
 //
 
-#include "function/userfunctions.h"
+#include "api/api.h"
 #include "object/stringobject.h"
+#include "object/sliceobject.h"
 #include <memory.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -42,4 +43,8 @@ object* len(object* object) {
     assert(mf->length && "Type error: the mapping type does not implement the length function.");
 
     return mf->length(object);
+}
+
+object* slice(object* start, object* end, object* step) {
+    return slice_create(start, end, step);
 }

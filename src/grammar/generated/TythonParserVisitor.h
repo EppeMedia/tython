@@ -81,6 +81,10 @@ public:
 
     virtual std::any visitRval(TythonParser::RvalContext *context) = 0;
 
+    virtual std::any visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *context) = 0;
+
+    virtual std::any visitLbl_access_key_idx(TythonParser::Lbl_access_key_idxContext *context) = 0;
+
     virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *context) = 0;
 
     virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *context) = 0;

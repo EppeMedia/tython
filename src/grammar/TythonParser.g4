@@ -122,8 +122,12 @@ arithmetic_operator : SYM_PLUS
 rval                : literal
                     | lval;
 
+access_key          : start=rval? SYM_COL end=rval? SYM_COL? step=rval?     #lbl_access_key_slice
+                    | expression                                            #lbl_access_key_idx
+                    ;
+
 lval                : IDENTIFIER                                #lbl_identifier
-                    | IDENTIFIER SYM_LSQ expression SYM_RSQ     #lbl_key_access
+                    | IDENTIFIER SYM_LSQ access_key SYM_RSQ     #lbl_key_access
                     ;
 
 key_value_pair      : key=expression SYM_COL value=expression;

@@ -139,6 +139,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_access_key_idx(TythonParser::Lbl_access_key_idxContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override {
     return visitChildren(ctx);
   }

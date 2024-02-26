@@ -157,3 +157,12 @@ while i-- > 0:
 i = 3
 while --i > 0:
     print("- dash")
+
+print("--- Slices")
+
+arr = ["one", "two", "three", "four", "five", "six", "seven"]
+s = slice(2, 5, 1)
+print(arr)
+print(s)
+print(arr[s])
+print(arr[2:5:1])

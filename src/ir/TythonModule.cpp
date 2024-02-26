@@ -50,8 +50,13 @@ void TythonModule::initialize() {
 
     llvm::FunctionType* tython_len_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
     this->tython_len_func = new llvm::FunctionCallee();
-    *(this->tython_len_func) = this->getOrInsertFunction("len", tython_range_type);
+    *(this->tython_len_func) = this->getOrInsertFunction("len", tython_len_type);
     registerProcedure((llvm::Function*)this->tython_len_func->getCallee(), "len"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_slice_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, ptr_t }, false);
+    this->tython_slice_func = new llvm::FunctionCallee();
+    *(this->tython_slice_func) = this->getOrInsertFunction("slice", tython_slice_type);
+    registerProcedure((llvm::Function*)this->tython_slice_func->getCallee(), "slice"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
     llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, false);
     this->object_is_truthy_func = new llvm::FunctionCallee();

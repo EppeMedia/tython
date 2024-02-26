@@ -56,6 +56,32 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
     return lhs;
 }
 
+std::any SourceFileVisitor::visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *ctx) {
+
+    llvm::Value* start = this->builder->none_object_instance;
+
+    if (ctx->start) {
+        start = any_cast<llvm::Value*>(visit(ctx->start));
+    }
+
+    llvm::Value* end = this->builder->none_object_instance;
+
+    if (ctx->end) {
+        end = any_cast<llvm::Value*>(visit(ctx->end));
+    }
+
+    llvm::Value* step = this->builder->none_object_instance;
+
+    if (ctx->step) {
+        step = any_cast<llvm::Value*>(visit(ctx->step));
+    }
+
+    // create the slice object
+    auto f = this->module->findProcedure("slice");
+
+    return (llvm::Value*)this->builder->CreateCall(f, { start, end, step }, "slice_construct");
+}
+
 std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) {
 
     const auto identifier = ctx->IDENTIFIER()->getText();
@@ -90,7 +116,7 @@ std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessCont
     auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
     auto sequence_object = this->builder->CreateLoad(ptr_t, sequence_ref, "sequence_object");
 
-    auto key = any_cast<llvm::Value*>(visit(ctx->expression()));
+    auto key = any_cast<llvm::Value*>(visit(ctx->access_key()));
 
     return this->builder->CreateSubscript(sequence_object, key);
 }
@@ -580,9 +606,7 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
 
-    auto return_value = this->builder->CreateCall(f, params);
-
-    return return_value;
+    return this->builder->CreateCall(f, params);
 }
 
 std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonParser::ParametersContext *ctx) {

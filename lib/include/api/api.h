@@ -2,8 +2,8 @@
 // Created by manzi on 21/02/24.
 //
 
-#ifndef TYTHON_USERFUNCTIONS_H
-#define TYTHON_USERFUNCTIONS_H
+#ifndef TYTHON_API_H
+#define TYTHON_API_H
 
 #include "object.h"
 
@@ -20,4 +20,13 @@ void print(object* object);
  */
 object* len(object* object);
 
-#endif //TYTHON_USERFUNCTIONS_H
+/**
+ * Creates a new slice object with the specified properties.
+ * @param start The start of the new slice.
+ * @param end The end of the new slice.
+ * @param step The step size of the new slice.
+ * @return Returns a fresh instance of a slice with the specified properties.
+ */
+object* slice(object* start, object* end, object* step);
+
+#endif //TYTHON_API_H

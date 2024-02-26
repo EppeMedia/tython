@@ -40,6 +40,8 @@ public:
 
     std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override;
 
+    std::any visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *ctx) override;
+
     std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override;
     std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override;
 

@@ -7,7 +7,7 @@
 
 #include "type.h"
 
-type_object none_type;
+extern type_object none_type;
 
 typedef struct none_object_t {
     ObjectHead

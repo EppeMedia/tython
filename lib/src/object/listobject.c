@@ -10,6 +10,7 @@
 #include "object/boolobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
+#include "object/sliceobject.h"
 
 static object* list_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement
@@ -59,25 +60,53 @@ static object* list_to_string(object* obj) {
 static object* list_subscript(object* obj, object* idx) {
 
     assert(IS_LIST(obj));
-    assert(IS_INT(idx));
+    assert(IS_INT(idx) || IS_SLICE(idx));
 
     list_object* list_obj = AS_LIST(obj);
-    int_object* idx_obj = AS_INT(idx);
 
-    long long index = idx_obj->value;
+    if (IS_INT(idx)) {
 
-    if (index < 0) {
+        int_object* idx_obj = AS_INT(idx);
 
-        // negative indexes wrap around
+        long long index = idx_obj->value;
 
-        assert(llabs(index) <= list_obj->size);
-        index += list_obj->size;
+        if (index < 0) {
+
+            // negative indexes wrap around
+
+            assert(llabs(index) <= list_obj->size);
+            index += list_obj->size;
+        }
+
+        // assert that the index is within list bounds
+        assert(index < list_obj->size);
+
+        // return the element at the specified index
+        return list_obj->elements[index];
+
+    } else if (IS_SLICE(idx)) {
+
+        slice_object* slice_obj = AS_SLICE(idx);
+
+        // determine the size of the new list to create
+        object* length_obj = slice_type.mapping_functions->length(AS_OBJECT(slice_obj));
+
+        assert(IS_INT(length_obj));
+
+        const size_t len = AS_INT(length_obj)->value;
+        list_object* new_list = AS_LIST(list_create(len));
+
+        for (int i = 0; i < len; ++i) {
+
+            const size_t k = slice_obj->start + (slice_obj->step * i);
+
+            new_list->elements[i] = list_subscript(obj, TO_INT(k));
+        }
+
+        return AS_OBJECT(new_list);
     }
 
-    // assert that the index is within list bounds
-    assert(index < list_obj->size);
-
-    return list_obj->elements[index];
+    assert("Only integers or slices are allowed as indexes for list subscripts!" && NULL);
 }
 
 static object* list_length(object* obj) {

@@ -5,13 +5,14 @@ ADD_LIBRARY(tython_lib STATIC
         object.c
         type.c
         object/noneobject.c
+        object/boolobject.c
         object/integerobject.c
-        object/rangeobject.c
         object/floatobject.c
         object/stringobject.c
-        object/boolobject.c
-        object/dictobject.c
-        object/listobject.c
         object/tupleobject.c
-        function/userfunctions.c
+        object/listobject.c
+        object/rangeobject.c
+        object/sliceobject.c
+        object/dictobject.c
+        api/api.c
         bridge/basicland.c)

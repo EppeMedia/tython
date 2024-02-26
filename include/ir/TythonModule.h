@@ -25,6 +25,7 @@ private:
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_range_func;
     llvm::FunctionCallee* tython_len_func;
+    llvm::FunctionCallee* tython_slice_func;
 
     std::map<std::string, llvm::Function*> function_shadow_symbol_table;
 
@@ -46,6 +47,10 @@ public:
             dict_create_func(nullptr),
             list_create_func(nullptr),
             tython_print_func(nullptr),
+            tython_range_func(nullptr),
+            tython_len_func(nullptr),
+            tython_slice_func(nullptr),
+            tuple_create_func(nullptr),
             object_is_truthy_func(nullptr),
             function_shadow_symbol_table() {
         initialize();

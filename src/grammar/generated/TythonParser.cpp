@@ -48,8 +48,8 @@ void tythonparserParserInitialize() {
       "assign_statement", "break_statement", "return_statement", "if_statement", 
       "for_loop", "while_loop", "arguments", "parameters", "call_expression", 
       "expression", "binary_operator", "inequality_operator", "logic_operator", 
-      "arithmetic_operator", "rval", "lval", "key_value_pair", "dict_lit", 
-      "list_lit", "tuple_lit", "literal"
+      "arithmetic_operator", "rval", "access_key", "lval", "key_value_pair", 
+      "dict_lit", "list_lit", "tuple_lit", "literal"
     },
     std::vector<std::string>{
       "", "", "", "'def'", "'return'", "'if'", "'else'", "'for'", "'in'", 
@@ -73,116 +73,123 @@ void tythonparserParserInitialize() {
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,54,326,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,54,344,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
   	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
   	21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,
-  	28,2,29,7,29,1,0,5,0,62,8,0,10,0,12,0,65,9,0,1,0,4,0,68,8,0,11,0,12,0,
-  	69,1,0,1,0,1,1,1,1,1,1,3,1,77,8,1,1,1,1,1,1,2,1,2,1,2,5,2,84,8,2,10,2,
-  	12,2,87,9,2,1,3,1,3,3,3,91,8,3,1,3,1,3,1,3,1,3,3,3,97,8,3,1,3,1,3,1,3,
-  	1,3,1,4,1,4,1,4,1,4,4,4,107,8,4,11,4,12,4,108,1,4,1,4,3,4,113,8,4,1,5,
-  	1,5,3,5,117,8,5,1,6,1,6,1,6,1,6,3,6,123,8,6,1,7,1,7,1,7,5,7,128,8,7,10,
-  	7,12,7,131,9,7,1,7,3,7,134,8,7,1,7,1,7,1,8,1,8,1,8,1,8,3,8,142,8,8,1,
-  	9,1,9,1,9,1,9,1,10,1,10,1,11,1,11,1,11,1,12,1,12,1,12,1,12,1,12,1,12,
-  	1,12,1,12,3,12,161,8,12,3,12,163,8,12,1,13,1,13,1,13,3,13,168,8,13,1,
-  	13,1,13,1,13,1,13,1,14,1,14,1,14,1,14,1,14,1,15,3,15,180,8,15,1,15,1,
-  	15,1,15,4,15,185,8,15,11,15,12,15,186,3,15,189,8,15,1,16,3,16,192,8,16,
-  	1,16,1,16,1,16,4,16,197,8,16,11,16,12,16,198,3,16,201,8,16,1,17,3,17,
-  	204,8,17,1,17,1,17,1,17,1,17,1,17,1,18,1,18,1,18,1,18,1,18,1,18,1,18,
-  	1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,3,18,228,8,18,1,18,
-  	1,18,1,18,1,18,5,18,234,8,18,10,18,12,18,237,9,18,1,19,1,19,1,19,3,19,
-  	242,8,19,1,20,1,20,1,21,1,21,1,22,1,22,1,23,1,23,3,23,252,8,23,1,24,1,
-  	24,1,24,1,24,1,24,1,24,3,24,260,8,24,1,25,1,25,1,25,1,25,1,26,1,26,3,
-  	26,268,8,26,1,26,3,26,271,8,26,1,26,1,26,4,26,275,8,26,11,26,12,26,276,
-  	3,26,279,8,26,1,26,1,26,1,27,1,27,3,27,285,8,27,1,27,3,27,288,8,27,1,
-  	27,1,27,4,27,292,8,27,11,27,12,27,293,3,27,296,8,27,1,27,1,27,1,28,1,
-  	28,3,28,302,8,28,1,28,3,28,305,8,28,1,28,1,28,4,28,309,8,28,11,28,12,
-  	28,310,3,28,313,8,28,1,28,1,28,1,29,1,29,1,29,1,29,1,29,1,29,1,29,3,29,
-  	324,8,29,1,29,0,1,36,30,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,
-  	34,36,38,40,42,44,46,48,50,52,54,56,58,0,3,1,0,25,30,1,0,31,32,1,0,33,
-  	37,351,0,63,1,0,0,0,2,73,1,0,0,0,4,80,1,0,0,0,6,88,1,0,0,0,8,112,1,0,
-  	0,0,10,116,1,0,0,0,12,122,1,0,0,0,14,124,1,0,0,0,16,141,1,0,0,0,18,143,
-  	1,0,0,0,20,147,1,0,0,0,22,149,1,0,0,0,24,152,1,0,0,0,26,164,1,0,0,0,28,
-  	173,1,0,0,0,30,188,1,0,0,0,32,200,1,0,0,0,34,203,1,0,0,0,36,227,1,0,0,
-  	0,38,241,1,0,0,0,40,243,1,0,0,0,42,245,1,0,0,0,44,247,1,0,0,0,46,251,
-  	1,0,0,0,48,259,1,0,0,0,50,261,1,0,0,0,52,265,1,0,0,0,54,282,1,0,0,0,56,
-  	299,1,0,0,0,58,323,1,0,0,0,60,62,3,2,1,0,61,60,1,0,0,0,62,65,1,0,0,0,
-  	63,61,1,0,0,0,63,64,1,0,0,0,64,67,1,0,0,0,65,63,1,0,0,0,66,68,3,10,5,
-  	0,67,66,1,0,0,0,68,69,1,0,0,0,69,67,1,0,0,0,69,70,1,0,0,0,70,71,1,0,0,
-  	0,71,72,5,0,0,1,72,1,1,0,0,0,73,74,5,12,0,0,74,76,3,4,2,0,75,77,5,21,
-  	0,0,76,75,1,0,0,0,76,77,1,0,0,0,77,78,1,0,0,0,78,79,5,51,0,0,79,3,1,0,
-  	0,0,80,85,5,47,0,0,81,82,5,40,0,0,82,84,5,47,0,0,83,81,1,0,0,0,84,87,
-  	1,0,0,0,85,83,1,0,0,0,85,86,1,0,0,0,86,5,1,0,0,0,87,85,1,0,0,0,88,90,
-  	5,3,0,0,89,91,5,11,0,0,90,89,1,0,0,0,90,91,1,0,0,0,91,92,1,0,0,0,92,93,
-  	5,47,0,0,93,94,5,14,0,0,94,96,3,30,15,0,95,97,5,41,0,0,96,95,1,0,0,0,
-  	96,97,1,0,0,0,97,98,1,0,0,0,98,99,5,15,0,0,99,100,5,20,0,0,100,101,3,
-  	8,4,0,101,7,1,0,0,0,102,113,3,14,7,0,103,104,5,51,0,0,104,106,5,1,0,0,
-  	105,107,3,10,5,0,106,105,1,0,0,0,107,108,1,0,0,0,108,106,1,0,0,0,108,
-  	109,1,0,0,0,109,110,1,0,0,0,110,111,5,2,0,0,111,113,1,0,0,0,112,102,1,
-  	0,0,0,112,103,1,0,0,0,113,9,1,0,0,0,114,117,3,14,7,0,115,117,3,16,8,0,
-  	116,114,1,0,0,0,116,115,1,0,0,0,117,11,1,0,0,0,118,123,3,36,18,0,119,
-  	123,3,18,9,0,120,123,3,20,10,0,121,123,3,22,11,0,122,118,1,0,0,0,122,
-  	119,1,0,0,0,122,120,1,0,0,0,122,121,1,0,0,0,123,13,1,0,0,0,124,129,3,
-  	12,6,0,125,126,5,21,0,0,126,128,3,12,6,0,127,125,1,0,0,0,128,131,1,0,
-  	0,0,129,127,1,0,0,0,129,130,1,0,0,0,130,133,1,0,0,0,131,129,1,0,0,0,132,
-  	134,5,21,0,0,133,132,1,0,0,0,133,134,1,0,0,0,134,135,1,0,0,0,135,136,
-  	5,51,0,0,136,15,1,0,0,0,137,142,3,24,12,0,138,142,3,6,3,0,139,142,3,26,
-  	13,0,140,142,3,28,14,0,141,137,1,0,0,0,141,138,1,0,0,0,141,139,1,0,0,
-  	0,141,140,1,0,0,0,142,17,1,0,0,0,143,144,3,48,24,0,144,145,5,24,0,0,145,
-  	146,3,36,18,0,146,19,1,0,0,0,147,148,5,10,0,0,148,21,1,0,0,0,149,150,
-  	5,4,0,0,150,151,3,36,18,0,151,23,1,0,0,0,152,153,5,5,0,0,153,154,3,36,
-  	18,0,154,155,5,20,0,0,155,162,3,8,4,0,156,160,5,6,0,0,157,161,3,24,12,
-  	0,158,159,5,20,0,0,159,161,3,8,4,0,160,157,1,0,0,0,160,158,1,0,0,0,161,
-  	163,1,0,0,0,162,156,1,0,0,0,162,163,1,0,0,0,163,25,1,0,0,0,164,167,5,
-  	7,0,0,165,166,5,47,0,0,166,168,5,8,0,0,167,165,1,0,0,0,167,168,1,0,0,
-  	0,168,169,1,0,0,0,169,170,3,36,18,0,170,171,5,20,0,0,171,172,3,8,4,0,
-  	172,27,1,0,0,0,173,174,5,9,0,0,174,175,3,36,18,0,175,176,5,20,0,0,176,
-  	177,3,8,4,0,177,29,1,0,0,0,178,180,5,47,0,0,179,178,1,0,0,0,179,180,1,
-  	0,0,0,180,189,1,0,0,0,181,184,5,47,0,0,182,183,5,22,0,0,183,185,5,47,
-  	0,0,184,182,1,0,0,0,185,186,1,0,0,0,186,184,1,0,0,0,186,187,1,0,0,0,187,
-  	189,1,0,0,0,188,179,1,0,0,0,188,181,1,0,0,0,189,31,1,0,0,0,190,192,3,
-  	36,18,0,191,190,1,0,0,0,191,192,1,0,0,0,192,201,1,0,0,0,193,196,3,36,
-  	18,0,194,195,5,22,0,0,195,197,3,36,18,0,196,194,1,0,0,0,197,198,1,0,0,
-  	0,198,196,1,0,0,0,198,199,1,0,0,0,199,201,1,0,0,0,200,191,1,0,0,0,200,
-  	193,1,0,0,0,201,33,1,0,0,0,202,204,5,11,0,0,203,202,1,0,0,0,203,204,1,
-  	0,0,0,204,205,1,0,0,0,205,206,5,47,0,0,206,207,5,14,0,0,207,208,3,32,
-  	16,0,208,209,5,15,0,0,209,35,1,0,0,0,210,211,6,18,-1,0,211,228,3,34,17,
-  	0,212,213,5,14,0,0,213,214,3,36,18,0,214,215,5,15,0,0,215,228,1,0,0,0,
-  	216,228,3,46,23,0,217,218,5,38,0,0,218,228,3,48,24,0,219,220,3,48,24,
-  	0,220,221,5,38,0,0,221,228,1,0,0,0,222,223,5,39,0,0,223,228,3,48,24,0,
-  	224,225,3,48,24,0,225,226,5,39,0,0,226,228,1,0,0,0,227,210,1,0,0,0,227,
-  	212,1,0,0,0,227,216,1,0,0,0,227,217,1,0,0,0,227,219,1,0,0,0,227,222,1,
-  	0,0,0,227,224,1,0,0,0,228,235,1,0,0,0,229,230,10,8,0,0,230,231,3,38,19,
-  	0,231,232,3,36,18,9,232,234,1,0,0,0,233,229,1,0,0,0,234,237,1,0,0,0,235,
-  	233,1,0,0,0,235,236,1,0,0,0,236,37,1,0,0,0,237,235,1,0,0,0,238,242,3,
-  	40,20,0,239,242,3,42,21,0,240,242,3,44,22,0,241,238,1,0,0,0,241,239,1,
-  	0,0,0,241,240,1,0,0,0,242,39,1,0,0,0,243,244,7,0,0,0,244,41,1,0,0,0,245,
-  	246,7,1,0,0,246,43,1,0,0,0,247,248,7,2,0,0,248,45,1,0,0,0,249,252,3,58,
-  	29,0,250,252,3,48,24,0,251,249,1,0,0,0,251,250,1,0,0,0,252,47,1,0,0,0,
-  	253,260,5,47,0,0,254,255,5,47,0,0,255,256,5,16,0,0,256,257,3,36,18,0,
-  	257,258,5,17,0,0,258,260,1,0,0,0,259,253,1,0,0,0,259,254,1,0,0,0,260,
-  	49,1,0,0,0,261,262,3,36,18,0,262,263,5,20,0,0,263,264,3,36,18,0,264,51,
-  	1,0,0,0,265,278,5,18,0,0,266,268,3,50,25,0,267,266,1,0,0,0,267,268,1,
-  	0,0,0,268,279,1,0,0,0,269,271,3,50,25,0,270,269,1,0,0,0,270,271,1,0,0,
-  	0,271,274,1,0,0,0,272,273,5,22,0,0,273,275,3,50,25,0,274,272,1,0,0,0,
-  	275,276,1,0,0,0,276,274,1,0,0,0,276,277,1,0,0,0,277,279,1,0,0,0,278,267,
-  	1,0,0,0,278,270,1,0,0,0,279,280,1,0,0,0,280,281,5,19,0,0,281,53,1,0,0,
-  	0,282,295,5,16,0,0,283,285,3,46,23,0,284,283,1,0,0,0,284,285,1,0,0,0,
-  	285,296,1,0,0,0,286,288,3,46,23,0,287,286,1,0,0,0,287,288,1,0,0,0,288,
-  	291,1,0,0,0,289,290,5,22,0,0,290,292,3,46,23,0,291,289,1,0,0,0,292,293,
-  	1,0,0,0,293,291,1,0,0,0,293,294,1,0,0,0,294,296,1,0,0,0,295,284,1,0,0,
-  	0,295,287,1,0,0,0,296,297,1,0,0,0,297,298,5,17,0,0,298,55,1,0,0,0,299,
-  	312,5,14,0,0,300,302,3,46,23,0,301,300,1,0,0,0,301,302,1,0,0,0,302,313,
-  	1,0,0,0,303,305,3,46,23,0,304,303,1,0,0,0,304,305,1,0,0,0,305,308,1,0,
-  	0,0,306,307,5,22,0,0,307,309,3,46,23,0,308,306,1,0,0,0,309,310,1,0,0,
-  	0,310,308,1,0,0,0,310,311,1,0,0,0,311,313,1,0,0,0,312,301,1,0,0,0,312,
-  	304,1,0,0,0,313,314,1,0,0,0,314,315,5,15,0,0,315,57,1,0,0,0,316,324,5,
-  	48,0,0,317,324,5,49,0,0,318,324,5,50,0,0,319,324,5,46,0,0,320,324,3,52,
-  	26,0,321,324,3,54,27,0,322,324,3,56,28,0,323,316,1,0,0,0,323,317,1,0,
-  	0,0,323,318,1,0,0,0,323,319,1,0,0,0,323,320,1,0,0,0,323,321,1,0,0,0,323,
-  	322,1,0,0,0,324,59,1,0,0,0,41,63,69,76,85,90,96,108,112,116,122,129,133,
-  	141,160,162,167,179,186,188,191,198,200,203,227,235,241,251,259,267,270,
-  	276,278,284,287,293,295,301,304,310,312,323
+  	28,2,29,7,29,2,30,7,30,1,0,5,0,64,8,0,10,0,12,0,67,9,0,1,0,4,0,70,8,0,
+  	11,0,12,0,71,1,0,1,0,1,1,1,1,1,1,3,1,79,8,1,1,1,1,1,1,2,1,2,1,2,5,2,86,
+  	8,2,10,2,12,2,89,9,2,1,3,1,3,3,3,93,8,3,1,3,1,3,1,3,1,3,3,3,99,8,3,1,
+  	3,1,3,1,3,1,3,1,4,1,4,1,4,1,4,4,4,109,8,4,11,4,12,4,110,1,4,1,4,3,4,115,
+  	8,4,1,5,1,5,3,5,119,8,5,1,6,1,6,1,6,1,6,3,6,125,8,6,1,7,1,7,1,7,5,7,130,
+  	8,7,10,7,12,7,133,9,7,1,7,3,7,136,8,7,1,7,1,7,1,8,1,8,1,8,1,8,3,8,144,
+  	8,8,1,9,1,9,1,9,1,9,1,10,1,10,1,11,1,11,1,11,1,12,1,12,1,12,1,12,1,12,
+  	1,12,1,12,1,12,3,12,163,8,12,3,12,165,8,12,1,13,1,13,1,13,3,13,170,8,
+  	13,1,13,1,13,1,13,1,13,1,14,1,14,1,14,1,14,1,14,1,15,3,15,182,8,15,1,
+  	15,1,15,1,15,4,15,187,8,15,11,15,12,15,188,3,15,191,8,15,1,16,3,16,194,
+  	8,16,1,16,1,16,1,16,4,16,199,8,16,11,16,12,16,200,3,16,203,8,16,1,17,
+  	3,17,206,8,17,1,17,1,17,1,17,1,17,1,17,1,18,1,18,1,18,1,18,1,18,1,18,
+  	1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,3,18,230,8,18,
+  	1,18,1,18,1,18,1,18,5,18,236,8,18,10,18,12,18,239,9,18,1,19,1,19,1,19,
+  	3,19,244,8,19,1,20,1,20,1,21,1,21,1,22,1,22,1,23,1,23,3,23,254,8,23,1,
+  	24,3,24,257,8,24,1,24,1,24,3,24,261,8,24,1,24,3,24,264,8,24,1,24,3,24,
+  	267,8,24,1,24,3,24,270,8,24,1,25,1,25,1,25,1,25,1,25,1,25,3,25,278,8,
+  	25,1,26,1,26,1,26,1,26,1,27,1,27,3,27,286,8,27,1,27,3,27,289,8,27,1,27,
+  	1,27,4,27,293,8,27,11,27,12,27,294,3,27,297,8,27,1,27,1,27,1,28,1,28,
+  	3,28,303,8,28,1,28,3,28,306,8,28,1,28,1,28,4,28,310,8,28,11,28,12,28,
+  	311,3,28,314,8,28,1,28,1,28,1,29,1,29,3,29,320,8,29,1,29,3,29,323,8,29,
+  	1,29,1,29,4,29,327,8,29,11,29,12,29,328,3,29,331,8,29,1,29,1,29,1,30,
+  	1,30,1,30,1,30,1,30,1,30,1,30,3,30,342,8,30,1,30,0,1,36,31,0,2,4,6,8,
+  	10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,
+  	56,58,60,0,3,1,0,25,30,1,0,31,32,1,0,33,37,373,0,65,1,0,0,0,2,75,1,0,
+  	0,0,4,82,1,0,0,0,6,90,1,0,0,0,8,114,1,0,0,0,10,118,1,0,0,0,12,124,1,0,
+  	0,0,14,126,1,0,0,0,16,143,1,0,0,0,18,145,1,0,0,0,20,149,1,0,0,0,22,151,
+  	1,0,0,0,24,154,1,0,0,0,26,166,1,0,0,0,28,175,1,0,0,0,30,190,1,0,0,0,32,
+  	202,1,0,0,0,34,205,1,0,0,0,36,229,1,0,0,0,38,243,1,0,0,0,40,245,1,0,0,
+  	0,42,247,1,0,0,0,44,249,1,0,0,0,46,253,1,0,0,0,48,269,1,0,0,0,50,277,
+  	1,0,0,0,52,279,1,0,0,0,54,283,1,0,0,0,56,300,1,0,0,0,58,317,1,0,0,0,60,
+  	341,1,0,0,0,62,64,3,2,1,0,63,62,1,0,0,0,64,67,1,0,0,0,65,63,1,0,0,0,65,
+  	66,1,0,0,0,66,69,1,0,0,0,67,65,1,0,0,0,68,70,3,10,5,0,69,68,1,0,0,0,70,
+  	71,1,0,0,0,71,69,1,0,0,0,71,72,1,0,0,0,72,73,1,0,0,0,73,74,5,0,0,1,74,
+  	1,1,0,0,0,75,76,5,12,0,0,76,78,3,4,2,0,77,79,5,21,0,0,78,77,1,0,0,0,78,
+  	79,1,0,0,0,79,80,1,0,0,0,80,81,5,51,0,0,81,3,1,0,0,0,82,87,5,47,0,0,83,
+  	84,5,40,0,0,84,86,5,47,0,0,85,83,1,0,0,0,86,89,1,0,0,0,87,85,1,0,0,0,
+  	87,88,1,0,0,0,88,5,1,0,0,0,89,87,1,0,0,0,90,92,5,3,0,0,91,93,5,11,0,0,
+  	92,91,1,0,0,0,92,93,1,0,0,0,93,94,1,0,0,0,94,95,5,47,0,0,95,96,5,14,0,
+  	0,96,98,3,30,15,0,97,99,5,41,0,0,98,97,1,0,0,0,98,99,1,0,0,0,99,100,1,
+  	0,0,0,100,101,5,15,0,0,101,102,5,20,0,0,102,103,3,8,4,0,103,7,1,0,0,0,
+  	104,115,3,14,7,0,105,106,5,51,0,0,106,108,5,1,0,0,107,109,3,10,5,0,108,
+  	107,1,0,0,0,109,110,1,0,0,0,110,108,1,0,0,0,110,111,1,0,0,0,111,112,1,
+  	0,0,0,112,113,5,2,0,0,113,115,1,0,0,0,114,104,1,0,0,0,114,105,1,0,0,0,
+  	115,9,1,0,0,0,116,119,3,14,7,0,117,119,3,16,8,0,118,116,1,0,0,0,118,117,
+  	1,0,0,0,119,11,1,0,0,0,120,125,3,36,18,0,121,125,3,18,9,0,122,125,3,20,
+  	10,0,123,125,3,22,11,0,124,120,1,0,0,0,124,121,1,0,0,0,124,122,1,0,0,
+  	0,124,123,1,0,0,0,125,13,1,0,0,0,126,131,3,12,6,0,127,128,5,21,0,0,128,
+  	130,3,12,6,0,129,127,1,0,0,0,130,133,1,0,0,0,131,129,1,0,0,0,131,132,
+  	1,0,0,0,132,135,1,0,0,0,133,131,1,0,0,0,134,136,5,21,0,0,135,134,1,0,
+  	0,0,135,136,1,0,0,0,136,137,1,0,0,0,137,138,5,51,0,0,138,15,1,0,0,0,139,
+  	144,3,24,12,0,140,144,3,6,3,0,141,144,3,26,13,0,142,144,3,28,14,0,143,
+  	139,1,0,0,0,143,140,1,0,0,0,143,141,1,0,0,0,143,142,1,0,0,0,144,17,1,
+  	0,0,0,145,146,3,50,25,0,146,147,5,24,0,0,147,148,3,36,18,0,148,19,1,0,
+  	0,0,149,150,5,10,0,0,150,21,1,0,0,0,151,152,5,4,0,0,152,153,3,36,18,0,
+  	153,23,1,0,0,0,154,155,5,5,0,0,155,156,3,36,18,0,156,157,5,20,0,0,157,
+  	164,3,8,4,0,158,162,5,6,0,0,159,163,3,24,12,0,160,161,5,20,0,0,161,163,
+  	3,8,4,0,162,159,1,0,0,0,162,160,1,0,0,0,163,165,1,0,0,0,164,158,1,0,0,
+  	0,164,165,1,0,0,0,165,25,1,0,0,0,166,169,5,7,0,0,167,168,5,47,0,0,168,
+  	170,5,8,0,0,169,167,1,0,0,0,169,170,1,0,0,0,170,171,1,0,0,0,171,172,3,
+  	36,18,0,172,173,5,20,0,0,173,174,3,8,4,0,174,27,1,0,0,0,175,176,5,9,0,
+  	0,176,177,3,36,18,0,177,178,5,20,0,0,178,179,3,8,4,0,179,29,1,0,0,0,180,
+  	182,5,47,0,0,181,180,1,0,0,0,181,182,1,0,0,0,182,191,1,0,0,0,183,186,
+  	5,47,0,0,184,185,5,22,0,0,185,187,5,47,0,0,186,184,1,0,0,0,187,188,1,
+  	0,0,0,188,186,1,0,0,0,188,189,1,0,0,0,189,191,1,0,0,0,190,181,1,0,0,0,
+  	190,183,1,0,0,0,191,31,1,0,0,0,192,194,3,36,18,0,193,192,1,0,0,0,193,
+  	194,1,0,0,0,194,203,1,0,0,0,195,198,3,36,18,0,196,197,5,22,0,0,197,199,
+  	3,36,18,0,198,196,1,0,0,0,199,200,1,0,0,0,200,198,1,0,0,0,200,201,1,0,
+  	0,0,201,203,1,0,0,0,202,193,1,0,0,0,202,195,1,0,0,0,203,33,1,0,0,0,204,
+  	206,5,11,0,0,205,204,1,0,0,0,205,206,1,0,0,0,206,207,1,0,0,0,207,208,
+  	5,47,0,0,208,209,5,14,0,0,209,210,3,32,16,0,210,211,5,15,0,0,211,35,1,
+  	0,0,0,212,213,6,18,-1,0,213,230,3,34,17,0,214,215,5,14,0,0,215,216,3,
+  	36,18,0,216,217,5,15,0,0,217,230,1,0,0,0,218,230,3,46,23,0,219,220,5,
+  	38,0,0,220,230,3,50,25,0,221,222,3,50,25,0,222,223,5,38,0,0,223,230,1,
+  	0,0,0,224,225,5,39,0,0,225,230,3,50,25,0,226,227,3,50,25,0,227,228,5,
+  	39,0,0,228,230,1,0,0,0,229,212,1,0,0,0,229,214,1,0,0,0,229,218,1,0,0,
+  	0,229,219,1,0,0,0,229,221,1,0,0,0,229,224,1,0,0,0,229,226,1,0,0,0,230,
+  	237,1,0,0,0,231,232,10,8,0,0,232,233,3,38,19,0,233,234,3,36,18,9,234,
+  	236,1,0,0,0,235,231,1,0,0,0,236,239,1,0,0,0,237,235,1,0,0,0,237,238,1,
+  	0,0,0,238,37,1,0,0,0,239,237,1,0,0,0,240,244,3,40,20,0,241,244,3,42,21,
+  	0,242,244,3,44,22,0,243,240,1,0,0,0,243,241,1,0,0,0,243,242,1,0,0,0,244,
+  	39,1,0,0,0,245,246,7,0,0,0,246,41,1,0,0,0,247,248,7,1,0,0,248,43,1,0,
+  	0,0,249,250,7,2,0,0,250,45,1,0,0,0,251,254,3,60,30,0,252,254,3,50,25,
+  	0,253,251,1,0,0,0,253,252,1,0,0,0,254,47,1,0,0,0,255,257,3,46,23,0,256,
+  	255,1,0,0,0,256,257,1,0,0,0,257,258,1,0,0,0,258,260,5,20,0,0,259,261,
+  	3,46,23,0,260,259,1,0,0,0,260,261,1,0,0,0,261,263,1,0,0,0,262,264,5,20,
+  	0,0,263,262,1,0,0,0,263,264,1,0,0,0,264,266,1,0,0,0,265,267,3,46,23,0,
+  	266,265,1,0,0,0,266,267,1,0,0,0,267,270,1,0,0,0,268,270,3,36,18,0,269,
+  	256,1,0,0,0,269,268,1,0,0,0,270,49,1,0,0,0,271,278,5,47,0,0,272,273,5,
+  	47,0,0,273,274,5,16,0,0,274,275,3,48,24,0,275,276,5,17,0,0,276,278,1,
+  	0,0,0,277,271,1,0,0,0,277,272,1,0,0,0,278,51,1,0,0,0,279,280,3,36,18,
+  	0,280,281,5,20,0,0,281,282,3,36,18,0,282,53,1,0,0,0,283,296,5,18,0,0,
+  	284,286,3,52,26,0,285,284,1,0,0,0,285,286,1,0,0,0,286,297,1,0,0,0,287,
+  	289,3,52,26,0,288,287,1,0,0,0,288,289,1,0,0,0,289,292,1,0,0,0,290,291,
+  	5,22,0,0,291,293,3,52,26,0,292,290,1,0,0,0,293,294,1,0,0,0,294,292,1,
+  	0,0,0,294,295,1,0,0,0,295,297,1,0,0,0,296,285,1,0,0,0,296,288,1,0,0,0,
+  	297,298,1,0,0,0,298,299,5,19,0,0,299,55,1,0,0,0,300,313,5,16,0,0,301,
+  	303,3,46,23,0,302,301,1,0,0,0,302,303,1,0,0,0,303,314,1,0,0,0,304,306,
+  	3,46,23,0,305,304,1,0,0,0,305,306,1,0,0,0,306,309,1,0,0,0,307,308,5,22,
+  	0,0,308,310,3,46,23,0,309,307,1,0,0,0,310,311,1,0,0,0,311,309,1,0,0,0,
+  	311,312,1,0,0,0,312,314,1,0,0,0,313,302,1,0,0,0,313,305,1,0,0,0,314,315,
+  	1,0,0,0,315,316,5,17,0,0,316,57,1,0,0,0,317,330,5,14,0,0,318,320,3,46,
+  	23,0,319,318,1,0,0,0,319,320,1,0,0,0,320,331,1,0,0,0,321,323,3,46,23,
+  	0,322,321,1,0,0,0,322,323,1,0,0,0,323,326,1,0,0,0,324,325,5,22,0,0,325,
+  	327,3,46,23,0,326,324,1,0,0,0,327,328,1,0,0,0,328,326,1,0,0,0,328,329,
+  	1,0,0,0,329,331,1,0,0,0,330,319,1,0,0,0,330,322,1,0,0,0,331,332,1,0,0,
+  	0,332,333,5,15,0,0,333,59,1,0,0,0,334,342,5,48,0,0,335,342,5,49,0,0,336,
+  	342,5,50,0,0,337,342,5,46,0,0,338,342,3,54,27,0,339,342,3,56,28,0,340,
+  	342,3,58,29,0,341,334,1,0,0,0,341,335,1,0,0,0,341,336,1,0,0,0,341,337,
+  	1,0,0,0,341,338,1,0,0,0,341,339,1,0,0,0,341,340,1,0,0,0,342,61,1,0,0,
+  	0,46,65,71,78,87,92,98,110,114,118,124,131,135,143,162,164,169,181,188,
+  	190,193,200,202,205,229,237,243,253,256,260,263,266,269,277,285,288,294,
+  	296,302,305,311,313,319,322,328,330,341
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -284,28 +291,28 @@ TythonParser::ProgramContext* TythonParser::program() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(63);
+    setState(65);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == TythonParser::KW_IMPORT) {
-      setState(60);
+      setState(62);
       import_statement();
-      setState(65);
+      setState(67);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(67); 
+    setState(69); 
     _errHandler->sync(this);
     _la = _input->LA(1);
     do {
-      setState(66);
+      setState(68);
       statement();
-      setState(69); 
+      setState(71); 
       _errHandler->sync(this);
       _la = _input->LA(1);
     } while ((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & 2182255703576248) != 0));
-    setState(71);
+    setState(73);
     match(TythonParser::EOF);
    
   }
@@ -367,19 +374,19 @@ TythonParser::Import_statementContext* TythonParser::import_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(73);
+    setState(75);
     match(TythonParser::KW_IMPORT);
-    setState(74);
-    import_path();
     setState(76);
+    import_path();
+    setState(78);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_SEMCOL) {
-      setState(75);
+      setState(77);
       match(TythonParser::SYM_SEMCOL);
     }
-    setState(78);
+    setState(80);
     match(TythonParser::NEWLINE);
    
   }
@@ -441,17 +448,17 @@ TythonParser::Import_pathContext* TythonParser::import_path() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(80);
+    setState(82);
     match(TythonParser::IDENTIFIER);
-    setState(85);
+    setState(87);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == TythonParser::SYM_DOT) {
-      setState(81);
+      setState(83);
       match(TythonParser::SYM_DOT);
-      setState(82);
+      setState(84);
       match(TythonParser::IDENTIFIER);
-      setState(87);
+      setState(89);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -535,35 +542,35 @@ TythonParser::Function_defContext* TythonParser::function_def() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(88);
-    match(TythonParser::KW_DEF);
     setState(90);
+    match(TythonParser::KW_DEF);
+    setState(92);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::KW_EXTERN) {
-      setState(89);
+      setState(91);
       match(TythonParser::KW_EXTERN);
     }
-    setState(92);
-    match(TythonParser::IDENTIFIER);
-    setState(93);
-    match(TythonParser::SYM_LPAR);
     setState(94);
-    arguments();
+    match(TythonParser::IDENTIFIER);
+    setState(95);
+    match(TythonParser::SYM_LPAR);
     setState(96);
+    arguments();
+    setState(98);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_ELLIPS) {
-      setState(95);
+      setState(97);
       match(TythonParser::SYM_ELLIPS);
     }
-    setState(98);
-    match(TythonParser::SYM_RPAR);
-    setState(99);
-    match(TythonParser::SYM_COL);
     setState(100);
+    match(TythonParser::SYM_RPAR);
+    setState(101);
+    match(TythonParser::SYM_COL);
+    setState(102);
     block();
    
   }
@@ -632,7 +639,7 @@ TythonParser::BlockContext* TythonParser::block() {
     exitRule();
   });
   try {
-    setState(112);
+    setState(114);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_RETURN:
@@ -649,29 +656,29 @@ TythonParser::BlockContext* TythonParser::block() {
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(102);
+        setState(104);
         simple_statements();
         break;
       }
 
       case TythonParser::NEWLINE: {
         enterOuterAlt(_localctx, 2);
-        setState(103);
+        setState(105);
         match(TythonParser::NEWLINE);
-        setState(104);
+        setState(106);
         match(TythonParser::INDENT);
-        setState(106); 
+        setState(108); 
         _errHandler->sync(this);
         _la = _input->LA(1);
         do {
-          setState(105);
+          setState(107);
           antlrcpp::downCast<BlockContext *>(_localctx)->indent_statements = statement();
-          setState(108); 
+          setState(110); 
           _errHandler->sync(this);
           _la = _input->LA(1);
         } while ((((_la & ~ 0x3fULL) == 0) &&
           ((1ULL << _la) & 2182255703576248) != 0));
-        setState(110);
+        setState(112);
         match(TythonParser::DEDENT);
         break;
       }
@@ -729,7 +736,7 @@ TythonParser::StatementContext* TythonParser::statement() {
     exitRule();
   });
   try {
-    setState(116);
+    setState(118);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_RETURN:
@@ -746,7 +753,7 @@ TythonParser::StatementContext* TythonParser::statement() {
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(114);
+        setState(116);
         simple_statements();
         break;
       }
@@ -756,7 +763,7 @@ TythonParser::StatementContext* TythonParser::statement() {
       case TythonParser::KW_FOR:
       case TythonParser::KW_WHILE: {
         enterOuterAlt(_localctx, 2);
-        setState(115);
+        setState(117);
         compound_statement();
         break;
       }
@@ -822,33 +829,33 @@ TythonParser::Simple_statementContext* TythonParser::simple_statement() {
     exitRule();
   });
   try {
-    setState(122);
+    setState(124);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(118);
+      setState(120);
       expression(0);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(119);
+      setState(121);
       assign_statement();
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(120);
+      setState(122);
       break_statement();
       break;
     }
 
     case 4: {
       enterOuterAlt(_localctx, 4);
-      setState(121);
+      setState(123);
       return_statement();
       break;
     }
@@ -921,31 +928,31 @@ TythonParser::Simple_statementsContext* TythonParser::simple_statements() {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(124);
+    setState(126);
     simple_statement();
-    setState(129);
+    setState(131);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
-        setState(125);
+        setState(127);
         match(TythonParser::SYM_SEMCOL);
-        setState(126);
+        setState(128);
         simple_statement(); 
       }
-      setState(131);
+      setState(133);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx);
     }
-    setState(133);
+    setState(135);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::SYM_SEMCOL) {
-      setState(132);
+      setState(134);
       match(TythonParser::SYM_SEMCOL);
     }
-    setState(135);
+    setState(137);
     match(TythonParser::NEWLINE);
    
   }
@@ -1005,33 +1012,33 @@ TythonParser::Compound_statementContext* TythonParser::compound_statement() {
     exitRule();
   });
   try {
-    setState(141);
+    setState(143);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::KW_IF: {
         enterOuterAlt(_localctx, 1);
-        setState(137);
+        setState(139);
         if_statement();
         break;
       }
 
       case TythonParser::KW_DEF: {
         enterOuterAlt(_localctx, 2);
-        setState(138);
+        setState(140);
         function_def();
         break;
       }
 
       case TythonParser::KW_FOR: {
         enterOuterAlt(_localctx, 3);
-        setState(139);
+        setState(141);
         for_loop();
         break;
       }
 
       case TythonParser::KW_WHILE: {
         enterOuterAlt(_localctx, 4);
-        setState(140);
+        setState(142);
         while_loop();
         break;
       }
@@ -1094,11 +1101,11 @@ TythonParser::Assign_statementContext* TythonParser::assign_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(143);
-    lval();
-    setState(144);
-    match(TythonParser::SYM_ASSIGN);
     setState(145);
+    lval();
+    setState(146);
+    match(TythonParser::SYM_ASSIGN);
+    setState(147);
     expression(0);
    
   }
@@ -1147,7 +1154,7 @@ TythonParser::Break_statementContext* TythonParser::break_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(147);
+    setState(149);
     match(TythonParser::KW_BREAK);
    
   }
@@ -1200,9 +1207,9 @@ TythonParser::Return_statementContext* TythonParser::return_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(149);
+    setState(151);
     match(TythonParser::KW_RETURN);
-    setState(150);
+    setState(152);
     expression(0);
    
   }
@@ -1280,34 +1287,34 @@ TythonParser::If_statementContext* TythonParser::if_statement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(152);
-    match(TythonParser::KW_IF);
-    setState(153);
-    expression(0);
     setState(154);
-    match(TythonParser::SYM_COL);
+    match(TythonParser::KW_IF);
     setState(155);
+    expression(0);
+    setState(156);
+    match(TythonParser::SYM_COL);
+    setState(157);
     antlrcpp::downCast<If_statementContext *>(_localctx)->br_if = block();
-    setState(162);
+    setState(164);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::KW_ELSE) {
-      setState(156);
+      setState(158);
       match(TythonParser::KW_ELSE);
-      setState(160);
+      setState(162);
       _errHandler->sync(this);
       switch (_input->LA(1)) {
         case TythonParser::KW_IF: {
-          setState(157);
+          setState(159);
           antlrcpp::downCast<If_statementContext *>(_localctx)->br_else_if = if_statement();
           break;
         }
 
         case TythonParser::SYM_COL: {
-          setState(158);
+          setState(160);
           match(TythonParser::SYM_COL);
-          setState(159);
+          setState(161);
           antlrcpp::downCast<If_statementContext *>(_localctx)->br_else = block();
           break;
         }
@@ -1383,16 +1390,16 @@ TythonParser::For_loopContext* TythonParser::for_loop() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(164);
+    setState(166);
     match(TythonParser::KW_FOR);
-    setState(167);
+    setState(169);
     _errHandler->sync(this);
 
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 15, _ctx)) {
     case 1: {
-      setState(165);
+      setState(167);
       match(TythonParser::IDENTIFIER);
-      setState(166);
+      setState(168);
       match(TythonParser::KW_IN);
       break;
     }
@@ -1400,11 +1407,11 @@ TythonParser::For_loopContext* TythonParser::for_loop() {
     default:
       break;
     }
-    setState(169);
-    expression(0);
-    setState(170);
-    match(TythonParser::SYM_COL);
     setState(171);
+    expression(0);
+    setState(172);
+    match(TythonParser::SYM_COL);
+    setState(173);
     block();
    
   }
@@ -1465,13 +1472,13 @@ TythonParser::While_loopContext* TythonParser::while_loop() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(173);
-    match(TythonParser::KW_WHILE);
-    setState(174);
-    expression(0);
     setState(175);
-    match(TythonParser::SYM_COL);
+    match(TythonParser::KW_WHILE);
     setState(176);
+    expression(0);
+    setState(177);
+    match(TythonParser::SYM_COL);
+    setState(178);
     block();
    
   }
@@ -1532,17 +1539,17 @@ TythonParser::ArgumentsContext* TythonParser::arguments() {
     exitRule();
   });
   try {
-    setState(188);
+    setState(190);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 18, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(179);
+      setState(181);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if (_la == TythonParser::IDENTIFIER) {
-        setState(178);
+        setState(180);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
       }
@@ -1551,19 +1558,19 @@ TythonParser::ArgumentsContext* TythonParser::arguments() {
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(181);
+      setState(183);
       antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
       antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
-      setState(184); 
+      setState(186); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(182);
+        setState(184);
         match(TythonParser::SYM_COMMA);
-        setState(183);
+        setState(185);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken = match(TythonParser::IDENTIFIER);
         antlrcpp::downCast<ArgumentsContext *>(_localctx)->args.push_back(antlrcpp::downCast<ArgumentsContext *>(_localctx)->identifierToken);
-        setState(186); 
+        setState(188); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_COMMA);
@@ -1632,18 +1639,18 @@ TythonParser::ParametersContext* TythonParser::parameters() {
     exitRule();
   });
   try {
-    setState(200);
+    setState(202);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(191);
+      setState(193);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2182255703574528) != 0)) {
-        setState(190);
+        setState(192);
         antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
         antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
       }
@@ -1652,19 +1659,19 @@ TythonParser::ParametersContext* TythonParser::parameters() {
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(193);
+      setState(195);
       antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
       antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
-      setState(196); 
+      setState(198); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(194);
+        setState(196);
         match(TythonParser::SYM_COMMA);
-        setState(195);
+        setState(197);
         antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext = expression(0);
         antlrcpp::downCast<ParametersContext *>(_localctx)->params.push_back(antlrcpp::downCast<ParametersContext *>(_localctx)->expressionContext);
-        setState(198); 
+        setState(200); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_COMMA);
@@ -1738,21 +1745,21 @@ TythonParser::Call_expressionContext* TythonParser::call_expression() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(203);
+    setState(205);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == TythonParser::KW_EXTERN) {
-      setState(202);
+      setState(204);
       match(TythonParser::KW_EXTERN);
     }
-    setState(205);
-    match(TythonParser::IDENTIFIER);
-    setState(206);
-    match(TythonParser::SYM_LPAR);
     setState(207);
-    parameters();
+    match(TythonParser::IDENTIFIER);
     setState(208);
+    match(TythonParser::SYM_LPAR);
+    setState(209);
+    parameters();
+    setState(210);
     match(TythonParser::SYM_RPAR);
    
   }
@@ -1958,7 +1965,7 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(227);
+    setState(229);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 23, _ctx)) {
     case 1: {
@@ -1966,7 +1973,7 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _ctx = _localctx;
       previousContext = _localctx;
 
-      setState(211);
+      setState(213);
       call_expression();
       break;
     }
@@ -1975,11 +1982,11 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_expression_parenthesesContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(212);
-      match(TythonParser::SYM_LPAR);
-      setState(213);
-      expression(0);
       setState(214);
+      match(TythonParser::SYM_LPAR);
+      setState(215);
+      expression(0);
+      setState(216);
       match(TythonParser::SYM_RPAR);
       break;
     }
@@ -1988,7 +1995,7 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_rvalContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(216);
+      setState(218);
       rval();
       break;
     }
@@ -1997,9 +2004,9 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_inc_prefixContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(217);
+      setState(219);
       match(TythonParser::SYM_INC);
-      setState(218);
+      setState(220);
       lval();
       break;
     }
@@ -2008,9 +2015,9 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lbl_inc_suffixContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(219);
+      setState(221);
       lval();
-      setState(220);
+      setState(222);
       match(TythonParser::SYM_INC);
       break;
     }
@@ -2019,9 +2026,9 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lcl_dec_prefixContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(222);
+      setState(224);
       match(TythonParser::SYM_DEC);
-      setState(223);
+      setState(225);
       lval();
       break;
     }
@@ -2030,9 +2037,9 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       _localctx = _tracker.createInstance<Lcl_dec_suffixContext>(_localctx);
       _ctx = _localctx;
       previousContext = _localctx;
-      setState(224);
+      setState(226);
       lval();
-      setState(225);
+      setState(227);
       match(TythonParser::SYM_DEC);
       break;
     }
@@ -2041,7 +2048,7 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(235);
+    setState(237);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 24, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
@@ -2053,15 +2060,15 @@ TythonParser::ExpressionContext* TythonParser::expression(int precedence) {
         _localctx = newContext;
         newContext->lhs = previousContext;
         pushNewRecursionContext(newContext, startState, RuleExpression);
-        setState(229);
+        setState(231);
 
         if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
-        setState(230);
+        setState(232);
         binary_operator();
-        setState(231);
+        setState(233);
         antlrcpp::downCast<Binary_expressionContext *>(_localctx)->rhs = expression(9); 
       }
-      setState(237);
+      setState(239);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 24, _ctx);
     }
@@ -2117,7 +2124,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
     exitRule();
   });
   try {
-    setState(241);
+    setState(243);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::SYM_NEQ:
@@ -2127,7 +2134,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_GT:
       case TythonParser::SYM_GTE: {
         enterOuterAlt(_localctx, 1);
-        setState(238);
+        setState(240);
         inequality_operator();
         break;
       }
@@ -2135,7 +2142,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_AND:
       case TythonParser::SYM_OR: {
         enterOuterAlt(_localctx, 2);
-        setState(239);
+        setState(241);
         logic_operator();
         break;
       }
@@ -2146,7 +2153,7 @@ TythonParser::Binary_operatorContext* TythonParser::binary_operator() {
       case TythonParser::SYM_DIV:
       case TythonParser::SYM_EXP: {
         enterOuterAlt(_localctx, 3);
-        setState(240);
+        setState(242);
         arithmetic_operator();
         break;
       }
@@ -2222,7 +2229,7 @@ TythonParser::Inequality_operatorContext* TythonParser::inequality_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(243);
+    setState(245);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & 2113929216) != 0))) {
@@ -2284,7 +2291,7 @@ TythonParser::Logic_operatorContext* TythonParser::logic_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(245);
+    setState(247);
     _la = _input->LA(1);
     if (!(_la == TythonParser::SYM_AND
 
@@ -2359,7 +2366,7 @@ TythonParser::Arithmetic_operatorContext* TythonParser::arithmetic_operator() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(247);
+    setState(249);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
       ((1ULL << _la) & 266287972352) != 0))) {
@@ -2419,7 +2426,7 @@ TythonParser::RvalContext* TythonParser::rval() {
     exitRule();
   });
   try {
-    setState(251);
+    setState(253);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::SYM_LPAR:
@@ -2430,20 +2437,162 @@ TythonParser::RvalContext* TythonParser::rval() {
       case TythonParser::FLOAT_LIT:
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(249);
+        setState(251);
         literal();
         break;
       }
 
       case TythonParser::IDENTIFIER: {
         enterOuterAlt(_localctx, 2);
-        setState(250);
+        setState(252);
         lval();
         break;
       }
 
     default:
       throw NoViableAltException(this);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Access_keyContext ------------------------------------------------------------------
+
+TythonParser::Access_keyContext::Access_keyContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+
+size_t TythonParser::Access_keyContext::getRuleIndex() const {
+  return TythonParser::RuleAccess_key;
+}
+
+void TythonParser::Access_keyContext::copyFrom(Access_keyContext *ctx) {
+  ParserRuleContext::copyFrom(ctx);
+}
+
+//----------------- Lbl_access_key_sliceContext ------------------------------------------------------------------
+
+std::vector<tree::TerminalNode *> TythonParser::Lbl_access_key_sliceContext::SYM_COL() {
+  return getTokens(TythonParser::SYM_COL);
+}
+
+tree::TerminalNode* TythonParser::Lbl_access_key_sliceContext::SYM_COL(size_t i) {
+  return getToken(TythonParser::SYM_COL, i);
+}
+
+std::vector<TythonParser::RvalContext *> TythonParser::Lbl_access_key_sliceContext::rval() {
+  return getRuleContexts<TythonParser::RvalContext>();
+}
+
+TythonParser::RvalContext* TythonParser::Lbl_access_key_sliceContext::rval(size_t i) {
+  return getRuleContext<TythonParser::RvalContext>(i);
+}
+
+TythonParser::Lbl_access_key_sliceContext::Lbl_access_key_sliceContext(Access_keyContext *ctx) { copyFrom(ctx); }
+
+
+std::any TythonParser::Lbl_access_key_sliceContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<TythonParserVisitor*>(visitor))
+    return parserVisitor->visitLbl_access_key_slice(this);
+  else
+    return visitor->visitChildren(this);
+}
+//----------------- Lbl_access_key_idxContext ------------------------------------------------------------------
+
+TythonParser::ExpressionContext* TythonParser::Lbl_access_key_idxContext::expression() {
+  return getRuleContext<TythonParser::ExpressionContext>(0);
+}
+
+TythonParser::Lbl_access_key_idxContext::Lbl_access_key_idxContext(Access_keyContext *ctx) { copyFrom(ctx); }
+
+
+std::any TythonParser::Lbl_access_key_idxContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<TythonParserVisitor*>(visitor))
+    return parserVisitor->visitLbl_access_key_idx(this);
+  else
+    return visitor->visitChildren(this);
+}
+TythonParser::Access_keyContext* TythonParser::access_key() {
+  Access_keyContext *_localctx = _tracker.createInstance<Access_keyContext>(_ctx, getState());
+  enterRule(_localctx, 48, TythonParser::RuleAccess_key);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    setState(269);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 31, _ctx)) {
+    case 1: {
+      _localctx = _tracker.createInstance<TythonParser::Lbl_access_key_sliceContext>(_localctx);
+      enterOuterAlt(_localctx, 1);
+      setState(256);
+      _errHandler->sync(this);
+
+      _la = _input->LA(1);
+      if ((((_la & ~ 0x3fULL) == 0) &&
+        ((1ULL << _la) & 2181431069851648) != 0)) {
+        setState(255);
+        antlrcpp::downCast<Lbl_access_key_sliceContext *>(_localctx)->start = rval();
+      }
+      setState(258);
+      match(TythonParser::SYM_COL);
+      setState(260);
+      _errHandler->sync(this);
+
+      switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 28, _ctx)) {
+      case 1: {
+        setState(259);
+        antlrcpp::downCast<Lbl_access_key_sliceContext *>(_localctx)->end = rval();
+        break;
+      }
+
+      default:
+        break;
+      }
+      setState(263);
+      _errHandler->sync(this);
+
+      _la = _input->LA(1);
+      if (_la == TythonParser::SYM_COL) {
+        setState(262);
+        match(TythonParser::SYM_COL);
+      }
+      setState(266);
+      _errHandler->sync(this);
+
+      _la = _input->LA(1);
+      if ((((_la & ~ 0x3fULL) == 0) &&
+        ((1ULL << _la) & 2181431069851648) != 0)) {
+        setState(265);
+        antlrcpp::downCast<Lbl_access_key_sliceContext *>(_localctx)->step = rval();
+      }
+      break;
+    }
+
+    case 2: {
+      _localctx = _tracker.createInstance<TythonParser::Lbl_access_key_idxContext>(_localctx);
+      enterOuterAlt(_localctx, 2);
+      setState(268);
+      expression(0);
+      break;
+    }
+
+    default:
+      break;
     }
    
   }
@@ -2496,8 +2645,8 @@ tree::TerminalNode* TythonParser::Lbl_key_accessContext::SYM_LSQ() {
   return getToken(TythonParser::SYM_LSQ, 0);
 }
 
-TythonParser::ExpressionContext* TythonParser::Lbl_key_accessContext::expression() {
-  return getRuleContext<TythonParser::ExpressionContext>(0);
+TythonParser::Access_keyContext* TythonParser::Lbl_key_accessContext::access_key() {
+  return getRuleContext<TythonParser::Access_keyContext>(0);
 }
 
 tree::TerminalNode* TythonParser::Lbl_key_accessContext::SYM_RSQ() {
@@ -2515,7 +2664,7 @@ std::any TythonParser::Lbl_key_accessContext::accept(tree::ParseTreeVisitor *vis
 }
 TythonParser::LvalContext* TythonParser::lval() {
   LvalContext *_localctx = _tracker.createInstance<LvalContext>(_ctx, getState());
-  enterRule(_localctx, 48, TythonParser::RuleLval);
+  enterRule(_localctx, 50, TythonParser::RuleLval);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2525,13 +2674,13 @@ TythonParser::LvalContext* TythonParser::lval() {
     exitRule();
   });
   try {
-    setState(259);
+    setState(277);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 27, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx)) {
     case 1: {
       _localctx = _tracker.createInstance<TythonParser::Lbl_identifierContext>(_localctx);
       enterOuterAlt(_localctx, 1);
-      setState(253);
+      setState(271);
       match(TythonParser::IDENTIFIER);
       break;
     }
@@ -2539,13 +2688,13 @@ TythonParser::LvalContext* TythonParser::lval() {
     case 2: {
       _localctx = _tracker.createInstance<TythonParser::Lbl_key_accessContext>(_localctx);
       enterOuterAlt(_localctx, 2);
-      setState(254);
+      setState(272);
       match(TythonParser::IDENTIFIER);
-      setState(255);
+      setState(273);
       match(TythonParser::SYM_LSQ);
-      setState(256);
-      expression(0);
-      setState(257);
+      setState(274);
+      access_key();
+      setState(275);
       match(TythonParser::SYM_RSQ);
       break;
     }
@@ -2597,7 +2746,7 @@ std::any TythonParser::Key_value_pairContext::accept(tree::ParseTreeVisitor *vis
 
 TythonParser::Key_value_pairContext* TythonParser::key_value_pair() {
   Key_value_pairContext *_localctx = _tracker.createInstance<Key_value_pairContext>(_ctx, getState());
-  enterRule(_localctx, 50, TythonParser::RuleKey_value_pair);
+  enterRule(_localctx, 52, TythonParser::RuleKey_value_pair);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2608,11 +2757,11 @@ TythonParser::Key_value_pairContext* TythonParser::key_value_pair() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(261);
+    setState(279);
     antlrcpp::downCast<Key_value_pairContext *>(_localctx)->key = expression(0);
-    setState(262);
+    setState(280);
     match(TythonParser::SYM_COL);
-    setState(263);
+    setState(281);
     antlrcpp::downCast<Key_value_pairContext *>(_localctx)->value = expression(0);
    
   }
@@ -2670,7 +2819,7 @@ std::any TythonParser::Dict_litContext::accept(tree::ParseTreeVisitor *visitor) 
 
 TythonParser::Dict_litContext* TythonParser::dict_lit() {
   Dict_litContext *_localctx = _tracker.createInstance<Dict_litContext>(_ctx, getState());
-  enterRule(_localctx, 52, TythonParser::RuleDict_lit);
+  enterRule(_localctx, 54, TythonParser::RuleDict_lit);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2682,19 +2831,19 @@ TythonParser::Dict_litContext* TythonParser::dict_lit() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(265);
+    setState(283);
     match(TythonParser::SYM_LBR);
-    setState(278);
+    setState(296);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 31, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx)) {
     case 1: {
-      setState(267);
+      setState(285);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2182255703574528) != 0)) {
-        setState(266);
+        setState(284);
         antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext = key_value_pair();
         antlrcpp::downCast<Dict_litContext *>(_localctx)->entries.push_back(antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext);
       }
@@ -2702,26 +2851,26 @@ TythonParser::Dict_litContext* TythonParser::dict_lit() {
     }
 
     case 2: {
-      setState(270);
+      setState(288);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2182255703574528) != 0)) {
-        setState(269);
+        setState(287);
         antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext = key_value_pair();
         antlrcpp::downCast<Dict_litContext *>(_localctx)->entries.push_back(antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext);
       }
-      setState(274); 
+      setState(292); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(272);
+        setState(290);
         match(TythonParser::SYM_COMMA);
-        setState(273);
+        setState(291);
         antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext = key_value_pair();
         antlrcpp::downCast<Dict_litContext *>(_localctx)->entries.push_back(antlrcpp::downCast<Dict_litContext *>(_localctx)->key_value_pairContext);
-        setState(276); 
+        setState(294); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_COMMA);
@@ -2731,7 +2880,7 @@ TythonParser::Dict_litContext* TythonParser::dict_lit() {
     default:
       break;
     }
-    setState(280);
+    setState(298);
     match(TythonParser::SYM_RBR);
    
   }
@@ -2789,7 +2938,7 @@ std::any TythonParser::List_litContext::accept(tree::ParseTreeVisitor *visitor) 
 
 TythonParser::List_litContext* TythonParser::list_lit() {
   List_litContext *_localctx = _tracker.createInstance<List_litContext>(_ctx, getState());
-  enterRule(_localctx, 54, TythonParser::RuleList_lit);
+  enterRule(_localctx, 56, TythonParser::RuleList_lit);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2801,19 +2950,19 @@ TythonParser::List_litContext* TythonParser::list_lit() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(282);
+    setState(300);
     match(TythonParser::SYM_LSQ);
-    setState(295);
+    setState(313);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 40, _ctx)) {
     case 1: {
-      setState(284);
+      setState(302);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2181431069851648) != 0)) {
-        setState(283);
+        setState(301);
         antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<List_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext);
       }
@@ -2821,26 +2970,26 @@ TythonParser::List_litContext* TythonParser::list_lit() {
     }
 
     case 2: {
-      setState(287);
+      setState(305);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2181431069851648) != 0)) {
-        setState(286);
+        setState(304);
         antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<List_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext);
       }
-      setState(291); 
+      setState(309); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(289);
+        setState(307);
         match(TythonParser::SYM_COMMA);
-        setState(290);
+        setState(308);
         antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<List_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<List_litContext *>(_localctx)->rvalContext);
-        setState(293); 
+        setState(311); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_COMMA);
@@ -2850,7 +2999,7 @@ TythonParser::List_litContext* TythonParser::list_lit() {
     default:
       break;
     }
-    setState(297);
+    setState(315);
     match(TythonParser::SYM_RSQ);
    
   }
@@ -2908,7 +3057,7 @@ std::any TythonParser::Tuple_litContext::accept(tree::ParseTreeVisitor *visitor)
 
 TythonParser::Tuple_litContext* TythonParser::tuple_lit() {
   Tuple_litContext *_localctx = _tracker.createInstance<Tuple_litContext>(_ctx, getState());
-  enterRule(_localctx, 56, TythonParser::RuleTuple_lit);
+  enterRule(_localctx, 58, TythonParser::RuleTuple_lit);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2920,19 +3069,19 @@ TythonParser::Tuple_litContext* TythonParser::tuple_lit() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(299);
+    setState(317);
     match(TythonParser::SYM_LPAR);
-    setState(312);
+    setState(330);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 39, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 44, _ctx)) {
     case 1: {
-      setState(301);
+      setState(319);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2181431069851648) != 0)) {
-        setState(300);
+        setState(318);
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext);
       }
@@ -2940,26 +3089,26 @@ TythonParser::Tuple_litContext* TythonParser::tuple_lit() {
     }
 
     case 2: {
-      setState(304);
+      setState(322);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if ((((_la & ~ 0x3fULL) == 0) &&
         ((1ULL << _la) & 2181431069851648) != 0)) {
-        setState(303);
+        setState(321);
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext);
       }
-      setState(308); 
+      setState(326); 
       _errHandler->sync(this);
       _la = _input->LA(1);
       do {
-        setState(306);
+        setState(324);
         match(TythonParser::SYM_COMMA);
-        setState(307);
+        setState(325);
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext = rval();
         antlrcpp::downCast<Tuple_litContext *>(_localctx)->elements.push_back(antlrcpp::downCast<Tuple_litContext *>(_localctx)->rvalContext);
-        setState(310); 
+        setState(328); 
         _errHandler->sync(this);
         _la = _input->LA(1);
       } while (_la == TythonParser::SYM_COMMA);
@@ -2969,7 +3118,7 @@ TythonParser::Tuple_litContext* TythonParser::tuple_lit() {
     default:
       break;
     }
-    setState(314);
+    setState(332);
     match(TythonParser::SYM_RPAR);
    
   }
@@ -3031,7 +3180,7 @@ std::any TythonParser::LiteralContext::accept(tree::ParseTreeVisitor *visitor) {
 
 TythonParser::LiteralContext* TythonParser::literal() {
   LiteralContext *_localctx = _tracker.createInstance<LiteralContext>(_ctx, getState());
-  enterRule(_localctx, 58, TythonParser::RuleLiteral);
+  enterRule(_localctx, 60, TythonParser::RuleLiteral);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3041,54 +3190,54 @@ TythonParser::LiteralContext* TythonParser::literal() {
     exitRule();
   });
   try {
-    setState(323);
+    setState(341);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case TythonParser::INT_LIT: {
         enterOuterAlt(_localctx, 1);
-        setState(316);
+        setState(334);
         match(TythonParser::INT_LIT);
         break;
       }
 
       case TythonParser::FLOAT_LIT: {
         enterOuterAlt(_localctx, 2);
-        setState(317);
+        setState(335);
         match(TythonParser::FLOAT_LIT);
         break;
       }
 
       case TythonParser::STR_LIT: {
         enterOuterAlt(_localctx, 3);
-        setState(318);
+        setState(336);
         match(TythonParser::STR_LIT);
         break;
       }
 
       case TythonParser::NONE_LIT: {
         enterOuterAlt(_localctx, 4);
-        setState(319);
+        setState(337);
         match(TythonParser::NONE_LIT);
         break;
       }
 
       case TythonParser::SYM_LBR: {
         enterOuterAlt(_localctx, 5);
-        setState(320);
+        setState(338);
         dict_lit();
         break;
       }
 
       case TythonParser::SYM_LSQ: {
         enterOuterAlt(_localctx, 6);
-        setState(321);
+        setState(339);
         list_lit();
         break;
       }
 
       case TythonParser::SYM_LPAR: {
         enterOuterAlt(_localctx, 7);
-        setState(322);
+        setState(340);
         tuple_lit();
         break;
       }

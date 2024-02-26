@@ -33,8 +33,8 @@ public:
     RuleWhile_loop = 14, RuleArguments = 15, RuleParameters = 16, RuleCall_expression = 17, 
     RuleExpression = 18, RuleBinary_operator = 19, RuleInequality_operator = 20, 
     RuleLogic_operator = 21, RuleArithmetic_operator = 22, RuleRval = 23, 
-    RuleLval = 24, RuleKey_value_pair = 25, RuleDict_lit = 26, RuleList_lit = 27, 
-    RuleTuple_lit = 28, RuleLiteral = 29
+    RuleAccess_key = 24, RuleLval = 25, RuleKey_value_pair = 26, RuleDict_lit = 27, 
+    RuleList_lit = 28, RuleTuple_lit = 29, RuleLiteral = 30
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -78,6 +78,7 @@ public:
   class Logic_operatorContext;
   class Arithmetic_operatorContext;
   class RvalContext;
+  class Access_keyContext;
   class LvalContext;
   class Key_value_pairContext;
   class Dict_litContext;
@@ -564,6 +565,45 @@ public:
 
   RvalContext* rval();
 
+  class  Access_keyContext : public antlr4::ParserRuleContext {
+  public:
+    Access_keyContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+   
+    Access_keyContext() = default;
+    void copyFrom(Access_keyContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
+
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Lbl_access_key_sliceContext : public Access_keyContext {
+  public:
+    Lbl_access_key_sliceContext(Access_keyContext *ctx);
+
+    TythonParser::RvalContext *start = nullptr;
+    TythonParser::RvalContext *end = nullptr;
+    TythonParser::RvalContext *step = nullptr;
+    std::vector<antlr4::tree::TerminalNode *> SYM_COL();
+    antlr4::tree::TerminalNode* SYM_COL(size_t i);
+    std::vector<RvalContext *> rval();
+    RvalContext* rval(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_access_key_idxContext : public Access_keyContext {
+  public:
+    Lbl_access_key_idxContext(Access_keyContext *ctx);
+
+    ExpressionContext *expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  Access_keyContext* access_key();
+
   class  LvalContext : public antlr4::ParserRuleContext {
   public:
     LvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -592,7 +632,7 @@ public:
 
     antlr4::tree::TerminalNode *IDENTIFIER();
     antlr4::tree::TerminalNode *SYM_LSQ();
-    ExpressionContext *expression();
+    Access_keyContext *access_key();
     antlr4::tree::TerminalNode *SYM_RSQ();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
