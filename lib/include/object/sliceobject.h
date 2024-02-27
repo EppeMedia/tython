@@ -14,7 +14,7 @@ typedef struct slice_object_t {
     ObjectHead
 
     long long start;
-    long long end;
+    object* end;        // the end of a slice cannot have a set default integer value (start can default to 0, step can default to 1)
     long long step;
 
 } slice_object;

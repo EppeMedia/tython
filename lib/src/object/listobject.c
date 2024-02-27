@@ -6,11 +6,13 @@
 #include <assert.h>
 #include <memory.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "object/listobject.h"
 #include "object/boolobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
 #include "object/sliceobject.h"
+#include "object/noneobject.h"
 
 static object* list_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement
@@ -91,9 +93,49 @@ static object* list_subscript(object* obj, object* idx) {
         // determine the size of the new list to create
         object* length_obj = slice_type.mapping_functions->length(AS_OBJECT(slice_obj));
 
-        assert(IS_INT(length_obj));
+        long long start = slice_obj->start;
+        long long len;
 
-        const size_t len = AS_INT(length_obj)->value;
+        if (IS_INT(length_obj)) {
+
+            len = AS_INT(length_obj)->value;
+
+            printf("length is int\r\n");
+
+        } else if (IS_NONE(length_obj)) {
+            // the length cannot be determined without knowledge of the list (probably a negative index)
+
+            if (start < 0) {
+                // negative indexes wrap around
+                assert(llabs(start) <= list_obj->size);
+                start += list_obj->size;
+            }
+
+            assert(IS_INT(slice_obj->end) || IS_NONE(slice_obj->end));
+
+            long long end = 0;
+
+            if (IS_INT(slice_obj->end)) {
+                end = AS_INT(slice_obj->end)->value;
+            } else if (IS_NONE(slice_obj->end)) {
+                end = list_obj->size;
+            }
+
+            if (end < 0) {
+                // negative indexes wrap around
+                assert(llabs(end) <= list_obj->size);
+                end += list_obj->size;
+            }
+
+            len = end - start;
+
+            printf("length is none: len = end - start\r\n");
+            printf("start\t: %lld\r\n", start);
+            printf("end\t: %lld\r\n", end);
+        }
+
+        printf("len: %lld\r\n", len);
+
         list_object* new_list = AS_LIST(list_create(len));
 
         for (int i = 0; i < len; ++i) {

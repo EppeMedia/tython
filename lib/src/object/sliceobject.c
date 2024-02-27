@@ -21,19 +21,24 @@ object* slice_create(object* start, object* end, object* step) {
 
     if (IS_INT(start)) {
         start_obj = AS_INT(start);
-    } else {
+    } else if (IS_NONE(start)) {
         start_obj = AS_INT(TO_INT(0));
     }
 
-    int_object* end_obj = AS_INT(end);
-    int_object* step_obj = AS_INT(step);
+    int_object* step_obj;
+
+    if (IS_INT(step)) {
+        step_obj = AS_INT(step);
+    } else if (IS_NONE(step)) {
+        step_obj = AS_INT(TO_INT(1));
+    }
 
     assert(step_obj->value != 0);
 
     slice_object* slice_obj = AS_SLICE(slice_type.alloc(&slice_type));
 
     slice_obj->start = start_obj->value;
-    slice_obj->end = end_obj->value;
+    slice_obj->end = end;
     slice_obj->step = step_obj->value;
 
     return AS_OBJECT(slice_obj);
@@ -45,17 +50,19 @@ static object* slice_to_string(object* object) {
 
     slice_object* slice_obj = AS_SLICE(object);
 
+    string_object* end_str = GET_STRING(slice_obj->end);
+
     // determine length
-    const int fields_len = snprintf(NULL, 0, "%lld", slice_obj->start)
-                           + snprintf(NULL, 0, "%lld", slice_obj->end)
-                           + snprintf(NULL, 0, "%lld", slice_obj->step);
+    const size_t fields_len = snprintf(NULL, 0, "%lld", slice_obj->start)
+                           + snprintf(NULL, 0, "%lld", slice_obj->step)
+                           + end_str->length;
 
     // allocate string buffer ("slice" + braces + commas + spaces)
-    const int str_len = fields_len + (5 + 2 + 2 + 2);
+    const size_t str_len = fields_len + (5 + 2 + 2 + 2);
     char* str = malloc(str_len * sizeof(char));
 
     // fill string
-    sprintf(str, "slice(%lld, %lld, %lld)", slice_obj->start, slice_obj->end, slice_obj->step);
+    sprintf(str, "slice(%lld, %s, %lld)", slice_obj->start, to_cstr(end_str), slice_obj->step);
 
     return string_create(str, str_len);
 }
@@ -104,7 +111,7 @@ static object* slice_rich_compare(object* lhs, object* rhs, int op) {
 }
 
 static long long slice_length_c(slice_object* slice_obj) {
-    return (slice_obj->end - slice_obj->start) / slice_obj->step;
+    return (AS_INT(slice_obj->end)->value - slice_obj->start) / slice_obj->step;
 }
 
 static object* slice_length(object* obj) {
@@ -112,6 +119,12 @@ static object* slice_length(object* obj) {
     assert(IS_SLICE(obj));
 
     slice_object* slice_obj = AS_SLICE(obj);
+
+    if (IS_NONE(slice_obj->end)) {
+        return AS_OBJECT(TYTHON_NONE);
+    }
+
+    assert(IS_INT(slice_obj->end));
 
     return TO_INT(slice_length_c(slice_obj));
 }

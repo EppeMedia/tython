@@ -18,6 +18,6 @@ extern none_object none_instance;
 #define IS_NONE(obj)        (AS_OBJECT(obj)->type == &none_type)
 #define AS_NONE(instance)   ((none_object*)(instance))
 
-#define TYTHON_NONE &none_instance;
+#define TYTHON_NONE (&none_instance)
 
 #endif //TYTHON_NONEOBJECT_H

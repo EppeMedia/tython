@@ -160,9 +160,8 @@ while --i > 0:
 
 print("--- Slices")
 
-arr = ["one", "two", "three", "four", "five", "six", "seven"]
-s = slice(2, 5, 1)
+arr = ["zero", "one", "two", "three", "four", "five", "six", "seven"]
+s = slice(2, -1, 1)
 print(arr)
 print(s)
-print(arr[s])
-print(arr[2:5:1])
+print(arr[1:7:3])
