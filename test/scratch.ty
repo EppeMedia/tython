@@ -164,4 +164,4 @@ arr = ["zero", "one", "two", "three", "four", "five", "six", "seven"]
 s = slice(2, -1, 1)
 print(arr)
 print(s)
-print(arr[1:7:3])
+print(arr[1:7:1])

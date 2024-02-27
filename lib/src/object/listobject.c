@@ -167,9 +167,10 @@ object* list_create(size_t size) {
     AS_OBJECT(list_obj)->identity = AS_OBJECT(list_obj);
 
     list_obj->size = size;
+    list_obj->capacity = size;
 
     // allocate space for entries
-    list_obj->elements = malloc(size * sizeof(object*));
+    list_obj->elements = malloc(list_obj->capacity * sizeof(object*));
 
     return AS_OBJECT(list_obj);
 }
@@ -183,6 +184,45 @@ static object* list_to_bool(object* obj) {
     }
 
     return TYTHON_FALSE;
+}
+
+/**
+ * This is a special case: we are defining a c-function as if it is a member of the list "class".
+ * The fact that there is no tython code declaring such a list class is what makes this so strange.
+ * Regardless, we want to provide the user with a consistent interface, so we will go to a great length to achieve this.
+ * Todo: find a place for this comment
+ * @param self The list object to append to
+ * @return Returns None
+ */
+static object* list_append(object* self, object* item) {
+
+    assert(IS_LIST(self));
+
+    list_object* list_obj = AS_LIST(self);
+
+    // check if we have enoiugh allocated space for this new item
+    if (list_obj->size <= list_obj->capacity) {
+
+        // we have enough space; simply place the new item and increment the size counter
+        list_obj->elements[list_obj->size++] = item;
+
+    } else {
+
+        // we need to extend the capacity of the list
+
+        // find a new capacity (doubling is a popular approach)
+        const size_t new_capacity = list_obj->capacity * 2;
+        object** new_elements = realloc(list_obj->elements, new_capacity * sizeof(object*));
+
+        assert(new_elements && "Heap allocation failure!");
+
+        list_obj->elements = new_elements;
+        list_obj->capacity = new_capacity;
+
+        return list_append(self, item);
+    }
+
+    return AS_OBJECT(TYTHON_NONE);
 }
 
 static object* list_create_iterator(object* obj) {
@@ -216,7 +256,7 @@ type_object list_type = {
         },
 
         .alloc              = &default_alloc,
-        .seqalloc           = NULL,         // todo: should be list_create
+        .seqalloc           = NULL,                 // todo: should be list_create
 
         .base               = NULL,
         .instance_size      = sizeof(list_object),

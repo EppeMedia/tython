@@ -14,6 +14,7 @@ typedef struct list_object_t {
     ObjectHead;
 
     size_t size;
+    size_t capacity;
     object** elements;
 
 } list_object;
