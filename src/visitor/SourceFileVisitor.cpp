@@ -275,6 +275,7 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
     }
 
     { // if_else
+
         this->builder->SetInsertPoint(br_else_if);
 
         if (ctx->br_else_if) {
@@ -706,6 +707,27 @@ llvm::Value *SourceFileVisitor::visitArithmeticOperator(TythonParser::Arithmetic
     }
 
     throw NotImplemented("Unimplemented arithmetic operator \"" + ctx->getText() + "\"!");
+}
+
+std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) {
+
+    const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+
+    auto method_name_str = ctx->call_expression()->IDENTIFIER()->getText();
+    auto object_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    auto object = this->builder->CreateLoad(ptr_t, object_ref);
+
+    auto method_name = this->builder->CreateGlobalString(method_name_str, method_name_str, 0, this->module);
+
+    // todo: implement non-builtin methods (class-member callables)
+    auto f_ptr = this->builder->CreateResolveBuiltinMethod(object, method_name);
+
+    auto args = visitInternalCallParameters(ctx->call_expression()->parameters());
+    args.insert(args.begin(), object);
+
+    auto f_type = llvm::FunctionType::get(ptr_t, true); // todo: we can determine the number of arguments and just pretend/assume they're all opaque pointers
+
+    return (llvm::Value*)this->builder->CreateCall(f_type, f_ptr, args);
 }
 
 std::any SourceFileVisitor::visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) {

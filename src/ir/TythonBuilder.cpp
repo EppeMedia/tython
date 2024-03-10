@@ -3,6 +3,7 @@
 #include "type.h"
 #include "object/dictobject.h"
 #include "object/listobject.h"
+#include "object/tupleobject.h"
 #include <cstddef>
 
 void TythonBuilder::init() {
@@ -69,6 +70,8 @@ void TythonBuilder::initFirstClassTypes() {
 
         ptr_t,      // create iterator (unary function pointer)
         ptr_t,      // iterator next (unary function pointer)
+
+        ptr_t,      // methods
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
@@ -117,6 +120,10 @@ llvm::Value *TythonBuilder::CreateGetMappingFunctions(llvm::Value *type_object) 
 
 llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *object_instance) {
     return (llvm::Value*)this->CreateCall(*this->module->object_is_truthy_func, { object_instance }, "object_is_truthy");
+}
+
+llvm::Value *TythonBuilder::CreateResolveBuiltinMethod(llvm::Value *object, llvm::Value *name) {
+    return (llvm::Value*)this->CreateCall(*this->module->resolve_builtin_method_func, { object, name }, "resolve_builtin_method");
 }
 
 llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) {
@@ -377,12 +384,12 @@ llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<l
     auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
     auto f = this->module->tuple_create_func;
-    auto list_ref = this->CreateCall((llvm::Function*)f->getCallee(), {count }, "tuple_create");
+    auto tuple_ref = this->CreateCall((llvm::Function*)f->getCallee(), {count }, "tuple_create");
 
-    // steal the elements reference off of the list object
-    size_t offset = offsetof(list_object, elements);
+    // steal the elements reference off of the tuple object
+    size_t offset = offsetof(tuple_object, elements);
     auto offset_value = llvm::ConstantInt::get(int64_t, offset);
-    auto ptr_loc = this->CreatePtrToInt(list_ref, int64_t);
+    auto ptr_loc = this->CreatePtrToInt(tuple_ref, int64_t);
     auto ptr_offset = this->CreateAdd(ptr_loc, offset_value, "elements_offset");
     auto entries_ref = this->CreateIntToPtr(ptr_offset, ptr_t, "elements_ref");
 
@@ -402,5 +409,5 @@ llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<l
         this->CreateStore(element, e_ref);
     }
 
-    return list_ref;
+    return tuple_ref;
 }

@@ -19,4 +19,12 @@
  */
 bool object_is_truthy(object* obj);
 
+/**
+ * Resolves the function pointer for a given method name.
+ * @param object The object the method should exist on.
+ * @param name The name of the method to resolve.
+ * @return Returns a function pointer to the named method on the specified object, or NULL if no such method exists.
+ */
+function_object_function* resolve_builtin_method(object* object, const char* name);
+
 #endif //TYTHON_BASICLAND_H

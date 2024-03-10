@@ -10,6 +10,7 @@
 #include "object/boolobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
+#include "object/listobject.h"
 
 static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.
@@ -120,6 +121,23 @@ static object* dict_to_bool(object* obj) {
     return TYTHON_FALSE;
 }
 
+static object* dict_values(object* self) {
+
+    assert(IS_DICT(self));
+
+    dict_object* dict_obj = AS_DICT(self);
+
+    // the list to return
+    list_object* list_obj = AS_LIST(list_create(dict_obj->size));
+
+    for (int i = 0; i < dict_obj->size; ++i) {
+
+        list_obj->elements[i] = dict_obj->entries[i].value;
+    }
+
+    return AS_OBJECT(list_obj);
+}
+
 static number_functions dict_number_functions = {
         .to_bool = &dict_to_bool
 };
@@ -127,6 +145,11 @@ static number_functions dict_number_functions = {
 static mapping_functions dict_mapping_functions = {
         .length     = &dict_length,
         .subscript  = &dict_subscript,
+};
+
+static builtin_method dict_methods[] = {
+        { "values", &dict_values },
+        { NULL, NULL }              // sentinel
 };
 
 type_object dict_type = {
@@ -149,4 +172,6 @@ type_object dict_type = {
         .number_functions   = &dict_number_functions,
         .mapping_functions  = &dict_mapping_functions,
         .sequence_functions = NULL,
+
+        .methods            = dict_methods,
 };

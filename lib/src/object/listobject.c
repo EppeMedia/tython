@@ -13,6 +13,8 @@
 #include "object/integerobject.h"
 #include "object/sliceobject.h"
 #include "object/noneobject.h"
+#include "object/dictobject.h"
+#include "object/functionobject.h"
 
 static object* list_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement
@@ -100,8 +102,6 @@ static object* list_subscript(object* obj, object* idx) {
 
             len = AS_INT(length_obj)->value;
 
-            printf("length is int\r\n");
-
         } else if (IS_NONE(length_obj)) {
             // the length cannot be determined without knowledge of the list (probably a negative index)
 
@@ -128,13 +128,7 @@ static object* list_subscript(object* obj, object* idx) {
             }
 
             len = end - start;
-
-            printf("length is none: len = end - start\r\n");
-            printf("start\t: %lld\r\n", start);
-            printf("end\t: %lld\r\n", end);
         }
-
-        printf("len: %lld\r\n", len);
 
         list_object* new_list = AS_LIST(list_create(len));
 
@@ -248,6 +242,11 @@ static mapping_functions list_mapping_functions = {
         .subscript  = &list_subscript,
 };
 
+static builtin_method list_methods[] = {
+        { "append", &list_append },
+        { NULL, NULL }              // sentinel
+};
+
 type_object list_type = {
 
         .obj_base = {
@@ -270,6 +269,8 @@ type_object list_type = {
         .sequence_functions = NULL,
 
         .create_iterator    = &list_create_iterator,
+
+        .methods            = list_methods,
 };
 
 static object* list_iterator_next(object* obj) {

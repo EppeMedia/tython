@@ -29,7 +29,7 @@ typedef struct sequence_object_t {
 
 #define ObjectHeadInitType(type)        \
     .obj_base = {                       \
-        .identity   = &type.obj_base,   \
+        .identity   = &(type).obj_base,   \
         .type       = &type_type        \
     }                                   \
 

@@ -61,6 +61,10 @@ void TythonModule::initialize() {
     llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, false);
     this->object_is_truthy_func = new llvm::FunctionCallee();
     *(this->object_is_truthy_func) = this->getOrInsertFunction("object_is_truthy", object_is_truthy_type);
+
+    llvm::FunctionType* resolve_builtin_method_type = llvm::FunctionType::get(ptr_t, {ptr_t, ptr_t }, false);
+    this->resolve_builtin_method_func = new llvm::FunctionCallee();
+    *(this->resolve_builtin_method_func) = this->getOrInsertFunction("resolve_builtin_method", resolve_builtin_method_type);
 }
 
 llvm::Function* TythonModule::findProcedure(const std::string& _procedure_name) {

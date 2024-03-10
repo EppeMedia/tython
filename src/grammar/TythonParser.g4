@@ -95,6 +95,7 @@ call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 expression          : lhs=expression binary_operator rhs=expression #binary_expression
                     | call_expression                               #lbl_call_expression
                     | SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
+                    | lval SYM_DOT call_expression                  #lbl_method_call
                     | rval                                          #lbl_rval
                     | SYM_INC lval                                  #lbl_inc_prefix
                     | lval SYM_INC                                  #lbl_inc_suffix

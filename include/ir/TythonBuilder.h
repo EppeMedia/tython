@@ -87,6 +87,8 @@ public:
 
     llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
 
+    llvm::Value* CreateResolveBuiltinMethod(llvm::Value* object, llvm::Value* name);
+
     /**
      * Generates the instructions to numerically add two Tython objects.
      * @param lhs The lhs object of the sum.

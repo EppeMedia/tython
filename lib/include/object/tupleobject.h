@@ -10,9 +10,9 @@
 extern type_object tuple_type;
 
 typedef struct tuple_object_t {
-    ObjectHead;
+    ObjectHead;     // 8 + 8
 
-    size_t size;
+    size_t size;    // 8
     object** elements;
 
 } tuple_object;

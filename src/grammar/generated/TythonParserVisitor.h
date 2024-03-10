@@ -57,6 +57,8 @@ public:
 
     virtual std::any visitBinary_expression(TythonParser::Binary_expressionContext *context) = 0;
 
+    virtual std::any visitLbl_method_call(TythonParser::Lbl_method_callContext *context) = 0;
+
     virtual std::any visitLbl_rval(TythonParser::Lbl_rvalContext *context) = 0;
 
     virtual std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *context) = 0;

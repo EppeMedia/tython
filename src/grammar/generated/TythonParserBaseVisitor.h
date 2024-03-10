@@ -91,6 +91,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitLbl_rval(TythonParser::Lbl_rvalContext *ctx) override {
     return visitChildren(ctx);
   }

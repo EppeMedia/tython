@@ -416,6 +416,17 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
+  class  Lbl_method_callContext : public ExpressionContext {
+  public:
+    Lbl_method_callContext(ExpressionContext *ctx);
+
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_DOT();
+    Call_expressionContext *call_expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  Lbl_rvalContext : public ExpressionContext {
   public:
     Lbl_rvalContext(ExpressionContext *ctx);

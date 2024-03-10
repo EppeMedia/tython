@@ -14,5 +14,7 @@ ADD_LIBRARY(tython_lib STATIC
         object/rangeobject.c
         object/sliceobject.c
         object/dictobject.c
+        object/classobject.c
+        object/functionobject.c
         api/api.c
         bridge/basicland.c)

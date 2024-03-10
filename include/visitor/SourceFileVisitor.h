@@ -77,6 +77,8 @@ public:
     llvm::Value* visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
 
+    std::any visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) override;
+
     std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) override;
     std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *ctx) override;
     std::any visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) override;

@@ -83,6 +83,22 @@ typedef object* (*repr_f)(object*);
 typedef object* (*unary_f)(object*);
 typedef object* (*binary_f)(object*, object*);
 
+/**
+ * All functions are expected to return an object since there is no void type.
+ * Functions that do not return any value will invariably return the None object instance.
+ */
+typedef object* (function_object_function)();
+
+/**
+ * Builtin methods do not contain function object, and do not record the number of arguments a function takes.
+ */
+typedef struct builtin_method_t {
+
+    const char* name;
+    function_object_function* f;
+
+} builtin_method;
+
 /*
  * Built-in data structures and their operations.
  */
@@ -91,27 +107,33 @@ typedef object* (*binary_f)(object*, object*);
  * This struct describes the set of all possible operations on number-like types.
  */
 typedef struct number_functions_t {
+
     unary_f to_bool;
     unary_f to_int;
     unary_f to_float;
 
     binary_f add; // adds one number to another
     binary_f sub; // subtracts the right-hand argument from the first-hand argument
+
 } number_functions;
 
 /**
  * This is the set of all possible operations operations on mapping data structures.
  */
 typedef struct mapping_functions_t {
+
     unary_f length;     // length of the map
     binary_f subscript; // (object* mapping_obj, object* key), access value by key
+
 } mapping_functions;
 
 /**
  * This is the set of all possible operations on sequence objects.
  */
 typedef struct sequence_functions_t {
+
     unary_f length;     // length of the sequence
+
 } sequence_functions;
 
 /**
@@ -153,6 +175,8 @@ typedef struct type_t {
      */
     unary_f create_iterator;        // creates an iterator for this type
     unary_f iterator_next;          // the iterator increment function, if this type is an iterator
+
+    builtin_method* methods;        // the built-in methods on instances of this type. Must end with sentinel a tuple of NULLs. Does not contain user-defined methods.
 
 } type_object;
 

@@ -22,6 +22,8 @@ private:
     llvm::FunctionCallee* tuple_create_func;
 
     llvm::FunctionCallee* object_is_truthy_func;
+    llvm::FunctionCallee* resolve_builtin_method_func;
+
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_range_func;
     llvm::FunctionCallee* tython_len_func;
