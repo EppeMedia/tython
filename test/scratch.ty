@@ -1,175 +1,175 @@
-#import io
-#
-#test = 1
-#
-#if test:
-#    print("Yes.")
-#else:
-#    print("No.")
-#
-#dict = {
-#        "mkey": "mvalue",
-#        "second_key": "second_value"
-#}
-#
-#if dict:
-#    print(dict["mkey"])
-#    print(dict["second_key"])
-#
-#arr = [
-#    "one",
-#    "two",
-#    "three",
-#    123,
-#    [
-#        "second list",
-#        {
-#            "and": "a dict!",
-#            "list": ["a list in a dict in a list in a list???"]
-#        }
-#    ],
-#    "more stuff",
-#    -3.1415
-#]
-#
-#print(arr)
-#print(len(arr))
-#
-#r = range(0, 10, 2)
-#i = 0
-#
-#for i < len(r):
-#    print(r[i])
-#    i = i + 1
-#
-#print("-------")
-#
-#for k in r:
-#    print(k)
-#
-#for k in range(3, 5, 1):
-#    print(k)
-#
-#for k in ["hi", "there", {"key": "value"}, "world!"]:
-#    print(k)
-#
-#print("---------------------")
-#print("** Doing fibonacci **")
-#print("---------------------")
-#
-#def Fibonacci(n):
-#
-#    # Check if input is 0 then it will
-#    # print incorrect input
-#    if n < 0:
-#        print("Incorrect input")
-#
-#    # Check if n is 0
-#    # then it will return 0
-#    if n == 0:
-#        return 0
-#
-#    # Check if n is 1,2
-#    # it will return 1
-#    if n == 1:
-#        return 1
-#    if n == 2:
-#        return 1
-#
-#    return Fibonacci(n - 1) + Fibonacci(n - 2)
-#
-## Driver Program
-#print(Fibonacci(9))
-#
-#def foo(a):
-#    print(a)
-#
-#r = foo("Hello World!")
-#print(r)
-#
-#if r == None:
-#    print("R is None :)")
-#if r != None:
-#    print("Big sad...")
-#
-#print("--- Tuples")
-#
-#tup = (0, test, arr, "This is the last element")
-#
-#print(tup)
-#print(tup[-1])
-#
-#for e in tup:
-#    print(e)
-#
-#print("--- While loops")
-#c = 0
-#while c < 3:
-#    print(tup[c])
-#    c = c + 1
-#
-#print("--- Breaks")
-#
-#for e in tup:
-#    print(e)
-#    if e == 1:
-#        break
-#
-#c = 0
-#while c < 3:
-#    print(c)
-#    if c == 1:
-#        print("breaking...")
-#        break
-#    c = c + 1
-#
-#d = 0
-#while d != 42:
-#    print("outer")
-#    while d < 3:
-#        print("inner")
-#        d = d + 1
-#        if d == 3:
-#            print("breaking inner...")
-#            d = 39
-#            break
-#    d = d + 1
-#
-#for i in range(0, 100, 1):
-#    print("hi")
-#    break
-#
-#print("--- Shorthand increment/decrement")
-#
-#i = 0
-#while i++ < 3:
-#    print("+ dot")
-#
-#i = 0
-#while ++i < 3:
-#    print("+ dash")
-#
-#i = 3
-#while i-- > 0:
-#    print("- dot")
-#
-#i = 3
-#while --i > 0:
-#    print("- dash")
-#
-#print("--- Slices")
-#
-#arr = ["zero", "one", "two", "three", "four", "five", "six", "seven"]
-#s = slice(2, -1, 1)
-#print(arr)
-#print(s)
-#print(arr[1:7:1])
-#
-#print("--- Builtin methods")
-#
-#arr.append("eight")
-#print(arr)
-#
+import io
+
+test = 1
+
+if test:
+    print("Yes.")
+else:
+    print("No.")
+
+dict = {
+        "mkey": "mvalue",
+        "second_key": "second_value"
+}
+
+if dict:
+    print(dict["mkey"])
+    print(dict["second_key"])
+
+arr = [
+    "one",
+    "two",
+    "three",
+    123,
+    [
+        "second list",
+        {
+            "and": "a dict!",
+            "list": ["a list in a dict in a list in a list???"]
+        }
+    ],
+    "more stuff",
+    -3.1415
+]
+
+print(arr)
+print(len(arr))
+
+r = range(0, 10, 2)
+i = 0
+
+for i < len(r):
+    print(r[i])
+    i = i + 1
+
+print("-------")
+
+for k in r:
+    print(k)
+
+for k in range(3, 5, 1):
+    print(k)
+
+for k in ["hi", "there", {"key": "value"}, "world!"]:
+    print(k)
+
+print("---------------------")
+print("** Doing fibonacci **")
+print("---------------------")
+
+def Fibonacci(n):
+
+    # Check if input is 0 then it will
+    # print incorrect input
+    if n < 0:
+        print("Incorrect input")
+
+    # Check if n is 0
+    # then it will return 0
+    if n == 0:
+        return 0
+
+    # Check if n is 1,2
+    # it will return 1
+    if n == 1:
+        return 1
+    if n == 2:
+        return 1
+
+    return Fibonacci(n - 1) + Fibonacci(n - 2)
+
+# Driver Program
+print(Fibonacci(9))
+
+def foo(a):
+    print(a)
+
+r = foo("Hello World!")
+print(r)
+
+if r == None:
+    print("R is None :)")
+if r != None:
+    print("Big sad...")
+
+print("--- Tuples")
+
+tup = (0, test, arr, "This is the last element")
+
+print(tup)
+print(tup[-1])
+
+for e in tup:
+    print(e)
+
+print("--- While loops")
+c = 0
+while c < 3:
+    print(tup[c])
+    c = c + 1
+
+print("--- Breaks")
+
+for e in tup:
+    print(e)
+    if e == 1:
+        break
+
+c = 0
+while c < 3:
+    print(c)
+    if c == 1:
+        print("breaking...")
+        break
+    c = c + 1
+
+d = 0
+while d != 42:
+    print("outer")
+    while d < 3:
+        print("inner")
+        d = d + 1
+        if d == 3:
+            print("breaking inner...")
+            d = 39
+            break
+    d = d + 1
+
+for i in range(0, 100, 1):
+    print("hi")
+    break
+
+print("--- Shorthand increment/decrement")
+
+i = 0
+while i++ < 3:
+    print("+ dot")
+
+i = 0
+while ++i < 3:
+    print("+ dash")
+
+i = 3
+while i-- > 0:
+    print("- dot")
+
+i = 3
+while --i > 0:
+    print("- dash")
+
+print("--- Slices")
+
+arr = ["zero", "one", "two", "three", "four", "five", "six", "seven"]
+s = slice(2, -1, 1)
+print(arr)
+print(s)
+print(arr[1:7:1])
+
+print("--- Builtin methods")
+
+arr.append("eight")
+print(arr)
+
 d = { "mkey1": "mval1", "mkey2": "mval2" }
 print(d)
 d_values = d.values()
