@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 #include "object/floatobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
@@ -24,13 +25,13 @@ static object* float_to_string(object* object) {
     assert(IS_FLOAT(object));
 
     // determine length
-    const int str_len = snprintf(NULL, 0, "%f", AS_FLOAT(object)->value);
+    const int str_len = snprintf(NULL, 0, FLOATOBJECT_REPRESENTATION_FORMAT, FLOATOBJECT_REPRESENTATION_PRECISION, AS_FLOAT(object)->value);
 
     // allocate string buffer
     char* str = malloc(sizeof(char) * str_len);
 
     // fill string
-    sprintf(str, "%f", AS_FLOAT(object)->value);
+    sprintf(str, FLOATOBJECT_REPRESENTATION_FORMAT, FLOATOBJECT_REPRESENTATION_PRECISION, AS_FLOAT(object)->value);
 
     return string_create(str, str_len);
 }
@@ -88,7 +89,7 @@ static float_object* convert_to_float(object* obj) {
 
 static object* float_add(object* lhs, object* rhs) {
 
-    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
+    assert(IS_FLOAT(lhs));
 
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
@@ -98,12 +99,42 @@ static object* float_add(object* lhs, object* rhs) {
 
 static object* float_sub(object* lhs, object* rhs) {
 
-    assert(IS_FLOAT(lhs) && IS_FLOAT(rhs));
+    assert(IS_FLOAT(lhs));
 
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
     return TO_FLOAT(lhs_obj->value - rhs_obj->value);
+}
+
+static object* float_mult(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT(lhs_obj->value * rhs_obj->value);
+}
+
+static object* float_div(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT(lhs_obj->value / rhs_obj->value);
+}
+
+static object* float_exp(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT(powl(lhs_obj->value, rhs_obj->value));
 }
 
 static number_functions float_number_functions = {
@@ -113,6 +144,9 @@ static number_functions float_number_functions = {
 
     .add                = &float_add,
     .sub                = &float_sub,
+    .mult               = &float_mult,
+    .div                = &float_div,
+    .exp                = &float_exp,
 } ;
 
 type_object float_type = {

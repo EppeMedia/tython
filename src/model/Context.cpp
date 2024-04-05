@@ -42,3 +42,7 @@ void Context::setComplete() {
 bool Context::isComplete() const {
     return this->flags & TYTHON_CONTEXT_FLAG_COMPLETE;
 }
+
+bool Context::isAssign() const {
+    return this->flags & TYTHON_CONTEXT_FLAG_ASSIGN;
+}

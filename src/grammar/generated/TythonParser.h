@@ -16,13 +16,14 @@ public:
     KW_FOR = 7, KW_IN = 8, KW_WHILE = 9, KW_BREAK = 10, KW_EXTERN = 11, 
     KW_IMPORT = 12, KW_SELF = 13, SYM_LPAR = 14, SYM_RPAR = 15, SYM_LSQ = 16, 
     SYM_RSQ = 17, SYM_LBR = 18, SYM_RBR = 19, SYM_COL = 20, SYM_SEMCOL = 21, 
-    SYM_COMMA = 22, SYM_STMNT_DELIMITER = 23, SYM_ASSIGN = 24, SYM_NEQ = 25, 
-    SYM_LTE = 26, SYM_LT = 27, SYM_EQ = 28, SYM_GT = 29, SYM_GTE = 30, SYM_AND = 31, 
-    SYM_OR = 32, SYM_PLUS = 33, SYM_MINUS = 34, SYM_MULT = 35, SYM_DIV = 36, 
-    SYM_EXP = 37, SYM_INC = 38, SYM_DEC = 39, SYM_DOT = 40, SYM_ELLIPS = 41, 
-    SYM_COMMENT = 42, SYM_COMMENT_START = 43, TRUE_LIT = 44, FALSE_LIT = 45, 
-    NONE_LIT = 46, IDENTIFIER = 47, INT_LIT = 48, FLOAT_LIT = 49, STR_LIT = 50, 
-    NEWLINE = 51, WS = 52, SYM_COMMENT_END = 53, COMMENT_CONTENT = 54
+    SYM_COMMA = 22, SYM_STMNT_DELIMITER = 23, SYM_ASSIGN = 24, SYM_PLUS_EQ = 25, 
+    SYM_MINUS_EQ = 26, SYM_NEQ = 27, SYM_LTE = 28, SYM_LT = 29, SYM_EQ = 30, 
+    SYM_GT = 31, SYM_GTE = 32, SYM_AND = 33, SYM_OR = 34, SYM_PLUS = 35, 
+    SYM_MINUS = 36, SYM_MULT = 37, SYM_DIV = 38, SYM_EXP = 39, SYM_INC = 40, 
+    SYM_DEC = 41, SYM_DOT = 42, SYM_ELLIPS = 43, SYM_COMMENT = 44, SYM_COMMENT_START = 45, 
+    TRUE_LIT = 46, FALSE_LIT = 47, NONE_LIT = 48, IDENTIFIER = 49, INT_LIT = 50, 
+    FLOAT_LIT = 51, STR_LIT = 52, NEWLINE = 53, WS = 54, SYM_COMMENT_END = 55, 
+    COMMENT_CONTENT = 56
   };
 
   enum {
@@ -31,10 +32,8 @@ public:
     RuleCompound_statement = 8, RuleAssign_statement = 9, RuleBreak_statement = 10, 
     RuleReturn_statement = 11, RuleIf_statement = 12, RuleFor_loop = 13, 
     RuleWhile_loop = 14, RuleArguments = 15, RuleParameters = 16, RuleCall_expression = 17, 
-    RuleExpression = 18, RuleBinary_operator = 19, RuleInequality_operator = 20, 
-    RuleLogic_operator = 21, RuleArithmetic_operator = 22, RuleRval = 23, 
-    RuleAccess_key = 24, RuleLval = 25, RuleKey_value_pair = 26, RuleDict_lit = 27, 
-    RuleList_lit = 28, RuleTuple_lit = 29, RuleLiteral = 30
+    RuleExpression = 18, RuleLval = 19, RuleKey_value_pair = 20, RuleDict_lit = 21, 
+    RuleList_lit = 22, RuleTuple_lit = 23, RuleSlice_lit = 24, RuleLiteral = 25
   };
 
   explicit TythonParser(antlr4::TokenStream *input);
@@ -73,17 +72,12 @@ public:
   class ParametersContext;
   class Call_expressionContext;
   class ExpressionContext;
-  class Binary_operatorContext;
-  class Inequality_operatorContext;
-  class Logic_operatorContext;
-  class Arithmetic_operatorContext;
-  class RvalContext;
-  class Access_keyContext;
   class LvalContext;
   class Key_value_pairContext;
   class Dict_litContext;
   class List_litContext;
   class Tuple_litContext;
+  class Slice_litContext;
   class LiteralContext; 
 
   class  ProgramContext : public antlr4::ParserRuleContext {
@@ -241,14 +235,47 @@ public:
   class  Assign_statementContext : public antlr4::ParserRuleContext {
   public:
     Assign_statementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+   
+    Assign_statementContext() = default;
+    void copyFrom(Assign_statementContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
+
     virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Lbl_assign_minus_eqContext : public Assign_statementContext {
+  public:
+    Lbl_assign_minus_eqContext(Assign_statementContext *ctx);
+
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_MINUS_EQ();
+    ExpressionContext *expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_assign_statementContext : public Assign_statementContext {
+  public:
+    Lbl_assign_statementContext(Assign_statementContext *ctx);
+
     LvalContext *lval();
     antlr4::tree::TerminalNode *SYM_ASSIGN();
     ExpressionContext *expression();
 
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_assign_plus_eqContext : public Assign_statementContext {
+  public:
+    Lbl_assign_plus_eqContext(Assign_statementContext *ctx);
+
+    LvalContext *lval();
+    antlr4::tree::TerminalNode *SYM_PLUS_EQ();
+    ExpressionContext *expression();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
   };
 
   Assign_statementContext* assign_statement();
@@ -403,55 +430,72 @@ public:
    
   };
 
-  class  Binary_expressionContext : public ExpressionContext {
+  class  Lbl_identifierContext : public ExpressionContext {
   public:
-    Binary_expressionContext(ExpressionContext *ctx);
+    Lbl_identifierContext(ExpressionContext *ctx);
+
+    antlr4::tree::TerminalNode *IDENTIFIER();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_literalContext : public ExpressionContext {
+  public:
+    Lbl_literalContext(ExpressionContext *ctx);
+
+    LiteralContext *literal();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_div_exprContext : public ExpressionContext {
+  public:
+    Lbl_div_exprContext(ExpressionContext *ctx);
 
     TythonParser::ExpressionContext *lhs = nullptr;
     TythonParser::ExpressionContext *rhs = nullptr;
-    Binary_operatorContext *binary_operator();
+    antlr4::tree::TerminalNode *SYM_DIV();
     std::vector<ExpressionContext *> expression();
     ExpressionContext* expression(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
-  class  Lbl_method_callContext : public ExpressionContext {
+  class  Lbl_or_exprContext : public ExpressionContext {
   public:
-    Lbl_method_callContext(ExpressionContext *ctx);
+    Lbl_or_exprContext(ExpressionContext *ctx);
 
-    LvalContext *lval();
-    antlr4::tree::TerminalNode *SYM_DOT();
-    Call_expressionContext *call_expression();
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_OR();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
-  class  Lbl_rvalContext : public ExpressionContext {
+  class  Lbl_eq_exprContext : public ExpressionContext {
   public:
-    Lbl_rvalContext(ExpressionContext *ctx);
+    Lbl_eq_exprContext(ExpressionContext *ctx);
 
-    RvalContext *rval();
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_EQ();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
-  class  Lbl_inc_prefixContext : public ExpressionContext {
+  class  Lbl_lt_exprContext : public ExpressionContext {
   public:
-    Lbl_inc_prefixContext(ExpressionContext *ctx);
+    Lbl_lt_exprContext(ExpressionContext *ctx);
 
-    antlr4::tree::TerminalNode *SYM_INC();
-    LvalContext *lval();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  Lcl_dec_suffixContext : public ExpressionContext {
-  public:
-    Lcl_dec_suffixContext(ExpressionContext *ctx);
-
-    LvalContext *lval();
-    antlr4::tree::TerminalNode *SYM_DEC();
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_LT();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -460,7 +504,7 @@ public:
   public:
     Lbl_inc_suffixContext(ExpressionContext *ctx);
 
-    LvalContext *lval();
+    ExpressionContext *expression();
     antlr4::tree::TerminalNode *SYM_INC();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -471,6 +515,178 @@ public:
     Lbl_call_expressionContext(ExpressionContext *ctx);
 
     Call_expressionContext *call_expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_dec_prefixContext : public ExpressionContext {
+  public:
+    Lbl_dec_prefixContext(ExpressionContext *ctx);
+
+    antlr4::tree::TerminalNode *SYM_DEC();
+    ExpressionContext *expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_and_exprContext : public ExpressionContext {
+  public:
+    Lbl_and_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_AND();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_gte_exprContext : public ExpressionContext {
+  public:
+    Lbl_gte_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_GTE();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_dec_suffixContext : public ExpressionContext {
+  public:
+    Lbl_dec_suffixContext(ExpressionContext *ctx);
+
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *SYM_DEC();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_key_accessContext : public ExpressionContext {
+  public:
+    Lbl_key_accessContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *obj = nullptr;
+    TythonParser::ExpressionContext *key = nullptr;
+    antlr4::tree::TerminalNode *SYM_LSQ();
+    antlr4::tree::TerminalNode *SYM_RSQ();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_neq_exprContext : public ExpressionContext {
+  public:
+    Lbl_neq_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_NEQ();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_method_callContext : public ExpressionContext {
+  public:
+    Lbl_method_callContext(ExpressionContext *ctx);
+
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *SYM_DOT();
+    Call_expressionContext *call_expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_add_exprContext : public ExpressionContext {
+  public:
+    Lbl_add_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_PLUS();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_lte_exprContext : public ExpressionContext {
+  public:
+    Lbl_lte_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_LTE();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_inc_prefixContext : public ExpressionContext {
+  public:
+    Lbl_inc_prefixContext(ExpressionContext *ctx);
+
+    antlr4::tree::TerminalNode *SYM_INC();
+    ExpressionContext *expression();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_mult_exprContext : public ExpressionContext {
+  public:
+    Lbl_mult_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_MULT();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_exponent_exprContext : public ExpressionContext {
+  public:
+    Lbl_exponent_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_EXP();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_sub_exprContext : public ExpressionContext {
+  public:
+    Lbl_sub_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_MINUS();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Lbl_gt_exprContext : public ExpressionContext {
+  public:
+    Lbl_gt_exprContext(ExpressionContext *ctx);
+
+    TythonParser::ExpressionContext *lhs = nullptr;
+    TythonParser::ExpressionContext *rhs = nullptr;
+    antlr4::tree::TerminalNode *SYM_GT();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -486,167 +702,29 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
-  class  Lcl_dec_prefixContext : public ExpressionContext {
+  class  Lbl_slice_accessContext : public ExpressionContext {
   public:
-    Lcl_dec_prefixContext(ExpressionContext *ctx);
+    Lbl_slice_accessContext(ExpressionContext *ctx);
 
-    antlr4::tree::TerminalNode *SYM_DEC();
-    LvalContext *lval();
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *SYM_LSQ();
+    Slice_litContext *slice_lit();
+    antlr4::tree::TerminalNode *SYM_RSQ();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   ExpressionContext* expression();
   ExpressionContext* expression(int precedence);
-  class  Binary_operatorContext : public antlr4::ParserRuleContext {
-  public:
-    Binary_operatorContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Inequality_operatorContext *inequality_operator();
-    Logic_operatorContext *logic_operator();
-    Arithmetic_operatorContext *arithmetic_operator();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  Binary_operatorContext* binary_operator();
-
-  class  Inequality_operatorContext : public antlr4::ParserRuleContext {
-  public:
-    Inequality_operatorContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *SYM_NEQ();
-    antlr4::tree::TerminalNode *SYM_LT();
-    antlr4::tree::TerminalNode *SYM_LTE();
-    antlr4::tree::TerminalNode *SYM_EQ();
-    antlr4::tree::TerminalNode *SYM_GT();
-    antlr4::tree::TerminalNode *SYM_GTE();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  Inequality_operatorContext* inequality_operator();
-
-  class  Logic_operatorContext : public antlr4::ParserRuleContext {
-  public:
-    Logic_operatorContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *SYM_AND();
-    antlr4::tree::TerminalNode *SYM_OR();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  Logic_operatorContext* logic_operator();
-
-  class  Arithmetic_operatorContext : public antlr4::ParserRuleContext {
-  public:
-    Arithmetic_operatorContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *SYM_PLUS();
-    antlr4::tree::TerminalNode *SYM_MINUS();
-    antlr4::tree::TerminalNode *SYM_MULT();
-    antlr4::tree::TerminalNode *SYM_DIV();
-    antlr4::tree::TerminalNode *SYM_EXP();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  Arithmetic_operatorContext* arithmetic_operator();
-
-  class  RvalContext : public antlr4::ParserRuleContext {
-  public:
-    RvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    LiteralContext *literal();
-    LvalContext *lval();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  RvalContext* rval();
-
-  class  Access_keyContext : public antlr4::ParserRuleContext {
-  public:
-    Access_keyContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-   
-    Access_keyContext() = default;
-    void copyFrom(Access_keyContext *context);
-    using antlr4::ParserRuleContext::copyFrom;
-
-    virtual size_t getRuleIndex() const override;
-
-   
-  };
-
-  class  Lbl_access_key_sliceContext : public Access_keyContext {
-  public:
-    Lbl_access_key_sliceContext(Access_keyContext *ctx);
-
-    TythonParser::RvalContext *start = nullptr;
-    TythonParser::RvalContext *end = nullptr;
-    TythonParser::RvalContext *step = nullptr;
-    std::vector<antlr4::tree::TerminalNode *> SYM_COL();
-    antlr4::tree::TerminalNode* SYM_COL(size_t i);
-    std::vector<RvalContext *> rval();
-    RvalContext* rval(size_t i);
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  Lbl_access_key_idxContext : public Access_keyContext {
-  public:
-    Lbl_access_key_idxContext(Access_keyContext *ctx);
-
-    ExpressionContext *expression();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  Access_keyContext* access_key();
-
   class  LvalContext : public antlr4::ParserRuleContext {
   public:
     LvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-   
-    LvalContext() = default;
-    void copyFrom(LvalContext *context);
-    using antlr4::ParserRuleContext::copyFrom;
-
     virtual size_t getRuleIndex() const override;
+    ExpressionContext *expression();
 
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
    
-  };
-
-  class  Lbl_identifierContext : public LvalContext {
-  public:
-    Lbl_identifierContext(LvalContext *ctx);
-
-    antlr4::tree::TerminalNode *IDENTIFIER();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  Lbl_key_accessContext : public LvalContext {
-  public:
-    Lbl_key_accessContext(LvalContext *ctx);
-
-    antlr4::tree::TerminalNode *IDENTIFIER();
-    antlr4::tree::TerminalNode *SYM_LSQ();
-    Access_keyContext *access_key();
-    antlr4::tree::TerminalNode *SYM_RSQ();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   LvalContext* lval();
@@ -676,10 +754,10 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *SYM_LBR();
     antlr4::tree::TerminalNode *SYM_RBR();
-    std::vector<Key_value_pairContext *> key_value_pair();
-    Key_value_pairContext* key_value_pair(size_t i);
     std::vector<antlr4::tree::TerminalNode *> SYM_COMMA();
     antlr4::tree::TerminalNode* SYM_COMMA(size_t i);
+    std::vector<Key_value_pairContext *> key_value_pair();
+    Key_value_pairContext* key_value_pair(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -690,14 +768,14 @@ public:
 
   class  List_litContext : public antlr4::ParserRuleContext {
   public:
-    TythonParser::RvalContext *rvalContext = nullptr;
-    std::vector<RvalContext *> elements;
+    TythonParser::ExpressionContext *expressionContext = nullptr;
+    std::vector<ExpressionContext *> elements;
     List_litContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *SYM_LSQ();
     antlr4::tree::TerminalNode *SYM_RSQ();
-    std::vector<RvalContext *> rval();
-    RvalContext* rval(size_t i);
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
     std::vector<antlr4::tree::TerminalNode *> SYM_COMMA();
     antlr4::tree::TerminalNode* SYM_COMMA(size_t i);
 
@@ -710,14 +788,14 @@ public:
 
   class  Tuple_litContext : public antlr4::ParserRuleContext {
   public:
-    TythonParser::RvalContext *rvalContext = nullptr;
-    std::vector<RvalContext *> elements;
+    TythonParser::ExpressionContext *expressionContext = nullptr;
+    std::vector<ExpressionContext *> elements;
     Tuple_litContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *SYM_LPAR();
     antlr4::tree::TerminalNode *SYM_RPAR();
-    std::vector<RvalContext *> rval();
-    RvalContext* rval(size_t i);
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
     std::vector<antlr4::tree::TerminalNode *> SYM_COMMA();
     antlr4::tree::TerminalNode* SYM_COMMA(size_t i);
 
@@ -727,6 +805,25 @@ public:
   };
 
   Tuple_litContext* tuple_lit();
+
+  class  Slice_litContext : public antlr4::ParserRuleContext {
+  public:
+    TythonParser::ExpressionContext *start = nullptr;
+    TythonParser::ExpressionContext *end = nullptr;
+    TythonParser::ExpressionContext *step = nullptr;
+    Slice_litContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> SYM_COL();
+    antlr4::tree::TerminalNode* SYM_COL(size_t i);
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  Slice_litContext* slice_lit();
 
   class  LiteralContext : public antlr4::ParserRuleContext {
   public:

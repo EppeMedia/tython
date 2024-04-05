@@ -11,6 +11,7 @@
 #include "object/stringobject.h"
 #include "object/integerobject.h"
 #include "object/listobject.h"
+#include "object/noneobject.h"
 
 static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.
@@ -67,7 +68,7 @@ static object* dict_to_string(object* obj) {
     return TO_STRING(string, str_len);
 }
 
-static object* dict_subscript(object* obj, object* key) {
+static object** dict_subscript(object* obj, object* key) {
 
     assert(IS_DICT(obj));
 
@@ -77,14 +78,18 @@ static object* dict_subscript(object* obj, object* key) {
 
     // linear search
     for (int i = 0; i < dict_obj->size; ++i) {
-        dict_entry dict_entry = dict_obj->entries[i];
+
+        const dict_entry dict_entry = dict_obj->entries[i];
+
         if (HASH_OBJECT(key)->value == HASH_OBJECT(dict_entry.key)->value) {
-            // found it
-            return dict_entry.value;
+            // found it, return a pointer to the value
+            return &dict_obj->entries[i].value;
         }
     }
 
-    return AS_OBJECT(NULL); // todo: implement and return None
+    assert(NULL && "Key error; key not found!");
+
+    return NULL;
 }
 
 static object* dict_length(object* obj) {

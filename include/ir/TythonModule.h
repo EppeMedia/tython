@@ -31,8 +31,6 @@ private:
 
     std::map<std::string, llvm::Function*> function_shadow_symbol_table;
 
-private:
-
     /**
      * @brief Initializes this module
      *
@@ -54,6 +52,7 @@ public:
             tython_slice_func(nullptr),
             tuple_create_func(nullptr),
             object_is_truthy_func(nullptr),
+            resolve_builtin_method_func(nullptr),
             function_shadow_symbol_table() {
         initialize();
     };

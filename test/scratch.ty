@@ -8,11 +8,14 @@ else:
     print("No.")
 
 dict = {
-        "mkey": "mvalue",
-        "second_key": "second_value"
+    "mkey": "mvalue",
+    "second_key": "second_value"
 }
 
+print(dict)
+
 if dict:
+    print(dict)
     print(dict["mkey"])
     print(dict["second_key"])
 
@@ -139,23 +142,23 @@ for i in range(0, 100, 1):
     print("hi")
     break
 
-print("--- Shorthand increment/decrement")
-
-i = 0
-while i++ < 3:
-    print("+ dot")
-
-i = 0
-while ++i < 3:
-    print("+ dash")
-
-i = 3
-while i-- > 0:
-    print("- dot")
-
-i = 3
-while --i > 0:
-    print("- dash")
+#print("--- Shorthand increment/decrement")
+#
+#i = 0
+#while i++ < 3:
+#    print(". dot++")
+#
+#i = 0
+#while ++i < 3:
+#    print("- ++dash")
+#
+#i = 3
+#while i-- > 0:
+#    print(". dot--")
+#
+#i = 3
+#while --i > 0:
+#    print("- --dash")
 
 print("--- Slices")
 
@@ -174,3 +177,25 @@ d = { "mkey1": "mval1", "mkey2": "mval2" }
 print(d)
 d_values = d.values()
 print(d_values)
+
+res = (3 + 3 * 4) ** 2
+print(res)
+
+bananas = 0
+for i in range(0, 10, 1):
+    print(bananas)
+    bananas += 1
+    print(bananas)
+    bananas -= 1
+    print(bananas)
+
+ll = [["hello", "world"], ["bye", "see ya"]]
+print(ll)
+print(ll[0])
+print(ll[0][0])
+print(ll[0][1])
+print(ll[1])
+print(ll[1][0])
+print(ll[1][1])
+ll[0][1] = "test"
+print(ll)

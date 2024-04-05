@@ -8,12 +8,15 @@
 #include "object.h"
 #include "type.h"
 
+#define FLOATOBJECT_REPRESENTATION_FORMAT       "%.*Lf"
+#define FLOATOBJECT_REPRESENTATION_PRECISION    17
+
 extern type_object float_type;
 
 typedef struct float_object_t {
     ObjectHead
 
-    double value;
+    long double value;
 
 } float_object;
 

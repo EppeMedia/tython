@@ -6,6 +6,7 @@
 #include "../../include/utils/Utils.h"
 #include "../../include/exception/CompileException.h"
 #include <spdlog/spdlog.h>
+#include <Token.h>
 
 using namespace std;
 
@@ -277,6 +278,16 @@ namespace utils {
         const auto n = fileextension_index - start_index;
 
         return path.substr(start_index, n);
+    }
+
+    void log_warn(const TythonModule *module, antlr4::ParserRuleContext *ctx, const std::string &message) {
+
+        const auto source_name = module->getSourceFileName();
+        const auto line_nr = ctx->getStart()->getLine();
+
+        const auto msg = std::format("{}, line {}: {}\n\r->\t{}", source_name, line_nr, message, ctx->getText());
+
+        spdlog::warn(msg);
     }
 
 }

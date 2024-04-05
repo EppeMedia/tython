@@ -15,6 +15,7 @@
 #define TYTHON_TYPE_SLOT_RICH_COMPARE       7
 #define TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS   10
 #define TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS  11
+#define TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS 12
 #define TYTHON_TYPE_SLOT_ITERATOR_CREATE    13
 #define TYTHON_TYPE_SLOT_ITERATOR_NEXT      14
 
@@ -80,6 +81,14 @@ typedef object* (*rich_compare_f)(object* lhs, object* rhs, int op);
  */
 typedef object* (*repr_f)(object*);
 
+/**
+ * Subscript functions return a reference to a value indexed by a key.
+ *
+ * @param mapping_obj The container object to obtain the indexed key from.
+ * @param key The key by which to find the indexed value reference.
+ */
+typedef object** (*subscript_f)(object* mapping_obj, object* key);
+
 typedef object* (*unary_f)(object*);
 typedef object* (*binary_f)(object*, object*);
 
@@ -112,8 +121,11 @@ typedef struct number_functions_t {
     unary_f to_int;
     unary_f to_float;
 
-    binary_f add; // adds one number to another
-    binary_f sub; // subtracts the right-hand argument from the first-hand argument
+    binary_f add;   // adds one number to another
+    binary_f sub;   // subtracts the right-hand argument from the first-hand argument
+    binary_f mult;  // multiplies lhs with rhs
+    binary_f div;   // divides lhs by rhs
+    binary_f exp;   // exponentiates lhs by rhs
 
 } number_functions;
 
@@ -122,8 +134,8 @@ typedef struct number_functions_t {
  */
 typedef struct mapping_functions_t {
 
-    unary_f length;     // length of the map
-    binary_f subscript; // (object* mapping_obj, object* key), access value by key
+    unary_f length;         // length of the map
+    subscript_f subscript;  // (object* mapping_obj, object* key), obtain value reference by key
 
 } mapping_functions;
 
@@ -132,7 +144,8 @@ typedef struct mapping_functions_t {
  */
 typedef struct sequence_functions_t {
 
-    unary_f length;     // length of the sequence
+    unary_f length;         // length of the sequence
+    binary_f take_slice;    // take a slice of this sequence
 
 } sequence_functions;
 

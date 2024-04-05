@@ -38,17 +38,24 @@ public:
 
     std::any visitImport_statement(TythonParser::Import_statementContext *ctx) override;
 
-    std::any visitAssign_statement(TythonParser::Assign_statementContext *ctx) override;
+    std::any visitLbl_assign_statement(TythonParser::Lbl_assign_statementContext *ctx) override;
+    std::any visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plus_eqContext *ctx) override;
+    std::any visitLbl_assign_minus_eq(TythonParser::Lbl_assign_minus_eqContext *ctx) override;
 
-    std::any visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *ctx) override;
+    std::any visitLval(TythonParser::LvalContext *ctx) override;
+
+    std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override;
 
     std::any visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) override;
     std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override;
+    std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *ctx) override;
 
     std::any visitLiteral(TythonParser::LiteralContext *ctx) override;
     std::any visitDict_lit(TythonParser::Dict_litContext *ctx) override;
     std::any visitList_lit(TythonParser::List_litContext *ctx) override;
     std::any visitTuple_lit(TythonParser::Tuple_litContext *ctx) override;
+
+    std::any visitSlice_lit(TythonParser::Slice_litContext *ctx) override;
 
     std::any visitBlock(TythonParser::BlockContext *ctx) override;
     std::any visitSimple_statement(TythonParser::Simple_statementContext *ctx) override;
@@ -71,18 +78,30 @@ public:
     std::vector<llvm::Value*> visitExternCallParameters(TythonParser::ParametersContext *ctx);
     std::vector<llvm::Value*> visitInternalCallParameters(TythonParser::ParametersContext *ctx);
 
-    std::any visitBinary_expression(TythonParser::Binary_expressionContext *ctx) override;
-
-    llvm::Value* visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs);
-
     std::any visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) override;
+
+    // Expression overrides
+
+    std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) override;
+    std::any visitLbl_mult_expr(TythonParser::Lbl_mult_exprContext *ctx) override;
+    std::any visitLbl_div_expr(TythonParser::Lbl_div_exprContext *ctx) override;
+    std::any visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) override;
+    std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) override;
+
+    std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) override;
+    std::any visitLbl_or_expr(TythonParser::Lbl_or_exprContext *ctx) override;
+
+    std::any visitLbl_neq_expr(TythonParser::Lbl_neq_exprContext *ctx) override;
+    std::any visitLbl_lt_expr(TythonParser::Lbl_lt_exprContext *ctx) override;
+    std::any visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *ctx) override;
+    std::any visitLbl_eq_expr(TythonParser::Lbl_eq_exprContext *ctx) override;
+    std::any visitLbl_gt_expr(TythonParser::Lbl_gt_exprContext *ctx) override;
+    std::any visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *ctx) override;
 
     std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) override;
     std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *ctx) override;
-    std::any visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) override;
-    std::any visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *ctx) override;
+    std::any visitLbl_dec_prefix(TythonParser::Lbl_dec_prefixContext *ctx) override;
+    std::any visitLbl_dec_suffix(TythonParser::Lbl_dec_suffixContext *ctx) override;
 
 };
 

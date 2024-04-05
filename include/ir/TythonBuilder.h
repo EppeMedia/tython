@@ -106,6 +106,30 @@ public:
     llvm::Value* CreateTythonSub(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
+ * Generates the instructions to numerically multiply two Tython objects.
+ * @param lhs The lhs object of the multiplication.
+ * @param rhs The rhs object of the multiplication.
+ * @return Returns a reference to the result of the multiplication of the specified lhs and rhs.
+ */
+    llvm::Value* CreateTythonMult(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
+ * Generates the instructions to numerically divide two Tython objects.
+ * @param lhs The lhs object of the division.
+ * @param rhs The rhs object of the division.
+ * @return Returns a reference to the result of the division of the specified lhs and rhs.
+ */
+    llvm::Value* CreateTythonDiv(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
+ * Generates the instructions to numerically exponentiate the lhs (base) object by the rhs (exponent) object.
+ * @param lhs The lhs object (base) of the exponentiation.
+ * @param rhs The rhs object of the exponent.
+ * @return Returns a reference to the result of the exponentiation of the specified lhs (base) and rhs (exponent).
+ */
+    llvm::Value* CreateTythonExp(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
      * Generates the instructions to perform a rich comparison between to the specified objects.
      * @param lhs The left-hand side of the comparison operation.
      * @param rhs The right-hand side of the comparison operation.
@@ -115,12 +139,20 @@ public:
     llvm::Value* CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, int op);
 
     /**
-     * Generates instructions to obtain the value associated with the specified key on the specified object.
-     * @param object The object on which to find the value associated with the specified key.
+     * Generates instructions to obtain a reference to the value associated with the specified key on the specified object.
+     * @param object The object on which to find a reference to the value associated with the specified key.
      * @param key The key for which to find the associated value on the specified object.
      * @return Returns a reference to the value associated with the specified key on the specified object.
      */
     llvm::Value* CreateSubscript(llvm::Value* object, llvm::Value* key);
+
+    /**
+     * Generates instructions to obtain a slice of the specified sequence object.
+     * @param object The sequence object from which to take a slice.
+     * @param slice The slice indices to take from the specified object.
+     * @return Returns a slice of the specified sequence object.
+     */
+    llvm::Value* CreateTakeSlice(llvm::Value* object, llvm::Value* slice);
 
     /**
      * Generates the instructions to obtain a reference to a new iterator for the specified sequence object reference.

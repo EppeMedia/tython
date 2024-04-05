@@ -100,6 +100,7 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
 
     // init llvm
     auto module = new TythonModule(objectname + "_module", *llvmContext);
+    module->setSourceFileName(path);
 
     // Run compiler
     auto bb = BasicBlock::Create(*llvmContext);
@@ -334,13 +335,9 @@ int main(int argc, char **argv) {
 
     std::string executable_filename;
 
-    if (configuration.out) {
-        executable_filename = configuration.out->value_or("exec");
-    } else {
-        executable_filename = "exec";
-    }
+    executable_filename = configuration.out->value_or("exec");
 
-    std::string buildCommand = "clang -o " + executable_filename;
+    std::string buildCommand = "clang -lc -lm -o " + executable_filename;
 
     for (auto &objectFile : objectFiles) {
         buildCommand.append(" " + objectFile);

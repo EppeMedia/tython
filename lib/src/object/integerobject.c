@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 #include "object/integerobject.h"
 #include "object/stringobject.h"
 #include "object/floatobject.h"
@@ -105,6 +106,42 @@ static object* int_sub(object* lhs, object* rhs) {
     return TO_INT(lhs_obj->value - rhs_obj->value);
 }
 
+static object* int_mul(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs) && IS_INT(rhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value * rhs_obj->value);
+}
+
+static object* int_div(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs) && IS_INT(rhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value / rhs_obj->value);
+}
+
+static object* int_exp(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs) && IS_INT(rhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(powl((long double)lhs_obj->value, (long double)rhs_obj->value));
+}
+
 static number_functions int_number_functions = {
         .to_bool            = &int_to_bool,
         .to_int             = &identity,
@@ -112,6 +149,9 @@ static number_functions int_number_functions = {
 
         .add                = &int_add,
         .sub                = &int_sub,
+        .mult               = &int_mul,
+        .div                = &int_div,
+        .exp                = &int_exp,
 } ;
 
 type_object int_type = {

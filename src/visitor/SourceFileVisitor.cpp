@@ -5,6 +5,8 @@
 #include <regex>
 #include "type.h"
 #include "exception/UnkownSymbolException.h"
+#include "utils/Utils.h"
+#include <spdlog/spdlog.h>
 
 std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statementContext *ctx) {
 
@@ -23,7 +25,7 @@ std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statement
     return nullptr;
 }
 
-std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statementContext *ctx) {
+std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_statementContext *ctx) {
 
     llvm::Value* lhs;
 
@@ -33,10 +35,10 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
 
     } catch (UnknownSymbolException& e) {
 
-        // todo: Note that, unlike most other uses, assignment is a defining operation (identifiers that do not exist are created)
+        // Note that, unlike most other uses, assignment is a defining operation (identifiers that do not exist are created)
         // if a variable of this identifier is unknown, we try to create one on the fly
 
-        auto identifierContext = dynamic_cast<TythonParser::Lbl_identifierContext*>(ctx->lval());
+        auto identifierContext = dynamic_cast<TythonParser::Lbl_identifierContext*>(ctx->lval()->expression());
 
         if (identifierContext) {
 
@@ -45,7 +47,7 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
 
         } else {
             // we can only create new object here if they are simple identifier names (i.e. not dictionary access or sequence access)
-            throw CompileException("Illegal left-hand identifier for implicit declaration \"" + ctx->lval()->children[0]->getText() + "\"");
+            throw CompileException("Illegal left-hand identifier for implicit declaration \"" + ctx->lval()->expression()->getText() + "\"");
         }
     }
 
@@ -56,7 +58,65 @@ std::any SourceFileVisitor::visitAssign_statement(TythonParser::Assign_statement
     return lhs;
 }
 
-std::any SourceFileVisitor::visitLbl_access_key_slice(TythonParser::Lbl_access_key_sliceContext *ctx) {
+std::any SourceFileVisitor::visitLval(TythonParser::LvalContext *ctx) {
+
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+
+    llvm::Value* ref;
+
+    try {
+
+        ref = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    } catch (UnknownSymbolException& e) {
+
+        this->builder->popContext();
+
+        throw e;
+    }
+
+    this->builder->popContext();
+
+    return ref;
+}
+
+std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plus_eqContext *ctx) {
+
+    const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lval()));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
+
+    auto sum = this->builder->CreateTythonAdd(lhs_deref, rhs);
+
+    this->builder->CreateStore(sum, lhs);
+
+    return lhs;
+}
+
+std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_minus_eqContext *ctx) {
+
+    const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lval()));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
+
+    auto res = this->builder->CreateTythonSub(lhs_deref, rhs);
+
+    this->builder->CreateStore(res, lhs);
+
+    return lhs;
+}
+
+std::any SourceFileVisitor::visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) {
+    return any_cast<llvm::Value*>(visit(ctx->expression()));
+}
+
+std::any SourceFileVisitor::visitSlice_lit(TythonParser::Slice_litContext *ctx) {
 
     llvm::Value* start = this->builder->none_object_instance;
 
@@ -89,16 +149,13 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
     // check if the identifier exists, otherwise throw an exception
     if (auto variable = this->builder->current_context->findVariable(identifier)) {
 
-        // variable is a pointer to the value object
-
-        if (dynamic_cast<TythonParser::RvalContext*>(ctx->parent)) {
-            // We need to load it to get a pointer to the variable's value object.
-            const auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
-            return (llvm::Value*)this->builder->CreateLoad(ptr_type, variable);
+        if (this->builder->current_context->isAssign()) {
+            return variable;
         }
 
-        // else, this is an lval; the target is the variable, not the referenced value.
-        return variable;
+        // this is not an assignment context; load the reference
+        const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+        return (llvm::Value*)this->builder->CreateLoad(ptr_t, variable);
     }
 
     throw UnknownSymbolException("Unknown symbol " + identifier);
@@ -106,19 +163,31 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 
 std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) {
 
-    auto identifier = ctx->IDENTIFIER()->getText();
-    auto sequence_ref = this->builder->current_context->findVariable(identifier);
+    // avoid not loading the mapping object if we are in an assign context
+    // (in an assign context we want a reference to the result of this WHOLE key access expression)
+    this->builder->nestContext();
+    auto mapping_object = any_cast<llvm::Value*>(visit(ctx->obj));
+    this->builder->popContext();
 
-    if (!sequence_ref) {
-        throw UnknownSymbolException("Attempted key access on undefined sequence symbol \"" + identifier + "\"");
+    auto key = any_cast<llvm::Value*>(visit(ctx->key));
+
+    auto object_ptr = this->builder->CreateSubscript(mapping_object, key);
+
+    if (this->builder->current_context->isAssign()) {
+        return object_ptr;
     }
 
-    auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
-    auto sequence_object = this->builder->CreateLoad(ptr_t, sequence_ref, "sequence_object");
+    const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+    return (llvm::Value*)this->builder->CreateLoad(ptr_t, object_ptr);
+}
 
-    auto key = any_cast<llvm::Value*>(visit(ctx->access_key()));
+std::any SourceFileVisitor::visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *ctx) {
 
-    return this->builder->CreateSubscript(sequence_object, key);
+    auto sequence_object = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    auto slice = any_cast<llvm::Value*>(visit(ctx->slice_lit()));
+
+    return this->builder->CreateTakeSlice(sequence_object, slice);
 }
 
 std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
@@ -163,17 +232,17 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
     } else if (ctx->dict_lit()) {
 
         // delegate to the dictionary literal handler
-        return visit(ctx->dict_lit());
+        return any_cast<llvm::Value*>(visit(ctx->dict_lit()));
 
     } else if (ctx->list_lit()) {
 
         // delegate to the list literal handler
-        return visit(ctx->list_lit());
+        return any_cast<llvm::Value*>(visit(ctx->list_lit()));
 
     } else if (ctx->tuple_lit()) {
 
         // delegate to the tuple literal handler
-        return visit(ctx->tuple_lit());
+        return any_cast<llvm::Value*>(visit(ctx->tuple_lit()));
     }
 
     throw NotImplemented("Encountered unknown literal type. Language implementation and specification have probably diverged. Please contact the project maintainer.");
@@ -587,7 +656,15 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
     const auto function_name = ctx->IDENTIFIER()->getText();
     auto f = this->module->findProcedure(function_name);
 
-    if (!f) {
+    if (f) {
+
+        // check if the number of parameters match
+        if (f->arg_size() != ctx->parameters()->params.size()) {
+            const auto msg = std::format("Expected {} arguments, found {}.", f->arg_size(), ctx->parameters()->params.size());
+            utils::log_warn(module, ctx, msg);
+        }
+
+    } else {
 
         // check other processed objects so far
         for (auto &entry : this->external_object_symbol_table) {
@@ -649,64 +726,104 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
     return vars;
 }
 
-std::any SourceFileVisitor::visitBinary_expression(TythonParser::Binary_expressionContext *ctx) {
+std::any SourceFileVisitor::visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) {
 
     auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
     auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    // perform the binary operation
-    return visitBinaryOperator(ctx->binary_operator(), lhs, rhs);
+    return this->builder->CreateTythonExp(lhs, rhs);
 }
 
-llvm::Value* SourceFileVisitor::visitBinaryOperator(TythonParser::Binary_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
+std::any SourceFileVisitor::visitLbl_mult_expr(TythonParser::Lbl_mult_exprContext *ctx) {
 
-    if (ctx->inequality_operator()) {
-        return visitInequalityOperator(ctx->inequality_operator(), lhs, rhs);
-    }
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    if (ctx->arithmetic_operator()) {
-        return visitArithmeticOperator(ctx->arithmetic_operator(), lhs, rhs);
-    }
-
-    throw NotImplemented("Unimplemented binary operator \"" + ctx->getText() + "\"!");
+    return this->builder->CreateTythonMult(lhs, rhs);
 }
 
-llvm::Value* SourceFileVisitor::visitInequalityOperator(TythonParser::Inequality_operatorContext *ctx, llvm::Value* lhs, llvm::Value* rhs) {
+std::any SourceFileVisitor::visitLbl_div_expr(TythonParser::Lbl_div_exprContext *ctx) {
 
-    // determine which operation to perform
-    int op;
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    if (ctx->SYM_LT()) {
-        op = TYTHON_CMP_OP_LT;
-    } else if (ctx->SYM_LTE()) {
-        op = TYTHON_CMP_OP_LTE;
-    } else if (ctx->SYM_EQ()) {
-        op = TYTHON_CMP_OP_EQ;
-    } else if (ctx->SYM_NEQ()) {
-        op = TYTHON_CMP_OP_NEQ;
-    } else if (ctx->SYM_GT()) {
-        op = TYTHON_CMP_OP_GT;
-    } else if (ctx->SYM_GTE()) {
-        op = TYTHON_CMP_OP_GTE;
-    }  else {
-        throw NotImplemented("Unimplemented inequality operator \"" + ctx->getText() + "\"!");
-    }
-
-    return this->builder->CreateRichCmp(lhs, rhs, op);
+    return this->builder->CreateTythonDiv(lhs, rhs);
 }
 
-llvm::Value *SourceFileVisitor::visitArithmeticOperator(TythonParser::Arithmetic_operatorContext *ctx, llvm::Value *lhs,
-                                                        llvm::Value *rhs) {
+std::any SourceFileVisitor::visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) {
 
-    if (ctx->SYM_PLUS()) {
-        return this->builder->CreateTythonAdd(lhs, rhs);
-    }
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    if (ctx->SYM_MINUS()) {
-        return this->builder->CreateTythonSub(lhs, rhs);
-    }
+    return this->builder->CreateTythonAdd(lhs, rhs);
+}
 
-    throw NotImplemented("Unimplemented arithmetic operator \"" + ctx->getText() + "\"!");
+std::any SourceFileVisitor::visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateTythonSub(lhs, rhs);
+}
+
+std::any SourceFileVisitor::visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) {
+
+    // todo: implement
+    throw NotImplemented("Logical binary operators are not yet implemented!");
+}
+
+std::any SourceFileVisitor::visitLbl_or_expr(TythonParser::Lbl_or_exprContext *ctx) {
+
+    // todo: implement
+    throw NotImplemented("Logical binary operators are not yet implemented!");
+}
+
+std::any SourceFileVisitor::visitLbl_neq_expr(TythonParser::Lbl_neq_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_NEQ);
+}
+
+std::any SourceFileVisitor::visitLbl_lt_expr(TythonParser::Lbl_lt_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_LT);
+}
+
+std::any SourceFileVisitor::visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_LTE);
+}
+
+std::any SourceFileVisitor::visitLbl_eq_expr(TythonParser::Lbl_eq_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_EQ);
+}
+
+std::any SourceFileVisitor::visitLbl_gt_expr(TythonParser::Lbl_gt_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_GT);
+}
+
+std::any SourceFileVisitor::visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *ctx) {
+
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+
+    return this->builder->CreateRichCmp(lhs, rhs, TYTHON_CMP_OP_GTE);
 }
 
 std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) {
@@ -714,7 +831,7 @@ std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callCo
     const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
 
     auto method_name_str = ctx->call_expression()->IDENTIFIER()->getText();
-    auto object_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    auto object_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
     auto object = this->builder->CreateLoad(ptr_t, object_ref);
 
     auto method_name = this->builder->CreateGlobalString(method_name_str, method_name_str, 0, this->module);
@@ -736,7 +853,9 @@ std::any SourceFileVisitor::visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
+    this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
 
     const auto one = llvm::ConstantInt::get(int64_t, 1, true);
@@ -756,7 +875,9 @@ std::any SourceFileVisitor::visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
+    this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
 
     const auto zero = llvm::ConstantInt::get(int64_t, 0, true);
@@ -775,13 +896,15 @@ std::any SourceFileVisitor::visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixCont
     return old;
 }
 
-std::any SourceFileVisitor::visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixContext *ctx) {
+std::any SourceFileVisitor::visitLbl_dec_prefix(TythonParser::Lbl_dec_prefixContext *ctx) {
 
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
+    this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
 
     const auto one = llvm::ConstantInt::get(int64_t, 1, true);
@@ -795,13 +918,15 @@ std::any SourceFileVisitor::visitLcl_dec_prefix(TythonParser::Lcl_dec_prefixCont
     return dif;
 }
 
-std::any SourceFileVisitor::visitLcl_dec_suffix(TythonParser::Lcl_dec_suffixContext *ctx) {
+std::any SourceFileVisitor::visitLbl_dec_suffix(TythonParser::Lbl_dec_suffixContext *ctx) {
 
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->lval()));
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
+    this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
 
     const auto zero = llvm::ConstantInt::get(int64_t, 0, true);

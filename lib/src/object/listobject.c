@@ -61,10 +61,10 @@ static object* list_to_string(object* obj) {
     return TO_STRING(string, str_len);
 }
 
-static object* list_subscript(object* obj, object* idx) {
+static object** list_subscript(object* obj, object* idx) {
 
     assert(IS_LIST(obj));
-    assert(IS_INT(idx) || IS_SLICE(idx));
+    assert(IS_INT(idx));
 
     list_object* list_obj = AS_LIST(obj);
 
@@ -86,63 +86,68 @@ static object* list_subscript(object* obj, object* idx) {
         assert(index < list_obj->size);
 
         // return the element at the specified index
-        return list_obj->elements[index];
-
-    } else if (IS_SLICE(idx)) {
-
-        slice_object* slice_obj = AS_SLICE(idx);
-
-        // determine the size of the new list to create
-        object* length_obj = slice_type.mapping_functions->length(AS_OBJECT(slice_obj));
-
-        long long start = slice_obj->start;
-        long long len;
-
-        if (IS_INT(length_obj)) {
-
-            len = AS_INT(length_obj)->value;
-
-        } else if (IS_NONE(length_obj)) {
-            // the length cannot be determined without knowledge of the list (probably a negative index)
-
-            if (start < 0) {
-                // negative indexes wrap around
-                assert(llabs(start) <= list_obj->size);
-                start += list_obj->size;
-            }
-
-            assert(IS_INT(slice_obj->end) || IS_NONE(slice_obj->end));
-
-            long long end = 0;
-
-            if (IS_INT(slice_obj->end)) {
-                end = AS_INT(slice_obj->end)->value;
-            } else if (IS_NONE(slice_obj->end)) {
-                end = list_obj->size;
-            }
-
-            if (end < 0) {
-                // negative indexes wrap around
-                assert(llabs(end) <= list_obj->size);
-                end += list_obj->size;
-            }
-
-            len = end - start;
-        }
-
-        list_object* new_list = AS_LIST(list_create(len));
-
-        for (int i = 0; i < len; ++i) {
-
-            const size_t k = slice_obj->start + (slice_obj->step * i);
-
-            new_list->elements[i] = list_subscript(obj, TO_INT(k));
-        }
-
-        return AS_OBJECT(new_list);
+        return &list_obj->elements[index];
     }
 
     assert("Only integers or slices are allowed as indexes for list subscripts!" && NULL);
+}
+
+static object* list_take_slice(object* obj, object* slice) {
+
+    assert(IS_LIST(obj));
+    assert(IS_SLICE(slice));
+
+    list_object* list_obj = AS_LIST(obj);
+    slice_object* slice_obj = AS_SLICE(slice);
+
+    // determine the size of the new list to create
+    object* length_obj = slice_type.mapping_functions->length(AS_OBJECT(slice_obj));
+
+    long long start = slice_obj->start;
+    long long len;
+
+    if (IS_INT(length_obj)) {
+
+        len = AS_INT(length_obj)->value;
+
+    } else if (IS_NONE(length_obj)) {
+        // the length cannot be determined without knowledge of the list (probably a negative index)
+
+        if (start < 0) {
+            // negative indexes wrap around
+            assert(llabs(start) <= list_obj->size);
+            start += list_obj->size;
+        }
+
+        assert(IS_INT(slice_obj->end) || IS_NONE(slice_obj->end));
+
+        long long end = 0;
+
+        if (IS_INT(slice_obj->end)) {
+            end = AS_INT(slice_obj->end)->value;
+        } else if (IS_NONE(slice_obj->end)) {
+            end = list_obj->size;
+        }
+
+        if (end < 0) {
+            // negative indexes wrap around
+            assert(llabs(end) <= list_obj->size);
+            end += list_obj->size;
+        }
+
+        len = end - start;
+    }
+
+    list_object* new_list = AS_LIST(list_create(len));
+
+    for (int i = 0; i < len; ++i) {
+
+        const size_t k = slice_obj->start + (slice_obj->step * i);
+
+        new_list->elements[i] = *list_subscript(obj, TO_INT(k));
+    }
+
+    return AS_OBJECT(new_list);
 }
 
 static object* list_length(object* obj) {
@@ -205,8 +210,14 @@ static object* list_append(object* self, object* item) {
         // we need to extend the capacity of the list
 
         // find a new capacity (doubling is a popular approach)
-        const size_t new_capacity = list_obj->capacity * 2;
+        const size_t new_capacity = (list_obj->capacity == 0) ? 2 : (list_obj->capacity * 2);
         object** new_elements = realloc(list_obj->elements, new_capacity * sizeof(object*));
+
+        if (!new_elements) {
+            new_elements = malloc(new_capacity * sizeof(object*));
+            memcpy(new_elements, list_obj->elements, list_obj->capacity * sizeof(object*));
+            free(list_obj->elements);
+        }
 
         assert(new_elements && "Heap allocation failure!");
 
@@ -242,6 +253,11 @@ static mapping_functions list_mapping_functions = {
         .subscript  = &list_subscript,
 };
 
+static sequence_functions list_sequence_functions = {
+        .length     = &list_length,
+        .take_slice = &list_take_slice,
+};
+
 static builtin_method list_methods[] = {
         { "append", &list_append },
         { NULL, NULL }              // sentinel
@@ -266,7 +282,7 @@ type_object list_type = {
 
         .number_functions   = &list_number_functions,
         .mapping_functions  = &list_mapping_functions,
-        .sequence_functions = NULL,
+        .sequence_functions = &list_sequence_functions,
 
         .create_iterator    = &list_create_iterator,
 
@@ -284,7 +300,7 @@ static object* list_iterator_next(object* obj) {
         return NULL; // todo: None?
     }
 
-    object* e = list_subscript(AS_OBJECT(it->list_obj), it->idx);
+    object* e = *list_subscript(AS_OBJECT(it->list_obj), it->idx);
 
     // increment index
     it->idx = TO_INT(AS_INT(it->idx)->value + 1);

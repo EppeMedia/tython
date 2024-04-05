@@ -66,7 +66,11 @@ compound_statement  : if_statement
                     | for_loop
                     | while_loop;
 
-assign_statement    : lval SYM_ASSIGN expression;
+assign_statement    : lval SYM_ASSIGN expression    #lbl_assign_statement
+                    | lval SYM_PLUS_EQ expression   #lbl_assign_plus_eq
+                    | lval SYM_MINUS_EQ expression  #lbl_assign_minus_eq
+                    ;
+
 break_statement     : KW_BREAK;
 return_statement    : KW_RETURN expression;
 
@@ -92,49 +96,54 @@ parameters          : params+=expression?
 
 call_expression     : KW_EXTERN? IDENTIFIER SYM_LPAR parameters SYM_RPAR;
 
-expression          : lhs=expression binary_operator rhs=expression #binary_expression
+expression          : SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
+                    | expression SYM_DOT call_expression            #lbl_method_call
                     | call_expression                               #lbl_call_expression
-                    | SYM_LPAR expression SYM_RPAR                  #lbl_expression_parentheses
-                    | lval SYM_DOT call_expression                  #lbl_method_call
-                    | rval                                          #lbl_rval
-                    | SYM_INC lval                                  #lbl_inc_prefix
-                    | lval SYM_INC                                  #lbl_inc_suffix
-                    | SYM_DEC lval                                  #lcl_dec_prefix
-                    | lval SYM_DEC                                  #lcl_dec_suffix
+
+//                    Shorthand increment/decrement (Super set instructions)
+                    | SYM_INC expression                            #lbl_inc_prefix
+                    | expression SYM_INC                            #lbl_inc_suffix
+                    | SYM_DEC expression                            #lbl_dec_prefix
+                    | expression SYM_DEC                            #lbl_dec_suffix
+
+//                    Arithmetic expressions
+                    | lhs=expression SYM_EXP rhs=expression         #lbl_exponent_expr
+                    | lhs=expression SYM_MULT rhs=expression        #lbl_mult_expr
+                    | lhs=expression SYM_DIV rhs=expression         #lbl_div_expr
+                    | lhs=expression SYM_PLUS rhs=expression        #lbl_add_expr
+                    | lhs=expression SYM_MINUS rhs=expression       #lbl_sub_expr
+//                    Logic expressions
+                    | lhs=expression SYM_AND rhs=expression         #lbl_and_expr
+                    | lhs=expression SYM_OR rhs=expression          #lbl_or_expr
+//                    Inequality expressions
+                    | lhs=expression SYM_NEQ rhs=expression         #lbl_neq_expr
+                    | lhs=expression SYM_LT rhs=expression          #lbl_lt_expr
+                    | lhs=expression SYM_LTE rhs=expression         #lbl_lte_expr
+                    | lhs=expression SYM_EQ rhs=expression          #lbl_eq_expr
+                    | lhs=expression SYM_GT rhs=expression          #lbl_gt_expr
+                    | lhs=expression SYM_GTE rhs=expression         #lbl_gte_expr
+
+                    | expression SYM_LSQ slice_lit SYM_RSQ          #lbl_slice_access
+                    | obj=expression SYM_LSQ key=expression SYM_RSQ #lbl_key_access
+                    | literal                                       #lbl_literal
+                    | IDENTIFIER                                    #lbl_identifier
                     ;
 
-binary_operator     : inequality_operator | logic_operator | arithmetic_operator;
-
-inequality_operator : SYM_NEQ
-                    | SYM_LT
-                    | SYM_LTE
-                    | SYM_EQ
-                    | SYM_GT
-                    | SYM_GTE;
-
-logic_operator      : SYM_AND | SYM_OR;
-
-arithmetic_operator : SYM_PLUS
-                    | SYM_MINUS
-                    | SYM_MULT
-                    | SYM_DIV
-                    | SYM_EXP;
-
-rval                : literal
-                    | lval;
-
-access_key          : start=rval? SYM_COL end=rval? SYM_COL? step=rval?     #lbl_access_key_slice
-                    | expression                                            #lbl_access_key_idx
-                    ;
-
-lval                : IDENTIFIER                                #lbl_identifier
-                    | IDENTIFIER SYM_LSQ access_key SYM_RSQ     #lbl_key_access
-                    ;
+lval                : expression;
 
 key_value_pair      : key=expression SYM_COL value=expression;
 
-dict_lit            : SYM_LBR (entries+=key_value_pair? | (entries+=key_value_pair? (SYM_COMMA entries+=key_value_pair)+)) SYM_RBR;
-list_lit            : SYM_LSQ (elements+=rval? | (elements+=rval? (SYM_COMMA elements+=rval)+)) SYM_RSQ;
-tuple_lit           : SYM_LPAR (elements+=rval? | (elements+=rval? (SYM_COMMA elements+=rval)+)) SYM_RPAR;
+dict_lit            : SYM_LBR (entries+=key_value_pair? | (entries+=key_value_pair? (SYM_COMMA entries+=key_value_pair)+)) SYM_COMMA? SYM_RBR;
+list_lit            : SYM_LSQ (elements+=expression? | (elements+=expression? (SYM_COMMA elements+=expression)+)) SYM_RSQ;
+tuple_lit           : SYM_LPAR (elements+=expression? | (elements+=expression? (SYM_COMMA elements+=expression)+)) SYM_RPAR;
 
-literal             : INT_LIT | FLOAT_LIT | STR_LIT | NONE_LIT | dict_lit | list_lit | tuple_lit;
+slice_lit          : start=expression? SYM_COL end=expression? SYM_COL? step=expression?;
+
+literal             : INT_LIT
+                    | FLOAT_LIT
+                    | STR_LIT
+                    | NONE_LIT
+                    | dict_lit
+                    | list_lit
+                    | tuple_lit
+                    ;

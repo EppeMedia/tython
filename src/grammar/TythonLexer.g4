@@ -75,6 +75,8 @@ SYM_COMMA           : ',';
 SYM_STMNT_DELIMITER : SYM_SEMCOL;
 
 SYM_ASSIGN          : '=';
+SYM_PLUS_EQ         : '+=';
+SYM_MINUS_EQ        : '-=';
 
 SYM_NEQ             : '!=';
 SYM_LTE             : '<=';
@@ -111,7 +113,7 @@ IDENTIFIER          : ([a-zA-Z] | '_')+([a-zA-Z0-9] | '_')*;
 
 // non-identifier-like literals
 INT_LIT             : '-'?[0-9]+;
-FLOAT_LIT           : INT_LIT? '.' [0-9]+;
+FLOAT_LIT           : INT_LIT? '.' ([0-9]+)? ('e' ('+'|'-') [0-9]+)?;
 STR_LIT             : '"' ~'"'+ '"';
 
 NEWLINE             : ({this->atStartOfInput()}? WS | ( '\r'? '\n' | '\r' | '\f') WS?) {this->onNewLine();};

@@ -35,6 +35,9 @@ void TythonBuilder::initFirstClassTypes() {
 
         ptr_t,      // add      (function ptr)
         ptr_t,      // sub      (function ptr)
+        ptr_t,      // mult     (function ptr)
+        ptr_t,      // div      (function ptr)
+        ptr_t,      // exp      (function ptr)
     };
 
     this->number_functions_type = llvm::StructType::get(this->getContext(), number_functions_types, "Object.Number.Functions");
@@ -171,6 +174,72 @@ llvm::Value *TythonBuilder::CreateTythonSub(llvm::Value *lhs, llvm::Value *rhs) 
     return this->CreateCall(function_type, add_f, { lhs, rhs }, "sub");
 }
 
+llvm::Value *TythonBuilder::CreateTythonMult(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 5);
+
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
+
+    const auto lhs_number_functions_ref = this->CreateGetNumberFunctions(lhs_type);
+    const auto lhs_number_functions = this->CreateLoad(ptr_t, lhs_number_functions_ref);
+
+    auto add_f_ref = this->CreateGEP(this->number_functions_type, lhs_number_functions, {zero, slot });
+    auto add_f = this->CreateLoad(ptr_t, add_f_ref, "mul_f");
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
+
+    return this->CreateCall(function_type, add_f, { lhs, rhs }, "mul");
+}
+
+llvm::Value *TythonBuilder::CreateTythonDiv(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 6);
+
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
+
+    const auto lhs_number_functions_ref = this->CreateGetNumberFunctions(lhs_type);
+    const auto lhs_number_functions = this->CreateLoad(ptr_t, lhs_number_functions_ref);
+
+    auto add_f_ref = this->CreateGEP(this->number_functions_type, lhs_number_functions, {zero, slot });
+    auto add_f = this->CreateLoad(ptr_t, add_f_ref, "div_f");
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
+
+    return this->CreateCall(function_type, add_f, { lhs, rhs }, "div");
+}
+
+llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto slot = llvm::ConstantInt::get(int32_t, 7);
+
+    const auto lhs_type_ref = this->CreateGetTypeObject(lhs);
+    const auto lhs_type = this->CreateLoad(ptr_t, lhs_type_ref);
+
+    const auto lhs_number_functions_ref = this->CreateGetNumberFunctions(lhs_type);
+    const auto lhs_number_functions = this->CreateLoad(ptr_t, lhs_number_functions_ref);
+
+    auto add_f_ref = this->CreateGEP(this->number_functions_type, lhs_number_functions, {zero, slot });
+    auto add_f = this->CreateLoad(ptr_t, add_f_ref, "exp_f");
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
+
+    return this->CreateCall(function_type, add_f, { lhs, rhs }, "exp");
+}
+
 llvm::Value *TythonBuilder::CreateGetIterator(llvm::Value *sequence) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
@@ -251,6 +320,29 @@ llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *ke
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
 
     return this->CreateCall(function_type, subscript_f, { object, key }, "subscript");
+}
+
+llvm::Value *TythonBuilder::CreateTakeSlice(llvm::Value *object, llvm::Value *slice) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto object_type_ref = this->CreateGetTypeObject(object);
+    const auto object_type = this->CreateLoad(ptr_t, object_type_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto one = llvm::ConstantInt::get(int32_t, 1);
+    const auto mapping_functions_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS);
+
+    auto mapping_functions_ref = this->CreateGEP(this->typeobject_type, object_type, { zero, mapping_functions_slot });
+    auto mapping_functions = this->CreateLoad(ptr_t, mapping_functions_ref);
+
+    auto subscript_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, { zero, one });
+    auto take_slice_f = this->CreateLoad(ptr_t, subscript_ref);
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
+
+    return this->CreateCall(function_type, take_slice_f, {object, slice }, "take_slice");
 }
 
 static bool isNumberType(llvm::Value* v) {

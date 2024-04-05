@@ -2,7 +2,6 @@
 #include "../../include/exception/CompileException.h"
 #include "spdlog/spdlog.h"
 #include "llvm/IR/IRBuilder.h"
-#include "../../include/model/Context.h"
 
 void TythonModule::initialize() {
 

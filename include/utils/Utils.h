@@ -8,7 +8,9 @@
 #include <fstream>
 #include <map>
 #include <vector>
+#include <ParserRuleContext.h>
 #include "../../config.h"
+#include "ir/TythonModule.h"
 
 using namespace std;
 
@@ -52,6 +54,14 @@ namespace utils {
      * @return The object name from the given path.
      */
     std::string get_objectname(std::string& path);
+
+    /**
+     * Logs the specified message with source file line info.
+     * @param module The source file module.
+     * @param ctx The current parser context.
+     * @param message The message to log.
+     */
+    void log_warn(const TythonModule* module, antlr4::ParserRuleContext* ctx, const std::string& message);
 
 };
 
