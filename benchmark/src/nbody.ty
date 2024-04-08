@@ -13,18 +13,26 @@
 #Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 __contact__ = "collinwinter@google.com (Collin Winter)"
-DEFAULT_ITERATIONS = 200 #20000
+DEFAULT_ITERATIONS = 1000 #20000
 DEFAULT_REFERENCE = "sun"
 
 DEFAULT_LOOPS = 100
 
+ZERO = 0
+ZERO_F = 0.0
+ZERO_DOT_ZERO_ONE = 0.01
+ZERO_DOT_FIVE = 0.5
+ONE = 1
+NEG_ONE_DOT_FIVE = -1.5
+TWO = 2
+TWO_DOT_ZERO = 2.0
 
 def combinations(l):
 #    """Pure-Python implementation of itertools.combinations(l, 2)."""
     result = []
-    q = len(l) - 1
-    for x in range(0, q, 1):
-        i = x + 1
+    q = len(l) - ONE
+    for x in range(ZERO, q, ONE):
+        i = x + ONE
         ls = l[i:]
         for y in ls:
             result.append((l[x], y))
@@ -36,7 +44,7 @@ SOLAR_MASS = 4.0 * PI * PI
 DAYS_PER_YEAR = 365.24
 
 BODIES = {
-    "sun": ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], SOLAR_MASS),
+    "sun": ([ZERO_F, ZERO_F, ZERO_F], [ZERO_F, ZERO_F, ZERO_F], SOLAR_MASS),
 
     "jupiter": ([4.84143144246472090e+00,
                  -1.16032004402742839e+00,
@@ -71,122 +79,121 @@ BODIES = {
                 5.15138902046611451e-05 * SOLAR_MASS)
 }
 
-
-SYSTEM = list(BODIES.values())        # removed list constructor
+SYSTEM = list(BODIES.values())
 PAIRS = combinations(SYSTEM)
 
 def advance(dt, n):
-    for i in range(0, n, 1):
+    for i in range(ZERO, n, ONE):
         for p in PAIRS:
 
-            x1 = p[0][0][0]
-            y1 = p[0][0][1]
-            z1 = p[0][0][2]
-            v1 = p[0][1]
-            m1 = p[0][2]
+            x1 = p[ZERO][ZERO][ZERO]
+            y1 = p[ZERO][ZERO][ONE]
+            z1 = p[ZERO][ZERO][TWO]
+            v1 = p[ZERO][ONE]
+            m1 = p[ZERO][TWO]
 
-            x2 = p[1][0][0]
-            y2 = p[1][0][1]
-            z2 = p[1][0][2]
-            v2 = p[1][1]
-            m2 = p[1][2]
+            x2 = p[ONE][ZERO][ZERO]
+            y2 = p[ONE][ZERO][ONE]
+            z2 = p[ONE][ZERO][TWO]
+            v2 = p[ONE][ONE]
+            m2 = p[ONE][TWO]
 
             dx = x1 - x2
             dy = y1 - y2
             dz = z1 - z2
-            mag = dt * ((dx * dx + dy * dy + dz * dz) ** (-1.5))
+            mag = dt * ((dx * dx + dy * dy + dz * dz) ** (NEG_ONE_DOT_FIVE))
             b1m = m1 * mag
             b2m = m2 * mag
-            v1[0] -= dx * b2m
-            v1[1] -= dy * b2m
-            v1[2] -= dz * b2m
-            v2[0] += dx * b1m
-            v2[1] += dy * b1m
-            v2[2] += dz * b1m
+            v1[ZERO] -= dx * b2m
+            v1[ONE] -= dy * b2m
+            v1[TWO] -= dz * b2m
+            v2[ZERO] += dx * b1m
+            v2[ONE] += dy * b1m
+            v2[TWO] += dz * b1m
 
         for b in SYSTEM:
 
-            r = b[0]
-            vx = b[1][0]
-            vy = b[1][1]
-            vz = b[1][2]
-            m = b[2]
+            r = b[ZERO]
+            vx = b[ONE][ZERO]
+            vy = b[ONE][ONE]
+            vz = b[ONE][TWO]
+            m = b[TWO]
 
-            r[0] += dt * vx
-            r[1] += dt * vy
-            r[2] += dt * vz
+            r[ZERO] += dt * vx
+            r[ONE] += dt * vy
+            r[TWO] += dt * vz
 
 def report_energy():
 
-    e = 0.0
+    e = ZERO_F
 
     for p in PAIRS:
 
-        x1 = p[0][0][0]
-        y1 = p[0][0][1]
-        z1 = p[0][0][2]
-        v1 = p[0][1]
-        m1 = p[0][2]
+        x1 = p[ZERO][ZERO][ZERO]
+        y1 = p[ZERO][ZERO][ONE]
+        z1 = p[ZERO][ZERO][TWO]
+        v1 = p[ZERO][ONE]
+        m1 = p[ZERO][TWO]
 
-        x2 = p[1][0][0]
-        y2 = p[1][0][1]
-        z2 = p[1][0][2]
-        v2 = p[1][1]
-        m2 = p[1][2]
+        x2 = p[ONE][ZERO][ZERO]
+        y2 = p[ONE][ZERO][ONE]
+        z2 = p[ONE][ZERO][TWO]
+        v2 = p[ONE][ONE]
+        m2 = p[ONE][TWO]
 
         dx = x1 - x2
         dy = y1 - y2
         dz = z1 - z2
-        e -= (m1 * m2) / ((dx * dx + dy * dy + dz * dz) ** 0.5)
+        e -= (m1 * m2) / ((dx * dx + dy * dy + dz * dz) ** ZERO_DOT_FIVE)
 
     for b in SYSTEM:
 
-        r = b[0]
-        vx = b[1][0]
-        vy = b[1][1]
-        vz = b[1][2]
-        m = b[2]
+        r = b[ZERO]
+        vx = b[ONE][ZERO]
+        vy = b[ONE][ONE]
+        vz = b[ONE][TWO]
+        m = b[TWO]
 
-        e += m * (vx * vx + vy * vy + vz * vz) / 2.0
+        e += m * (vx * vx + vy * vy + vz * vz) / TWO_DOT_ZERO
 
     return e
 
 
 def offset_momentum(ref):
 
-    px=0.0
-    py=0.0
-    pz=0.0
+    px=ZERO_F
+    py=ZERO_F
+    pz=ZERO_F
 
     for b in SYSTEM:
 
-        r = b[0]
-        vx = b[1][0]
-        vy = b[1][1]
-        vz = b[1][2]
-        m = b[2]
+        r = b[ZERO]
+        vx = b[ONE][ZERO]
+        vy = b[ONE][ONE]
+        vz = b[ONE][TWO]
+        m = b[TWO]
 
         px -= vx * m
         py -= vy * m
         pz -= vz * m
 
-    v = ref[1]
-    m = ref[2]
+    v = ref[ONE]
+    m = ref[TWO]
 
-    v[0] = px / m
-    v[1] = py / m
-    v[2] = pz / m
+    v[ZERO] = px / m
+    v[ONE] = py / m
+    v[TWO] = pz / m
 
 
 def bench_nbody(loops, reference, iterations):
     # Set up global state
     offset_momentum(BODIES[reference])
 
-    range_it = range(0, loops, 1)
+    range_it = range(ZERO, loops, ONE)
 
     for _ in range_it:
         report_energy()
-        advance(0.01, iterations)
+        advance(ZERO_DOT_ZERO_ONE, iterations)
         report_energy()
 
 #print("Let's go")
