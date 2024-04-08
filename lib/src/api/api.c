@@ -5,6 +5,8 @@
 #include "api/api.h"
 #include "object/stringobject.h"
 #include "object/sliceobject.h"
+#include "object/listobject.h"
+#include "bridge/basicland.h"
 #include <memory.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -47,4 +49,20 @@ object* len(object* object) {
 
 object* slice(object* start, object* end, object* step) {
     return slice_create(start, end, step);
+}
+
+object* list(object* obj) {
+
+    assert(obj->type->create_iterator && "Type error: cannot create list from non-iterable object!");
+
+    object* it = obj->type->create_iterator(obj);
+    list_object* list_obj = AS_LIST(list_create(0));
+    function_object_function* list_append = resolve_builtin_method(AS_OBJECT(list_obj), "append");
+
+    struct object_t* e;
+    while ((e = it->type->iterator_next(it))) {
+        (*list_append)(AS_OBJECT(list_obj), e);
+    }
+
+    return AS_OBJECT(list_obj);
 }

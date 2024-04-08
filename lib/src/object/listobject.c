@@ -89,7 +89,7 @@ static object** list_subscript(object* obj, object* idx) {
         return &list_obj->elements[index];
     }
 
-    assert("Only integers or slices are allowed as indexes for list subscripts!" && NULL);
+    assert("Only integers are allowed as indexes for list subscripts!" && NULL);
 }
 
 static object* list_take_slice(object* obj, object* slice) {

@@ -13,7 +13,7 @@
 #Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 __contact__ = "collinwinter@google.com (Collin Winter)"
-DEFAULT_ITERATIONS = 100 #20000
+DEFAULT_ITERATIONS = 200 #20000
 DEFAULT_REFERENCE = "sun"
 
 DEFAULT_LOOPS = 100
@@ -72,12 +72,12 @@ BODIES = {
 }
 
 
-SYSTEM = BODIES.values()        # removed list constructor
+SYSTEM = list(BODIES.values())        # removed list constructor
 PAIRS = combinations(SYSTEM)
 
-print(BODIES)
-print(SYSTEM)
-print(PAIRS)
+#print(BODIES)
+#print(SYSTEM)
+#print(PAIRS)
 
 
 def advance(dt, n):
@@ -190,10 +190,10 @@ def bench_nbody(loops, reference, iterations):
     range_it = range(0, loops, 1)
 
     for _ in range_it:
-        print(report_energy())
+#        print(report_energy())
         advance(0.01, iterations)
-        print(report_energy())
+#        print(report_energy())
 
-print("Let's go")
+#print("Let's go")
 bench_nbody(DEFAULT_LOOPS, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
-print("Done")
+#print("Done")

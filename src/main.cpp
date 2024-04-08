@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
 
     executable_filename = configuration.out->value_or("exec");
 
-    std::string buildCommand = "clang -lc -lm -o " + executable_filename;
+    std::string buildCommand = "clang -lm -lprofiler -o " + executable_filename;
 
     for (auto &objectFile : objectFiles) {
         buildCommand.append(" " + objectFile);

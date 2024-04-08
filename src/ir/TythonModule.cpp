@@ -57,6 +57,11 @@ void TythonModule::initialize() {
     *(this->tython_slice_func) = this->getOrInsertFunction("slice", tython_slice_type);
     registerProcedure((llvm::Function*)this->tython_slice_func->getCallee(), "slice"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
+    llvm::FunctionType* tython_list_constructor_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+    auto tython_list_constructor_func = new llvm::FunctionCallee();
+    *(tython_list_constructor_func) = this->getOrInsertFunction("list", tython_list_constructor_type);
+    registerProcedure((llvm::Function*)tython_list_constructor_func->getCallee(), "list"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
     llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int32_t, {ptr_t }, false);
     this->object_is_truthy_func = new llvm::FunctionCallee();
     *(this->object_is_truthy_func) = this->getOrInsertFunction("object_is_truthy", object_is_truthy_type);
