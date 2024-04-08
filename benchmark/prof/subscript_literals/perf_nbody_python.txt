@@ -1,0 +1,18 @@
+ Performance counter stats for 'python3 ../src/nbody.ty':
+
+            531.98 msec task-clock                       #    0.998 CPUs utilized
+                30      context-switches                 #   56.393 /sec
+                 0      cpu-migrations                   #    0.000 /sec
+               950      page-faults                      #    1.786 K/sec
+     2,220,899,277      cycles                           #    4.175 GHz                         (83.14%)
+        14,435,862      stalled-cycles-frontend          #    0.65% frontend cycles idle        (83.45%)
+           142,442      stalled-cycles-backend           #    0.01% backend cycles idle         (83.47%)
+     6,711,607,539      instructions                     #    3.02  insn per cycle
+                                                  #    0.00  stalled cycles per insn     (83.47%)
+       995,853,128      branches                         #    1.872 G/sec                       (83.46%)
+         7,176,109      branch-misses                    #    0.72% of all branches             (83.01%)
+
+       0.533015295 seconds time elapsed
+
+       0.528663000 seconds user
+       0.004005000 seconds sys

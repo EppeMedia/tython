@@ -1,0 +1,18 @@
+ Performance counter stats for './nbody':
+
+          2,977.15 msec task-clock                       #    0.999 CPUs utilized
+                37      context-switches                 #   12.428 /sec
+                 2      cpu-migrations                   #    0.672 /sec
+           639,187      page-faults                      #  214.698 K/sec
+    13,074,400,178      cycles                           #    4.392 GHz                         (83.34%)
+        37,317,181      stalled-cycles-frontend          #    0.29% frontend cycles idle        (83.34%)
+     1,404,240,535      stalled-cycles-backend           #   10.74% backend cycles idle         (83.35%)
+    26,306,227,264      instructions                     #    2.01  insn per cycle
+                                                  #    0.05  stalled cycles per insn     (83.34%)
+     4,953,750,538      branches                         #    1.664 G/sec                       (83.34%)
+       100,078,365      branch-misses                    #    2.02% of all branches             (83.28%)
+
+       2.979240205 seconds time elapsed
+
+       1.976994000 seconds user
+       1.000503000 seconds sys
