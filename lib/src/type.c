@@ -34,7 +34,7 @@ object* default_alloc(type_object* typeobj) {
 
 object* default_seqalloc(type_object* typeobj, size_t n) {
 
-    size_t size = typeobj->instance_size + (n * typeobj->item_size);
+    const size_t size = typeobj->instance_size + (n * typeobj->item_size);
 
     object* obj = calloc(1, size);
 

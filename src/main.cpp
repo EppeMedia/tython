@@ -336,6 +336,19 @@ int main(int argc, char **argv) {
     std::string executable_filename;
 
     executable_filename = configuration.out->value_or("exec");
+    const auto path_delimiter_pos = executable_filename.find_last_of('/');
+
+    // make sure the requested path exists
+    if (path_delimiter_pos != std::string::npos) {
+
+        const auto executable_path = executable_filename.substr(0, path_delimiter_pos);
+
+        if (configuration.verbose) {
+            std::cout << "-- Creating path \"" << executable_path << "\"..." << std::endl;
+        }
+
+        utils::exec(std::format("mkdir -p {}", executable_path));
+    }
 
     std::string buildCommand = "clang -lm -lprofiler -o " + executable_filename;
 
@@ -354,13 +367,13 @@ int main(int argc, char **argv) {
         std::cout << "-- " << buildCommand << std::endl;
     }
 
-    auto result = utils::exec(buildCommand);
+    utils::exec(buildCommand);
 
     if (configuration.verbose) {
-        std::cout << "Build done." << std::endl;
+        std::cout << "Created binary: " << executable_filename << std::endl;
     }
 
-    std::cout << "Created binary \"" << executable_filename << "\"." << std::endl;
+    std::cout << "Done." << std::endl;
 
     return 0;
 }

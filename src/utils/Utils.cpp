@@ -212,20 +212,18 @@ namespace utils {
         };
     }
 
-    std::string exec(const string& cmd) {
+    int exec(const string& cmd) {
 
-        char buffer[128];
+        FILE* f = popen(cmd.c_str(), "r");
 
-        std::string result;
-
-        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-
-        if (!pipe) {
-            throw std::runtime_error("popen() failed!");
+        if (!f) {
+            throw std::runtime_error(std::format("Failed to open a shell for \"{}\"!", cmd));
         }
 
-        while (fgets(buffer, 128, pipe.get()) != nullptr) {
-            result += buffer;
+        const auto result = pclose(f);
+
+        if (result != 0) {
+            throw std::runtime_error(std::format("\"{}\" terminated with non-zero exit status {}", cmd, result));
         }
 
         return result;

@@ -26,12 +26,12 @@ namespace utils {
     configuration_t getConfiguration(int argc, char** argv);
 
     /**
-     * run system command and get result in an std::string
+     * Runs the specified command in a system shell, and waits for it to terminate.
      *
-     * @param cmd
-     * @return
+     * @param cmd The shell command to run.
+     * @return Returns the command result code.
      */
-    string exec(const string& cmd);
+    int exec(const string& cmd);
 
     /**
      * JAVA-like split function for strings
