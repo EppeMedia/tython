@@ -73,6 +73,12 @@ std::any SourceFileVisitor::visitLval(TythonParser::LvalContext *ctx) {
         this->builder->popContext();
 
         throw e;
+
+    } catch (CompileException& e) {
+
+        this->builder->popContext();
+
+        throw e;
     }
 
     this->builder->popContext();
@@ -169,7 +175,9 @@ std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessCont
     auto mapping_object = any_cast<llvm::Value*>(visit(ctx->obj));
     this->builder->popContext();
 
+    this->builder->nestContext();
     auto key = any_cast<llvm::Value*>(visit(ctx->key));
+    this->builder->popContext();
 
     auto object_ptr = this->builder->CreateSubscript(mapping_object, key);
 
