@@ -53,6 +53,11 @@ std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_s
 
     auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
 
+    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
+    const auto lhs_obj = this->builder->CreateLoad(ptr_t, lhs); // decrement LHS ref count
+    this->builder->CreateReleaseObject(lhs_obj); // decrement LHS ref count
+
+    this->builder->CreateGrabObject(rhs); // increment RHS reference counter
     this->builder->CreateStore(rhs, lhs);
 
     return lhs;
@@ -95,7 +100,11 @@ std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plu
 
     auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
 
+
     auto sum = this->builder->CreateTythonAdd(lhs_deref, rhs);
+
+    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
+    this->builder->CreateGrabObject(sum);
 
     this->builder->CreateStore(sum, lhs);
 
@@ -112,6 +121,9 @@ std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_mi
     auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
 
     auto res = this->builder->CreateTythonSub(lhs_deref, rhs);
+
+    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
+    this->builder->CreateGrabObject(res);
 
     this->builder->CreateStore(res, lhs);
 
@@ -266,6 +278,10 @@ std::any SourceFileVisitor::visitDict_lit(TythonParser::Dict_litContext *ctx) {
         auto key = any_cast<llvm::Value*>(visit(entry->key));
         auto value = any_cast<llvm::Value*>(visit(entry->value));
 
+        // grab both key and value (the dictionary references them of course)
+        this->builder->CreateGrabObject(key);
+        this->builder->CreateGrabObject(value);
+
         entries.emplace_back(key, value);
     }
 
@@ -284,6 +300,9 @@ std::any SourceFileVisitor::visitList_lit(TythonParser::List_litContext *ctx) {
 
         auto v = any_cast<llvm::Value*>(visit(element));
 
+        // grab a reference to the value (the list references it)
+        this->builder->CreateGrabObject(v);
+
         elements.push_back(v);
     }
 
@@ -301,6 +320,9 @@ std::any SourceFileVisitor::visitTuple_lit(TythonParser::Tuple_litContext *ctx) 
     for (auto& element : ctx->elements) {
 
         auto v = any_cast<llvm::Value*>(visit(element));
+
+        // grab a reference to the value (the tuple references it)
+        this->builder->CreateGrabObject(v);
 
         elements.push_back(v);
     }
@@ -406,6 +428,9 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
         const auto iterable = any_cast<llvm::Value*>(visit(ctx->expression()));
         const auto it = this->builder->CreateGetIterator(iterable);
 
+        // grab a reference to the iterator
+        this->builder->CreateGrabObject(it);
+
         // start pre header
         this->builder->CreateBr(br_pre);
         this->builder->SetInsertPoint(br_pre);
@@ -415,6 +440,9 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
         // increment iterator, obtains stale value
         auto it_value = this->builder->CallIteratorNext(it);
+
+        // grab a reference to the iterator value
+        this->builder->CreateGrabObject(it_value);
 
         // bind the stale iterator value to the induction variable
         this->builder->CreateStore(it_value, it_var);
@@ -495,7 +523,22 @@ std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
 
     TythonParserBaseVisitor::visitBlock(ctx);
 
+    /*
+     * The following avoids inserting GC code after a terminating instruction.
+     */
+
+    // if this block is terminated explicitly (i.e. by a return statement), insert the cleanup code just before that terminator.
+    llvm::Instruction* terminator;
+    if ((terminator = this->builder->GetInsertBlock()->getTerminator())) {
+        this->builder->SetInsertPoint(terminator);
+    }
+
     this->builder->popContext();
+
+    if (terminator) {
+        // resume at the end of the block (at the terminating instruction)
+        this->builder->SetInsertPoint(this->builder->GetInsertBlock());
+    }
 
     return nullptr;
 }
@@ -566,7 +609,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     const bool isVarArgs = ctx->SYM_ELLIPS();
 
     llvm::FunctionType* ft = llvm::FunctionType::get(return_type, arg_types, isVarArgs);
-    auto fn = llvm::Function::Create(ft, llvm::GlobalValue::CommonLinkage, identifier, this->module);
+    auto fn = llvm::Function::Create(ft, llvm::GlobalValue::ExternalLinkage, identifier, this->module);
 
     this->module->registerProcedure(fn, identifier);
 
@@ -583,8 +626,22 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
 
     visitBlock(ctx->block());
 
-    // check if we do not have a return statement
-    if (!this->builder->GetInsertBlock()->getTerminator()) {
+    /*
+     * The following avoids inserting GC code after a terminating instruction.
+     */
+    llvm::Instruction* terminator;
+    if ((terminator = this->builder->GetInsertBlock()->getTerminator())) {
+        this->builder->SetInsertPoint(terminator);
+    }
+
+    this->builder->popContext();
+
+    if (terminator) {
+
+        // resume at the end of the block (at the terminating instruction)
+        this->builder->SetInsertPoint(this->builder->GetInsertBlock());
+
+    } else {
 
         // create implicit return None
 
@@ -594,8 +651,6 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
 
         this->builder->CreateRet(this->builder->none_object_instance);
     }
-
-    this->builder->popContext();
 
     this->builder->SetInsertPoint(old_bb);
 
@@ -607,6 +662,8 @@ std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statement
     ASSERT_LEXICAL_BLOCK_CONTEXT
 
     const auto ret_val = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    this->builder->CreateGrabObject(ret_val);
 
     this->builder->current_context->setComplete();
 
@@ -692,7 +749,19 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
 
-    return this->builder->CreateCall(f, params);
+    // grab reference to parameters
+    for (auto& v : params) {
+        this->builder->CreateGrabObject(v);
+    }
+
+    llvm::Value* result = this->builder->CreateCall(f, params);
+
+    // release param objects
+    for (auto& v : params) {
+        this->builder->CreateReleaseObject(v);
+    }
+
+    return result;
 }
 
 std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonParser::ParametersContext *ctx) {
@@ -714,7 +783,7 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
     for (int i = 0; i < ctx->args.size(); ++i) {
 
         auto identifier = ctx->args.at(i)->getText();
-        auto v = this->builder->GetInsertBlock()->getParent()->getArg(i); // todo: seems like a stack member to me, it will probably be deleted wih the call frame. What would then if we assign it to a global variable?
+        auto v = this->builder->GetInsertBlock()->getParent()->getArg(i);
 
         auto dataEntry = this->builder->CreateVariable(identifier);
 
@@ -724,6 +793,9 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
          * Implementation-wise, this is probably already partly achieved by our setup (i.e. a value pass of a sequence is a new sequence referencing the same elements as the original)
          * We'll have to have another look when we implement objects (class instances)
          */
+
+        // grab a reference to the argument value
+        this->builder->CreateGrabObject(v);
 
         // assign the passed argument value to the new variable
         this->builder->CreateStore(v, dataEntry);

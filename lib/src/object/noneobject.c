@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 #include <assert.h>
+#include <stdio.h>
 #include "object/noneobject.h"
 #include "object/boolobject.h"
 #include "object/stringobject.h"
@@ -15,8 +16,23 @@ none_object none_instance = {
         .obj_base = {
                 .identity       = &none_instance.obj_base,
                 .type           = &none_type,
+                .refs       = 0,
         },
 };
+
+static void grab_none_noop(object* instance) {
+
+    assert(IS_NONE(instance));
+
+    (void)0;
+}
+
+static void release_none_noop(object* instance) {
+
+    assert(IS_NONE(instance));
+
+    (void)0;
+}
 
 static object* none_rich_compare(object* lhs, object* rhs, int op) {
 
@@ -57,6 +73,7 @@ type_object none_type = {
         .obj_base = {
                 .identity       = &none_type.obj_base,
                 .type           = &type_type,
+                .refs           = 0,
         },
 
         .alloc              = NULL,     // The None object is globally unique
@@ -74,4 +91,7 @@ type_object none_type = {
         .sequence_functions = NULL,
 
         .create_iterator    = NULL,
+
+        .grab               = &grab_none_noop,       // The None object is globally unique; grab has no effect
+        .release            = &release_none_noop,    // The None object is globally unique; release has no effect
 };

@@ -87,6 +87,7 @@ type_object string_type = {
         .obj_base = {
                 .identity   = &string_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -103,4 +104,7 @@ type_object string_type = {
         .number_functions   = NULL,
         .mapping_functions  = NULL,
         .sequence_functions = &string_sequence_functions,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };

@@ -16,6 +16,7 @@ void TythonBuilder::init() {
 
 void TythonBuilder::initFirstClassTypes() {
 
+    llvm::Type* int32_t = llvm::Type::getInt32Ty(this->getContext());
     llvm::Type* int64_t = llvm::Type::getInt64Ty(this->getContext());
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
@@ -24,6 +25,7 @@ void TythonBuilder::initFirstClassTypes() {
     llvm::ArrayRef<llvm::Type*> object_types = {
         ptr_t,      // identity
         ptr_t,      // type object reference
+        int32_t,    // reference counter
     };
 
     this->object_type = llvm::StructType::create(this->getContext(), object_types, "Object");
@@ -54,6 +56,7 @@ void TythonBuilder::initFirstClassTypes() {
         // ObjectHead
         ptr_t,      // identity
         ptr_t,      // type object reference
+        int32_t,    // reference counter
         // End ObjectHead
 
         ptr_t,      // base (parent type)
@@ -75,6 +78,9 @@ void TythonBuilder::initFirstClassTypes() {
         ptr_t,      // iterator next (unary function pointer)
 
         ptr_t,      // methods
+
+        ptr_t,      // grab (inc. reference function pointer)
+        ptr_t,      // release (dec. reference function pointer)
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
@@ -87,7 +93,20 @@ Context *TythonBuilder::nestContext(unsigned int flags) {
     return this->current_context = new class Context(this->current_context, flags);
 }
 
-Context *TythonBuilder::popContext() {
+Context *TythonBuilder::popContext(bool free) {
+
+    if (free) {
+
+        // free objects bound to variables that were declared in this scope
+        for (auto &e: this->current_context->variable_shadow_symbol_table) {
+
+            const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+            const auto load = this->CreateLoad(ptr_t, e.second);
+            this->CreateReleaseObject(load);
+        }
+    }
+
     return this->current_context = this->current_context->parent;
 }
 
@@ -131,6 +150,10 @@ llvm::Value *TythonBuilder::CreateResolveBuiltinMethod(llvm::Value *object, llvm
 
 llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) {
 
+    // grab reference to both operands
+    this->CreateGrabObject(lhs);
+    this->CreateGrabObject(rhs);
+
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
@@ -148,11 +171,21 @@ llvm::Value *TythonBuilder::CreateTythonAdd(llvm::Value *lhs, llvm::Value *rhs) 
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateCall(function_type, add_f, { lhs, rhs }, "add");
+    const auto result = this->CreateCall(function_type, add_f, { lhs, rhs }, "add");
+
+    // release reference to both operands
+    this->CreateReleaseObject(lhs);
+    this->CreateReleaseObject(rhs);
+
+    return result;
 }
 
 
 llvm::Value *TythonBuilder::CreateTythonSub(llvm::Value *lhs, llvm::Value *rhs) {
+
+    // grab reference to both operands
+    this->CreateGrabObject(lhs);
+    this->CreateGrabObject(rhs);
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
@@ -171,10 +204,20 @@ llvm::Value *TythonBuilder::CreateTythonSub(llvm::Value *lhs, llvm::Value *rhs) 
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateCall(function_type, add_f, { lhs, rhs }, "sub");
+    const auto result = this->CreateCall(function_type, add_f, { lhs, rhs }, "sub");
+
+    // release reference to both operands
+    this->CreateReleaseObject(lhs);
+    this->CreateReleaseObject(rhs);
+
+    return result;
 }
 
 llvm::Value *TythonBuilder::CreateTythonMult(llvm::Value *lhs, llvm::Value *rhs) {
+
+    // grab reference to both operands
+    this->CreateGrabObject(lhs);
+    this->CreateGrabObject(rhs);
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
@@ -193,10 +236,20 @@ llvm::Value *TythonBuilder::CreateTythonMult(llvm::Value *lhs, llvm::Value *rhs)
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateCall(function_type, add_f, { lhs, rhs }, "mul");
+    const auto result = this->CreateCall(function_type, add_f, { lhs, rhs }, "mul");
+
+    // release reference to both operands
+    this->CreateReleaseObject(lhs);
+    this->CreateReleaseObject(rhs);
+
+    return result;
 }
 
 llvm::Value *TythonBuilder::CreateTythonDiv(llvm::Value *lhs, llvm::Value *rhs) {
+
+    // grab reference to both operands
+    this->CreateGrabObject(lhs);
+    this->CreateGrabObject(rhs);
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
@@ -215,10 +268,20 @@ llvm::Value *TythonBuilder::CreateTythonDiv(llvm::Value *lhs, llvm::Value *rhs) 
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateCall(function_type, add_f, { lhs, rhs }, "div");
+    const auto result = this->CreateCall(function_type, add_f, { lhs, rhs }, "div");
+
+    // release reference to both operands
+    this->CreateReleaseObject(lhs);
+    this->CreateReleaseObject(rhs);
+
+    return result;
 }
 
 llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) {
+
+    // grab reference to both operands
+    this->CreateGrabObject(lhs);
+    this->CreateGrabObject(rhs);
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
@@ -237,7 +300,13 @@ llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) 
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false); // todo: class member binop function type
 
-    return this->CreateCall(function_type, add_f, { lhs, rhs }, "exp");
+    const auto result = this->CreateCall(function_type, add_f, { lhs, rhs }, "exp");
+
+    // release reference to both operands
+    this->CreateReleaseObject(lhs);
+    this->CreateReleaseObject(rhs);
+
+    return result;
 }
 
 llvm::Value *TythonBuilder::CreateGetIterator(llvm::Value *sequence) {
@@ -337,8 +406,8 @@ llvm::Value *TythonBuilder::CreateTakeSlice(llvm::Value *object, llvm::Value *sl
     auto mapping_functions_ref = this->CreateGEP(this->typeobject_type, object_type, { zero, mapping_functions_slot });
     auto mapping_functions = this->CreateLoad(ptr_t, mapping_functions_ref);
 
-    auto subscript_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, { zero, one });
-    auto take_slice_f = this->CreateLoad(ptr_t, subscript_ref);
+    auto take_slice_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, {zero, one });
+    auto take_slice_f = this->CreateLoad(ptr_t, take_slice_ref);
 
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
 
@@ -387,8 +456,11 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
         alloc = this->CreateAlloca(this->getPtrTy(), nullptr, name);
     }
 
-    this->current_context->registerVariable(name, alloc);
+    // default value is None
+    this->CreateStore(this->none_object_instance, alloc);
 
+    // register and return reference
+    this->current_context->registerVariable(name, alloc);
     return this->current_context->findVariable(name);
 }
 
@@ -502,4 +574,42 @@ llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<l
     }
 
     return tuple_ref;
+}
+
+void TythonBuilder::CreateGrabObject(llvm::Value *object) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto typeobject_ref = this->CreateGetTypeObject(object);
+    const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto grab_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_GRAB);
+
+    auto grab_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, grab_slot });
+    auto grab_f = this->CreateLoad(ptr_t, grab_ref);
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+
+    this->CreateCall(function_type, grab_f, {object }, "grab");
+}
+
+void TythonBuilder::CreateReleaseObject(llvm::Value *object) {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+
+    const auto typeobject_ref = this->CreateGetTypeObject(object);
+    const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
+
+    const auto zero = llvm::ConstantInt::get(int32_t, 0);
+    const auto release_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_RELEASE);
+
+    auto release_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, release_slot });
+    auto release_f = this->CreateLoad(ptr_t, release_ref);
+
+    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+
+    this->CreateCall(function_type, release_f, {object }, "release");
 }

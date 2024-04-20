@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
         utils::exec(std::format("mkdir -p {}", executable_path));
     }
 
-    std::string buildCommand = "clang -lm -lprofiler -o " + executable_filename;
+    std::string buildCommand = "clang -lgc -lm -lprofiler -o " + executable_filename;
 
     for (auto &objectFile : objectFiles) {
         buildCommand.append(" " + objectFile);

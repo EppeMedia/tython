@@ -153,9 +153,10 @@ type_object float_type = {
     .obj_base = {
             .identity   = &float_type.obj_base,
             .type       = &type_type,
+            .refs       = 0,
     },
 
-    .alloc              = &default_alloc,
+    .alloc              = &pool_alloc,
     .seqalloc           = NULL,
 
     .base               = NULL,
@@ -169,4 +170,7 @@ type_object float_type = {
     .number_functions   = &float_number_functions,
     .mapping_functions  = NULL,
     .sequence_functions = NULL,                     // not a sequence type
+
+    .grab               = &default_grab,
+    .release            = &default_release,
 };

@@ -12,6 +12,8 @@
 
 class Context {
 
+friend class TythonBuilder;
+
 private:
     std::map<std::string, llvm::Value*> variable_shadow_symbol_table;
     unsigned int flags;

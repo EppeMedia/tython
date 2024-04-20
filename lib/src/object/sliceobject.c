@@ -141,6 +141,7 @@ type_object slice_type = {
         .obj_base = {
                 .identity   = &slice_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -159,4 +160,7 @@ type_object slice_type = {
         .sequence_functions = NULL,                     // not a sequence type
 
         .create_iterator    = NULL,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };

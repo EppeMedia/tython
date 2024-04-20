@@ -104,8 +104,9 @@ object* dict_create(size_t size) {
     dict_object* dict_obj = malloc(sizeof(dict_object));
 
     // initialize object header
-    AS_OBJECT(dict_obj)->type = &dict_type;
     AS_OBJECT(dict_obj)->identity = AS_OBJECT(dict_obj);
+    AS_OBJECT(dict_obj)->type = &dict_type;
+    AS_OBJECT(dict_obj)->refs = 0;
 
     dict_obj->size = size;
 
@@ -137,10 +138,37 @@ static object* dict_values(object* self) {
 
     for (int i = 0; i < dict_obj->size; ++i) {
 
-        list_obj->elements[i] = dict_obj->entries[i].value;
+        object* v = dict_obj->entries[i].value;
+
+        GRAB_OBJECT(v); // the new list grabs a reference to the value in the dictionary
+        list_obj->elements[i] = v;
     }
 
     return AS_OBJECT(list_obj);
+}
+
+static void dict_release(object* obj) {
+
+    assert(IS_DICT(obj));
+
+    dict_object* dict_obj = AS_DICT(obj);
+
+    // only release elements if we are about to be freed!
+    if (obj->refs != 1) {
+        return default_release(obj);
+    }
+
+    // release all the elements this dict references
+    for (size_t i = 0; i < dict_obj->size; ++i) {
+
+        dict_entry entry = dict_obj->entries[i];
+
+        entry.key->type->release(entry.key);
+        entry.value->type->release(entry.value);
+    }
+
+    // delegate the dict object to default release
+    default_release(obj);
 }
 
 static number_functions dict_number_functions = {
@@ -162,6 +190,7 @@ type_object dict_type = {
         .obj_base = {
             .identity       = &dict_type.obj_base,
             .type           = &type_type,
+            .refs           = 0,
         },
 
         .alloc              = &default_alloc,
@@ -179,4 +208,7 @@ type_object dict_type = {
         .sequence_functions = NULL,
 
         .methods            = dict_methods,
+
+        .grab               = &default_grab,
+        .release            = &dict_release,
 };

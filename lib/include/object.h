@@ -14,6 +14,7 @@
 typedef struct object_t {
     struct object_t* identity;     // identities are immutable
     type_object* type;             // types are immutable
+    int32_t refs;
 } object;
 
 /**

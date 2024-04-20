@@ -75,6 +75,7 @@ type_object bool_type = {
         .obj_base = {
                 .identity   = &int_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -91,6 +92,9 @@ type_object bool_type = {
         .number_functions   = &int_number_functions,
         .mapping_functions  = NULL,
         .sequence_functions = NULL,                     // not a sequence type
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };
 
 bool_object bool_true = {

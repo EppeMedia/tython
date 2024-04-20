@@ -38,9 +38,10 @@ private:
 
     /**
      * Climbs the context tree by one level, and updates the current context pointer.
+     * @param free Controls whether or not variables declared in the current context should be freed.
      * @return Returns the context pointer.
      */
-    class Context* popContext();
+    class Context* popContext(bool free = true);
 
     TythonModule* module;
     class Context* current_context;
@@ -213,6 +214,18 @@ public:
      * @return Returns a reference to the newly created tuple object.
      */
     llvm::Value* CreateTupleLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
+
+    /**
+     * Generates the instructions to grab a reference to the specified object.
+     * @param object The object to grab a reference to.
+     */
+    void CreateGrabObject(llvm::Value* object);
+
+    /**
+     * Generates the instructions to release a reference to the specified object.
+     * @param object The object to be released.
+     */
+    void CreateReleaseObject(llvm::Value* object);
 
 };
 

@@ -9,6 +9,7 @@
 #include "object/integerobject.h"
 #include "object/stringobject.h"
 #include "object/boolobject.h"
+#include "object/noneobject.h"
 
 object* range_create(object* start, object* end, object* step) {
 
@@ -108,7 +109,7 @@ static object* range_length(object* obj) {
     return TO_INT(range_length_c(range_obj));
 }
 
-static object* range_subscript(object* obj, object* idx) {
+static object** range_subscript(object* obj, object* idx) {
 
     assert(IS_RANGE(obj));
     assert(IS_INT(idx));
@@ -129,7 +130,12 @@ static object* range_subscript(object* obj, object* idx) {
     // assert that the index is within list bounds
     assert(index < length);
 
-    return TO_INT((index * range_obj->step) + range_obj->start);
+    object* v = TO_INT((index * range_obj->step) + range_obj->start);
+
+    object** r = malloc(sizeof(object**));
+    *r = v;
+
+    return r;
 }
 
 static object* range_create_iterator(object* obj) {
@@ -143,6 +149,10 @@ static object* range_create_iterator(object* obj) {
     it->start = TO_INT(range_obj->start);
     it->step = TO_INT(range_obj->step);
     it->length = range_length(obj);
+
+    GRAB_OBJECT(it->start);
+    GRAB_OBJECT(it->step);
+    GRAB_OBJECT(it->length);
 
     return AS_OBJECT(it);
 }
@@ -160,6 +170,7 @@ type_object range_type = {
         .obj_base = {
                 .identity   = &range_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -178,6 +189,9 @@ type_object range_type = {
         .sequence_functions = NULL,                     // not a sequence type
 
         .create_iterator    = &range_create_iterator,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };
 
 static object* range_iterator_next(object* obj) {
@@ -188,16 +202,22 @@ static object* range_iterator_next(object* obj) {
 
     if (AS_INT(it->length)->value <= 0) {
         // this iterator has run off the end
-        return NULL; // todo: None?
+        return AS_OBJECT(TYTHON_NONE);
     }
 
     // decrement length
     it->length = TO_INT(AS_INT(it->length)->value - 1);
 
+    // todo: release old length object
+    GRAB_OBJECT(it->length);
+
     object* cur = it->start;
 
     const long long new_cur = AS_INT(it->start)->value + AS_INT(it->step)->value;
     it->start = TO_INT(new_cur);
+
+    // todo: release old start object
+    GRAB_OBJECT(it->start);
 
     return cur;
 }
@@ -223,6 +243,7 @@ type_object range_iterator_type = {
         .obj_base = {
                 .identity   = &range_iterator_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -241,4 +262,7 @@ type_object range_iterator_type = {
         .sequence_functions = NULL,                     // not a sequence type
 
         .iterator_next      = &range_iterator_next,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };

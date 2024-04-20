@@ -31,6 +31,7 @@ type_object class_type = {
         .obj_base = {
                 .identity   = &class_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -47,4 +48,7 @@ type_object class_type = {
         .number_functions   = NULL,
         .mapping_functions  = NULL,
         .sequence_functions = NULL,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };

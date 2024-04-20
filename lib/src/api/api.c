@@ -14,6 +14,8 @@
 
 void print(object* object) {
 
+//    GRAB_OBJECT(object);
+
     // call the type's "str" function
     string_object* string_obj = AS_STRING(object->type->str(object));
 
@@ -35,6 +37,8 @@ void print(object* object) {
     buf[buf_size - 1] = '\0';
 
     printf("%s\r\n", buf);
+
+//    object->type->release(object);
 }
 
 object* len(object* object) {
@@ -57,12 +61,22 @@ object* list(object* obj) {
 
     object* it = obj->type->create_iterator(obj);
     list_object* list_obj = AS_LIST(list_create(0));
+
+    GRAB_OBJECT(it);
+
     function_object_function* list_append = resolve_builtin_method(AS_OBJECT(list_obj), "append");
 
-    struct object_t* e;
-    while ((e = it->type->iterator_next(it))) {
+    while (object_is_truthy(it)) {
+
+        object* e = it->type->iterator_next(it);
+        GRAB_OBJECT(e);
+
         (*list_append)(AS_OBJECT(list_obj), e);
+
+        e->type->release(e);
     }
+
+    it->type->release(it);
 
     return AS_OBJECT(list_obj);
 }

@@ -38,7 +38,7 @@ static object* list_to_string(object* obj) {
     }
 
     // allocate memory for the final string, which includes two square brackets for the list and a comma and space between each element
-    size_t separator_count = ((list_obj->size - 1) * 2); // the last entry is not followed by a comma and a space
+    size_t separator_count = list_obj->size > 0 ? ((list_obj->size - 1) * 2) : 0; // the last entry is not followed by a comma and a space
     size_t str_len = (element_strings_total_length * sizeof(char)) + 2 + (separator_count * sizeof(char));
     char* string = malloc(str_len);
     string[0] = '[';
@@ -144,7 +144,11 @@ static object* list_take_slice(object* obj, object* slice) {
 
         const size_t k = slice_obj->start + (slice_obj->step * i);
 
-        new_list->elements[i] = *list_subscript(obj, TO_INT(k));
+        object* v = *list_subscript(obj, TO_INT(k));
+
+        GRAB_OBJECT(v); // the new list has a reference to the element
+
+        new_list->elements[i] = v;
     }
 
     return AS_OBJECT(new_list);
@@ -162,8 +166,9 @@ object* list_create(size_t size) {
     list_object* list_obj = malloc(sizeof(list_object));
 
     // initialize object header
-    AS_OBJECT(list_obj)->type = &list_type;
     AS_OBJECT(list_obj)->identity = AS_OBJECT(list_obj);
+    AS_OBJECT(list_obj)->type = &list_type;
+    AS_OBJECT(list_obj)->refs = 0;
 
     list_obj->size = size;
     list_obj->capacity = size;
@@ -200,9 +205,10 @@ static object* list_append(object* self, object* item) {
     list_object* list_obj = AS_LIST(self);
 
     // check if we have enoiugh allocated space for this new item
-    if (list_obj->size <= list_obj->capacity) {
+    if (list_obj->size < list_obj->capacity) {
 
         // we have enough space; simply place the new item and increment the size counter
+        GRAB_OBJECT(item);
         list_obj->elements[list_obj->size++] = item;
 
     } else {
@@ -241,7 +247,39 @@ static object* list_create_iterator(object* obj) {
     it->idx = TO_INT(0);
     it->list_obj = list_obj;
 
+    GRAB_OBJECT(it->idx);
+    GRAB_OBJECT(AS_OBJECT(it->list_obj));
+
     return AS_OBJECT(it);
+}
+
+static void list_release(object* obj) {
+
+//    printf("--- releasing list...\r\n");
+
+    assert(IS_LIST(obj));
+
+    list_object* list_obj = AS_LIST(obj);
+
+    // only release elements if we are about to be freed!
+    if (obj->refs != 1) {
+        return default_release(obj);
+    }
+
+    // release all the elements this list references
+    for (size_t i = 0; i < list_obj->size; ++i) {
+
+//        printf("- releasing element %lu..\r\n", i);
+
+        object* e = list_obj->elements[i];
+
+        e->type->release(e);
+    }
+
+//    printf("--- released all list elements.\r\n");
+
+    // delegate the list object to default release
+    default_release(obj);
 }
 
 static number_functions list_number_functions = {
@@ -268,6 +306,7 @@ type_object list_type = {
         .obj_base = {
             .identity       = &list_type.obj_base,
             .type           = &type_type,
+            .refs           = 0,
         },
 
         .alloc              = &default_alloc,
@@ -287,6 +326,9 @@ type_object list_type = {
         .create_iterator    = &list_create_iterator,
 
         .methods            = list_methods,
+
+        .grab               = &default_grab,
+        .release            = &list_release,
 };
 
 static object* list_iterator_next(object* obj) {
@@ -297,13 +339,16 @@ static object* list_iterator_next(object* obj) {
 
     if (AS_INT(it->idx)->value >= it->list_obj->size) {
         // this iterator has run off the end
-        return NULL; // todo: None?
+        return AS_OBJECT(TYTHON_NONE);
     }
 
     object* e = *list_subscript(AS_OBJECT(it->list_obj), it->idx);
 
     // increment index
     it->idx = TO_INT(AS_INT(it->idx)->value + 1);
+
+    // todo: release old idx object
+    GRAB_OBJECT(it->idx);
 
     return e;
 }
@@ -329,6 +374,7 @@ type_object list_iterator_type = {
         .obj_base = {
                 .identity   = &list_iterator_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -347,4 +393,7 @@ type_object list_iterator_type = {
         .sequence_functions = NULL,                     // not a sequence type
 
         .iterator_next      = &list_iterator_next,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };

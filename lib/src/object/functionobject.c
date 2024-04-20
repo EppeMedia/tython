@@ -26,6 +26,7 @@ type_object function_type = {
         .obj_base = {
                 .identity   = &function_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -51,6 +52,7 @@ type_object function_arg_type = {
         .obj_base = {
                 .identity   = &function_arg_type.obj_base,
                 .type       = &type_type,
+                .refs       = 0,
         },
 
         .alloc              = &default_alloc,
@@ -69,5 +71,8 @@ type_object function_arg_type = {
         .sequence_functions = NULL,
 
         .iterator_next      = NULL,
+
+        .grab               = &default_grab,
+        .release            = &default_release,
 };
 

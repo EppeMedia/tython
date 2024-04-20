@@ -18,3 +18,5 @@ ADD_LIBRARY(tython_lib STATIC
         object/functionobject.c
         api/api.c
         bridge/basicland.c)
+
+target_link_libraries(tython_lib gc)

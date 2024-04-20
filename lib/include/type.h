@@ -12,12 +12,14 @@
  * Type slots describe the field offset in the type struct.
  * This is included in this header so that users of the library can used named offsets instead of magic numbers.
  */
-#define TYTHON_TYPE_SLOT_RICH_COMPARE       7
-#define TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS   10
-#define TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS  11
-#define TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS 12
-#define TYTHON_TYPE_SLOT_ITERATOR_CREATE    13
-#define TYTHON_TYPE_SLOT_ITERATOR_NEXT      14
+#define TYTHON_TYPE_SLOT_RICH_COMPARE       8
+#define TYTHON_TYPE_SLOT_NUMBER_FUNCTIONS   11
+#define TYTHON_TYPE_SLOT_MAPPING_FUNCTIONS  12
+#define TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS 13
+#define TYTHON_TYPE_SLOT_ITERATOR_CREATE    14
+#define TYTHON_TYPE_SLOT_ITERATOR_NEXT      15
+#define TYTHON_TYPE_SLOT_GRAB               17
+#define TYTHON_TYPE_SLOT_RELEASE            18
 
 /*
  * The following OP codes are for rich comparisons between objects. This corresponds to infix boolean comparisons like '==', '!=', '>=', etc.<br>
@@ -52,6 +54,8 @@
             return TO_INT(TYTHON_CMP_RES_ERR);                      \
     }
 
+#define GRAB_OBJECT(instance) (++instance->refs)
+
 /*
  * Function type defs
  */
@@ -65,6 +69,16 @@ typedef object* (*alloc_f)(type_object*);
  * Sequence allocation functions are responsible for allocating memory for object instances of their type, provisioning space for {n} elements.
  */
 typedef object* (*seqalloc_f)(type_object*, size_t);
+
+/**
+ * Grab functions are responsible for incrementing the reference counter of object instances.
+ */
+typedef void (*grab_f)(object*);
+
+/**
+ * Release functions are responsible for decrementing the reference counter of object instances.
+ */
+typedef void (*release_f)(object*);
 
 /**
  * Interface for rich comparison between objects (i.e. EQ, NEQ, LT, GTE).<br>
@@ -191,6 +205,9 @@ typedef struct type_t {
 
     builtin_method* methods;        // the built-in methods on instances of this type. Must end with sentinel a tuple of NULLs. Does not contain user-defined methods.
 
+    grab_f grab;                    // obtains a reference to an instances of this type.
+    release_f release;              // releases a reference to an instances of this type.
+
 } type_object;
 
 /*
@@ -200,10 +217,17 @@ extern type_object type_type;
 
 /**
  * Allocates memory for an object instance of type {typeobj} and initialises its core properties (see ObjectHead).
- * @param typeobj The type of of the object instance to allocate memory for.
- * @return Returns a pointer to freshly a allocated object with its core properties initialised.
+ * @param typeobj The type of the object instance to allocate memory for.
+ * @return Returns a pointer to a freshly allocated object with its core properties initialised.
  */
 object* default_alloc(type_object* typeobj);
+
+/**
+ * Allocates pooled memory for an object instance of type {typeobj} and initialises its core properties (see ObjectHead).
+ * @param typeobj The type of of the object instance to allocate pooled memory for.
+ * @return Returns a pointer to a freshly pool-allocated object with its core properties initialised.
+ */
+object* pool_alloc(type_object* typeobj);
 
 /**
  * Allocates memory for an sequence object instance of type {typeobj} and initialises its core properties (see ObjectHead).<br>
@@ -213,5 +237,17 @@ object* default_alloc(type_object* typeobj);
  * @return Returns a pointer to freshly a allocated object with its core properties initialised.
  */
 object* default_seqalloc(type_object* typeobj, size_t n);
+
+/**
+ * Increments the reference counter of the specified object instance.
+ * @param instance The object instance to increment the reference counter of.
+ */
+void default_grab(object* instance);
+
+/**
+ * Decrements the reference counter of the specified object instance.
+ * @param instance The object instance to decrement the reference counter of.
+ */
+void default_release(object* instance);
 
 #endif //TYTHON_TYPE_H
