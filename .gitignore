@@ -18,3 +18,9 @@ build.ninja
 
 build/
 exec
+
+benchmark/
+cmake-build-release/
+cmake-release/
+src/grammar/gen/
+
