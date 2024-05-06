@@ -4,6 +4,7 @@
 #include "object/dictobject.h"
 #include "object/listobject.h"
 #include "object/tupleobject.h"
+#include "../../config.h"
 #include <cstddef>
 
 void TythonBuilder::init() {
@@ -84,6 +85,15 @@ void TythonBuilder::initFirstClassTypes() {
     };
 
     this->typeobject_type = llvm::StructType::create(this->getContext(), typeobject_types, "Object.TypeObject");
+
+    llvm::ArrayRef<llvm::Type*> specialization_type_types = {
+
+        int32_t,    // type enumerator
+
+        int64_t,    // this is a lie; it is a one-register wide value that will be bitcast depending on the type enumerator
+    };
+
+    this->specialization_type = llvm::StructType::create(this->getContext(), specialization_type_types, "SpecializationType");
 
     // external symbols (fields)
     this->none_object_instance = new llvm::GlobalVariable(*this->module, this->object_type, true, llvm::GlobalValue::ExternalLinkage, nullptr, "none_instance", nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, true);
@@ -450,14 +460,20 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
     llvm::Value* alloc;
 
     if (this->current_context->isGlobal()) {
-        llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->getPtrTy());
-        alloc = new llvm::GlobalVariable(*this->module, this->getPtrTy(), false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
+
+        alloc = this->CreateAlloca(this->specialization_type, nullptr, name);
+
+        // todo: the following is still necessary, I commented it out for testing stack optimizations
+//        llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->getPtrTy());
+//        alloc = new llvm::GlobalVariable(*this->module, this->getPtrTy(), false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
     } else {
         alloc = this->CreateAlloca(this->getPtrTy(), nullptr, name);
     }
 
-    // default value is None
+#if GC_ENABLED
+    // default value is None, otherwise the GC infrastructure would try to grab a reference on a garbage pointer (not an object instance)
     this->CreateStore(this->none_object_instance, alloc);
+#endif
 
     // register and return reference
     this->current_context->registerVariable(name, alloc);
@@ -578,6 +594,10 @@ llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<l
 
 void TythonBuilder::CreateGrabObject(llvm::Value *object) {
 
+#if GC_ENABLED
+
+    // todo: specialization type check (only attempt to GC heap allocated objects)
+
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
@@ -593,9 +613,16 @@ void TythonBuilder::CreateGrabObject(llvm::Value *object) {
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
 
     this->CreateCall(function_type, grab_f, {object }, "grab");
+
+#endif
+
 }
 
 void TythonBuilder::CreateReleaseObject(llvm::Value *object) {
+
+#if GC_ENABLED
+
+    // todo: specialization type check (only attempt to GC heap allocated objects)
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
@@ -612,4 +639,35 @@ void TythonBuilder::CreateReleaseObject(llvm::Value *object) {
     auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
 
     this->CreateCall(function_type, release_f, {object }, "release");
+
+#endif
+
+}
+
+llvm::Value* TythonBuilder::CreateSpecInstance(int32_t type_enum, llvm::Value *value) {
+
+    // todo: struct instance (register/stack/heap?)
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto type_enum_value = llvm::ConstantInt::get(int32_t, type_enum);
+
+    const auto instance = this->CreateAlloca(this->specialization_type);
+
+    this->CreateStore(type_enum_value, instance);
+
+    // todo: cast value type to int64_t
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    llvm::Value* bitcast;
+
+    if (value->getType()->isPointerTy()) {
+        // pointer cast must be explicit
+        bitcast = this->CreatePtrToInt(value, int64_t);
+    } else {
+        bitcast = this->CreateBitCast(value, int64_t);
+    }
+
+    const auto ref = this->CreateStructGEP(this->specialization_type, instance, 1);
+
+    this->CreateStore(bitcast, ref);
+
+    return instance;
 }

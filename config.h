@@ -9,6 +9,8 @@
 #define LABEL_MAIN              "main"
 #define TYTHON_VERSION          "v0.1"
 
+#define GC_ENABLED              false
+
 // program arguments
 #define FLAG_HELP               "--help"            // prints a help message and exits
 #define FLAG_HELP_SHORT         "-?"

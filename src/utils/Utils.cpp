@@ -280,7 +280,7 @@ namespace utils {
 
     void log_warn(const TythonModule *module, antlr4::ParserRuleContext *ctx, const std::string &message) {
 
-        const auto source_name = module->getSourceFileName();
+        const auto& source_name = module->getSourceFileName();
         const auto line_nr = ctx->getStart()->getLine();
 
         const auto msg = std::format("{}, line {}: {}\n\r->\t{}", source_name, line_nr, message, ctx->getText());

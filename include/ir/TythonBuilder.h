@@ -10,11 +10,17 @@
 #include "model/Context.h"
 #include <string>
 
+#define SPEC_INT    0
+#define SPEC_FLOAT  1
+#define SPEC_OBJ    2
+
 class TythonBuilder : public llvm::IRBuilder<> {
 
     friend class SourceFileVisitor;
 
 private:
+
+    llvm::StructType* specialization_type;
 
     llvm::StructType* object_type;
     llvm::StructType* typeobject_type;
@@ -50,6 +56,7 @@ public:
     TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
                                                                 module(module),
                                                                 current_context(nullptr),
+                                                                specialization_type(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
                                                                 number_functions_type(nullptr),
@@ -226,6 +233,13 @@ public:
      * @param object The object to be released.
      */
     void CreateReleaseObject(llvm::Value* object);
+
+    /**
+     * Creates a specialized type/value struct.
+     * @param type_enum The type of the specialization.
+     * @param value The value which is of type {type_enum}.
+     */
+    llvm::Value* CreateSpecInstance(int32_t type_enum, llvm::Value* value);
 
 };
 

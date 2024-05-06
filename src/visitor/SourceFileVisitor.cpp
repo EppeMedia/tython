@@ -53,12 +53,23 @@ std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_s
 
     auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
 
-    const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
-    const auto lhs_obj = this->builder->CreateLoad(ptr_t, lhs); // decrement LHS ref count
-    this->builder->CreateReleaseObject(lhs_obj); // decrement LHS ref count
-
     this->builder->CreateGrabObject(rhs); // increment RHS reference counter
-    this->builder->CreateStore(rhs, lhs);
+    this->builder->CreateReleaseObject(lhs); // decrement LHS ref count
+
+    // todo: fill lhs struct
+    auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+
+    const auto lhs_type_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs, 0);
+    const auto lhs_content_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs, 1);
+
+    const auto rhs_type_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs, 0);
+    const auto rhs_type = this->builder->CreateLoad(int32_t, rhs_type_ref);
+    const auto rhs_content_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs, 1);
+    const auto rhs_content = this->builder->CreateLoad(int64_t, rhs_content_ref);
+
+    this->builder->CreateStore(rhs_type, lhs_type_ref);
+    this->builder->CreateStore(rhs_content, lhs_content_ref);
 
     return lhs;
 }
@@ -166,14 +177,7 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 
     // check if the identifier exists, otherwise throw an exception
     if (auto variable = this->builder->current_context->findVariable(identifier)) {
-
-        if (this->builder->current_context->isAssign()) {
-            return variable;
-        }
-
-        // this is not an assignment context; load the reference
-        const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
-        return (llvm::Value*)this->builder->CreateLoad(ptr_t, variable);
+        return variable;
     }
 
     throw UnknownSymbolException("Unknown symbol " + identifier);
@@ -218,7 +222,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto int64_t = llvm::IntegerType::getInt64Ty(this->module->getContext());
         auto v = llvm::ConstantInt::get(int64_t, raw, true);
 
-        return this->builder->CreateIntObject(v);
+        return this->builder->CreateSpecInstance(SPEC_INT, v);
 
     } else if (ctx->FLOAT_LIT()) {
 
@@ -226,7 +230,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto double_t = llvm::Type::getDoubleTy(this->module->getContext());
         auto v = llvm::ConstantFP::get(double_t, raw);
 
-        return this->builder->CreateFloatObject(v);
+        return this->builder->CreateSpecInstance(SPEC_FLOAT, v);
 
     } else if (ctx->STR_LIT()) {
 
@@ -269,6 +273,8 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 }
 
 std::any SourceFileVisitor::visitDict_lit(TythonParser::Dict_litContext *ctx) {
+
+    // todo: adapt to specialization struct here and in all literals
 
     std::vector<std::pair<llvm::Value*, llvm::Value*>> entries;
     entries.reserve(ctx->entries.size());
@@ -667,7 +673,15 @@ std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statement
 
     this->builder->current_context->setComplete();
 
-    return this->builder->CreateRet(ret_val);
+    // todo: this should only return specialized types!! This is just for testing
+    // load the content of the return value, and return that
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
+    const auto ref = this->builder->CreateStructGEP(this->builder->specialization_type, ret_val, 1);
+    const auto content = this->builder->CreateLoad(int64_t, ref);
+    return this->builder->CreateRet(content);
+
+    // todo: that's the old way:
+//    return this->builder->CreateRet(ret_val);
 }
 
 std::any SourceFileVisitor::visitCall_expression(TythonParser::Call_expressionContext *ctx) {
@@ -832,10 +846,87 @@ std::any SourceFileVisitor::visitLbl_div_expr(TythonParser::Lbl_div_exprContext 
 
 std::any SourceFileVisitor::visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) {
 
-    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
-    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
 
-    return this->builder->CreateTythonAdd(lhs, rhs);
+    // todo: assume everything is in spec-form
+    const auto lhs_spec = this->builder->current_context->findVariable(ctx->lhs->getText());
+    const auto rhs_spec = this->builder->current_context->findVariable(ctx->rhs->getText());
+
+    const auto lhs_type_enum_ref= this->builder->CreateStructGEP(this->builder->specialization_type, lhs_spec, 0);
+    const auto lhs_type_enum = this->builder->CreateLoad(int32_t, lhs_type_enum_ref, "lhs_type_enum");
+
+    llvm::Value* result_spec = this->builder->CreateAlloca(this->builder->specialization_type); // todo: why on stack? Can leak garbage if used in function return...
+
+    // todo: do a specialization guard here
+
+    // SWITCH on lhs type enumerator
+    const auto exit_block = llvm::BasicBlock::Create(this->builder->getContext(), "switch_exit_block", this->builder->GetInsertBlock()->getParent());
+    const auto catchall_block = llvm::BasicBlock::Create(this->builder->getContext(), "catchall_block", this->builder->GetInsertBlock()->getParent(), exit_block);
+    const auto switch_value = this->builder->CreateSwitch(lhs_type_enum, catchall_block, 2); // todo: 1 case...
+
+    const auto obj_type_enum_value = llvm::ConstantInt::get(int32_t, SPEC_OBJ);
+    switch_value->addCase(obj_type_enum_value, catchall_block);
+
+    // CASE lhs is INT
+    {
+        const auto int_spec_block = llvm::BasicBlock::Create(this->builder->getContext(), "int_spec_block",
+                                                             this->builder->GetInsertBlock()->getParent(), exit_block);
+
+        this->builder->SetInsertPoint(int_spec_block);
+
+        // if rhs is also INT, do simple add, else delegate to catchall function
+        const auto int_type_enum_value = llvm::ConstantInt::get(int32_t, SPEC_INT);
+        const auto rhs_type_enum_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs_spec, 0, "rhs_type_enum");
+        const auto rhs_type_enum = this->builder->CreateLoad(int32_t, rhs_type_enum_ref);
+
+        const auto rhs_is_int = this->builder->CreateICmpEQ( rhs_type_enum, int_type_enum_value, "rhs_type_check");
+
+        const auto simple_block = llvm::BasicBlock::Create(this->builder->getContext(), "simple_block",
+                                                           this->builder->GetInsertBlock()->getParent());
+
+        this->builder->CreateCondBr(rhs_is_int, simple_block, catchall_block);
+
+        this->builder->SetInsertPoint(simple_block);
+
+        // we know both lhs and rhs are integer values, so let's do a simple 'add' instruction on their contents
+        const auto lhs_value_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs_spec, 1);
+        const auto rhs_value_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs_spec, 1);
+
+        const auto lhs_value = this->builder->CreateLoad(int64_t, lhs_value_ref, "lhs_value");
+        const auto rhs_value = this->builder->CreateLoad(int64_t, rhs_value_ref, "rhs_value");
+
+        const auto sum = this->builder->CreateAdd(lhs_value, rhs_value, "sum");
+
+        // initialize the result spec struct
+        const auto int_type_enum_value2 = llvm::ConstantInt::get(int64_t, SPEC_INT);
+
+        this->builder->CreateStore(int_type_enum_value2, result_spec);
+        const auto ref = this->builder->CreateStructGEP(this->builder->specialization_type, result_spec, 1);
+//        const auto sum_bitcast = this->builder->CreateBitCast(sum, int64_t);
+        this->builder->CreateStore(sum, ref);
+
+        const auto int_type_enum_value3 = llvm::ConstantInt::get(int32_t, SPEC_INT);
+        switch_value->addCase(int_type_enum_value3, int_spec_block);
+
+        this->builder->CreateBr(exit_block);
+    }
+
+    // todo: populate catchall block
+    this->builder->SetInsertPoint(catchall_block);
+
+    // delegate to some external API function that takes two spec structs as input
+
+    this->builder->CreateBr(exit_block);
+
+    this->builder->SetInsertPoint(exit_block);
+
+    return result_spec;
+
+//    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+//    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
+//
+//    return this->builder->CreateTythonAdd(lhs, rhs);
 }
 
 std::any SourceFileVisitor::visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) {

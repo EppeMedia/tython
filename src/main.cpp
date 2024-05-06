@@ -109,8 +109,8 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     SourceFileVisitor sourceFileVisitor(module, &builder, object_symbol_table);
 
     // module (or program) entry point
-    auto int32_type = llvm::Type::getInt32Ty(builder.getContext());
-    auto entry_function_type = llvm::FunctionType::get(int32_type, false);
+    auto int64_type = llvm::Type::getInt64Ty(builder.getContext());
+    auto entry_function_type = llvm::FunctionType::get(int64_type, false);
     auto entry_function_name = isMain ? "main" : "__module_entry__";
     auto entry_function_linkage = isMain ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
     auto entry_function = llvm::Function::Create(entry_function_type, entry_function_linkage, entry_function_name, module);
@@ -123,8 +123,10 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     sourceFileVisitor.visitProgram(ast);
 
     // finish up the main function
-    auto zero = llvm::ConstantInt::get(int32_type, 0);
-    builder.CreateRet(zero);
+    if (!builder.GetInsertBlock()->getTerminator()) {
+        auto zero = llvm::ConstantInt::get(int64_type, 0);
+        builder.CreateRet(zero);
+    }
 
     // update compilation unit - symbol table map
     object_symbol_table.insert({ objectname, module->listProcedures() });
@@ -169,25 +171,30 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     }
 
     legacy::PassManager pass;
-    auto FileType = llvm::CodeGenFileType::CGFT_ObjectFile;
 
-    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+    // avoid optimizations for debugging
+    if (!config->debug) {
+
+        // optimize tagged union value structs with constant type
+        pass.add(createSROAPass());
+        pass.add(createSCCPPass());
+        pass.add(createCFGSimplificationPass());
+
+//        // loop invariant code motion (hoisting code to preheader)
+//        pass.add(createLICMPass());
+//        // Promote allocas to registers.
+//        pass.add(createPromoteMemoryToRegisterPass());
+//        // Do simple "peephole" optimizations and bit-twiddling optimizations.
+//        pass.add(createInstructionCombiningPass());
+//        // Reassociate expressions.
+//        pass.add(createReassociatePass());
+    }
+
+    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile)) {
 
         errs() << "The selected target cannot emit a file of this type.";
 
         throw CompileException("The selected target cannot emit a file of this type.");
-    }
-
-    // avoid optimizations for debugging
-    if (!config->debug) {
-        // loop invariant code motion (hoisting code to preheader)
-        pass.add(createLICMPass());
-        // Promote allocas to registers.
-        pass.add(createPromoteMemoryToRegisterPass());
-        // Do simple "peephole" optimizations and bit-twiddling optimizations.
-        pass.add(createInstructionCombiningPass());
-        // Reassociate expressions.
-        pass.add(createReassociatePass());
     }
 
     pass.run(*module);
@@ -292,6 +299,10 @@ int main(int argc, char **argv) {
 
         return 1;
     }
+
+#if !GC_ENABLED
+        std::cerr << "Warning: garbage collection is disabled in this build." << std::endl;
+#endif
 
     // initialize compilation target
     init_target();

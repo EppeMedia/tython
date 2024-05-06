@@ -199,16 +199,23 @@
 #print(ll[1][1])
 #ll[0][1] = "test"
 #print(ll)
+#
+#print("Free scoped variables")
+#
+#def foo():
+#    a = 42
+#    return a
+#
+#a = foo()
+#
+#print("a is")
+#print(a)
+#
+#print("end")
 
-print("Free scoped variables")
+a = 1
+b = 2
 
-def foo():
-    a = 42
-    return a
+c = a + b
 
-a = foo()
-
-print("a is")
-print(a)
-
-print("end")
+return c
