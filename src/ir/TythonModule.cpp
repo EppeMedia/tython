@@ -9,6 +9,7 @@ void TythonModule::initialize() {
     llvm::Type* int64_t = llvm::Type::getInt64Ty(this->getContext());
     llvm::Type* double_t = llvm::Type::getDoubleTy(this->getContext());
 
+    llvm::Type* void_t = llvm::Type::getVoidTy(this->getContext());
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
     // instantiate library functions
@@ -37,7 +38,7 @@ void TythonModule::initialize() {
     this->tuple_create_func = new llvm::FunctionCallee();
     *(this->tuple_create_func) = this->getOrInsertFunction("tuple_create", tuple_create_type);
 
-    llvm::FunctionType* tython_print_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+    llvm::FunctionType* tython_print_type = llvm::FunctionType::get(void_t, { ptr_t }, false);
     this->tython_print_func = new llvm::FunctionCallee();
     *(this->tython_print_func) = this->getOrInsertFunction("print", tython_print_type);
     registerProcedure((llvm::Function*)this->tython_print_func->getCallee(), "print"); // user accessible // todo: make a tython wrapper for this in the standard library module
@@ -69,6 +70,10 @@ void TythonModule::initialize() {
     llvm::FunctionType* resolve_builtin_method_type = llvm::FunctionType::get(ptr_t, {ptr_t, ptr_t }, false);
     this->resolve_builtin_method_func = new llvm::FunctionCallee();
     *(this->resolve_builtin_method_func) = this->getOrInsertFunction("resolve_builtin_method", resolve_builtin_method_type);
+
+    llvm::FunctionType* object_to_primitive_method_type = llvm::FunctionType::get(int64_t, {ptr_t, int32_t }, false);
+    this->object_to_primitive = new llvm::FunctionCallee();
+    *(this->object_to_primitive) = this->getOrInsertFunction("object_to_primitive", object_to_primitive_method_type);
 }
 
 llvm::Function* TythonModule::findProcedure(const std::string& _procedure_name) {

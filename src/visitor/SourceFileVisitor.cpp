@@ -4,6 +4,7 @@
 #include "../../include/exception/NotImplemented.h"
 #include <regex>
 #include "type.h"
+#include "api/api.h"
 #include "exception/UnkownSymbolException.h"
 #include "utils/Utils.h"
 #include <spdlog/spdlog.h>
@@ -46,6 +47,7 @@ std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_s
             lhs = this->builder->CreateVariable(identifier);
 
         } else {
+
             // we can only create new object here if they are simple identifier names (i.e. not dictionary access or sequence access)
             throw CompileException("Illegal left-hand identifier for implicit declaration \"" + ctx->lval()->expression()->getText() + "\"");
         }
@@ -56,20 +58,7 @@ std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_s
     this->builder->CreateGrabObject(rhs); // increment RHS reference counter
     this->builder->CreateReleaseObject(lhs); // decrement LHS ref count
 
-    // todo: fill lhs struct
-    auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
-    auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
-
-    const auto lhs_type_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs, 0);
-    const auto lhs_content_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs, 1);
-
-    const auto rhs_type_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs, 0);
-    const auto rhs_type = this->builder->CreateLoad(int32_t, rhs_type_ref);
-    const auto rhs_content_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs, 1);
-    const auto rhs_content = this->builder->CreateLoad(int64_t, rhs_content_ref);
-
-    this->builder->CreateStore(rhs_type, lhs_type_ref);
-    this->builder->CreateStore(rhs_content, lhs_content_ref);
+    this->builder->CreateAssign(lhs, rhs);
 
     return lhs;
 }
@@ -109,15 +98,12 @@ std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plu
     auto lhs = any_cast<llvm::Value*>(visit(ctx->lval()));
     auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
 
-    auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
+    auto sum = this->builder->CreateTythonAdd(lhs, rhs);
 
-
-    auto sum = this->builder->CreateTythonAdd(lhs_deref, rhs);
-
-    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
+//    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
     this->builder->CreateGrabObject(sum);
 
-    this->builder->CreateStore(sum, lhs);
+    this->builder->CreateAssign(lhs, sum);
 
     return lhs;
 }
@@ -129,14 +115,12 @@ std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_mi
     auto lhs = any_cast<llvm::Value*>(visit(ctx->lval()));
     auto rhs = any_cast<llvm::Value*>(visit(ctx->expression()));
 
-    auto lhs_deref = this->builder->CreateLoad(ptr_t, lhs);
+    auto res = this->builder->CreateTythonSub(lhs, rhs);
 
-    auto res = this->builder->CreateTythonSub(lhs_deref, rhs);
-
-    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
+//    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
     this->builder->CreateGrabObject(res);
 
-    this->builder->CreateStore(res, lhs);
+    this->builder->CreateAssign(lhs, res);
 
     return lhs;
 }
@@ -845,88 +829,10 @@ std::any SourceFileVisitor::visitLbl_div_expr(TythonParser::Lbl_div_exprContext 
 }
 
 std::any SourceFileVisitor::visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) {
+    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
+    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->builder->getContext());
-    const auto int64_t = llvm::IntegerType::getInt64Ty(this->builder->getContext());
-
-    // todo: assume everything is in spec-form
-    const auto lhs_spec = this->builder->current_context->findVariable(ctx->lhs->getText());
-    const auto rhs_spec = this->builder->current_context->findVariable(ctx->rhs->getText());
-
-    const auto lhs_type_enum_ref= this->builder->CreateStructGEP(this->builder->specialization_type, lhs_spec, 0);
-    const auto lhs_type_enum = this->builder->CreateLoad(int32_t, lhs_type_enum_ref, "lhs_type_enum");
-
-    llvm::Value* result_spec = this->builder->CreateAlloca(this->builder->specialization_type); // todo: why on stack? Can leak garbage if used in function return...
-
-    // todo: do a specialization guard here
-
-    // SWITCH on lhs type enumerator
-    const auto exit_block = llvm::BasicBlock::Create(this->builder->getContext(), "switch_exit_block", this->builder->GetInsertBlock()->getParent());
-    const auto catchall_block = llvm::BasicBlock::Create(this->builder->getContext(), "catchall_block", this->builder->GetInsertBlock()->getParent(), exit_block);
-    const auto switch_value = this->builder->CreateSwitch(lhs_type_enum, catchall_block, 2); // todo: 1 case...
-
-    const auto obj_type_enum_value = llvm::ConstantInt::get(int32_t, SPEC_OBJ);
-    switch_value->addCase(obj_type_enum_value, catchall_block);
-
-    // CASE lhs is INT
-    {
-        const auto int_spec_block = llvm::BasicBlock::Create(this->builder->getContext(), "int_spec_block",
-                                                             this->builder->GetInsertBlock()->getParent(), exit_block);
-
-        this->builder->SetInsertPoint(int_spec_block);
-
-        // if rhs is also INT, do simple add, else delegate to catchall function
-        const auto int_type_enum_value = llvm::ConstantInt::get(int32_t, SPEC_INT);
-        const auto rhs_type_enum_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs_spec, 0, "rhs_type_enum");
-        const auto rhs_type_enum = this->builder->CreateLoad(int32_t, rhs_type_enum_ref);
-
-        const auto rhs_is_int = this->builder->CreateICmpEQ( rhs_type_enum, int_type_enum_value, "rhs_type_check");
-
-        const auto simple_block = llvm::BasicBlock::Create(this->builder->getContext(), "simple_block",
-                                                           this->builder->GetInsertBlock()->getParent());
-
-        this->builder->CreateCondBr(rhs_is_int, simple_block, catchall_block);
-
-        this->builder->SetInsertPoint(simple_block);
-
-        // we know both lhs and rhs are integer values, so let's do a simple 'add' instruction on their contents
-        const auto lhs_value_ref = this->builder->CreateStructGEP(this->builder->specialization_type, lhs_spec, 1);
-        const auto rhs_value_ref = this->builder->CreateStructGEP(this->builder->specialization_type, rhs_spec, 1);
-
-        const auto lhs_value = this->builder->CreateLoad(int64_t, lhs_value_ref, "lhs_value");
-        const auto rhs_value = this->builder->CreateLoad(int64_t, rhs_value_ref, "rhs_value");
-
-        const auto sum = this->builder->CreateAdd(lhs_value, rhs_value, "sum");
-
-        // initialize the result spec struct
-        const auto int_type_enum_value2 = llvm::ConstantInt::get(int64_t, SPEC_INT);
-
-        this->builder->CreateStore(int_type_enum_value2, result_spec);
-        const auto ref = this->builder->CreateStructGEP(this->builder->specialization_type, result_spec, 1);
-//        const auto sum_bitcast = this->builder->CreateBitCast(sum, int64_t);
-        this->builder->CreateStore(sum, ref);
-
-        const auto int_type_enum_value3 = llvm::ConstantInt::get(int32_t, SPEC_INT);
-        switch_value->addCase(int_type_enum_value3, int_spec_block);
-
-        this->builder->CreateBr(exit_block);
-    }
-
-    // todo: populate catchall block
-    this->builder->SetInsertPoint(catchall_block);
-
-    // delegate to some external API function that takes two spec structs as input
-
-    this->builder->CreateBr(exit_block);
-
-    this->builder->SetInsertPoint(exit_block);
-
-    return result_spec;
-
-//    auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
-//    auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
-//
-//    return this->builder->CreateTythonAdd(lhs, rhs);
+    return this->builder->CreateTythonAdd(lhs, rhs);
 }
 
 std::any SourceFileVisitor::visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) {

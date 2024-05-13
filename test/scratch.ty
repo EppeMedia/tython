@@ -213,9 +213,10 @@
 #
 #print("end")
 
-a = 1
-b = 2
 
-c = a + b
+c = 1 - 2
 
-return c
+for i in range()
+c += 1
+
+print(c)

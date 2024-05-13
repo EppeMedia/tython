@@ -21,8 +21,10 @@ private:
     llvm::FunctionCallee* list_create_func;
     llvm::FunctionCallee* tuple_create_func;
 
+    // basicland api
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* resolve_builtin_method_func;
+    llvm::FunctionCallee* object_to_primitive;
 
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_range_func;
@@ -53,6 +55,7 @@ public:
             tuple_create_func(nullptr),
             object_is_truthy_func(nullptr),
             resolve_builtin_method_func(nullptr),
+            object_to_primitive(nullptr),
             function_shadow_symbol_table() {
         initialize();
     };

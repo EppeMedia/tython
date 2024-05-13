@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-void print(object* object) {
+static void print_object(object* object) {
 
-//    GRAB_OBJECT(object);
+    //    GRAB_OBJECT(object);
 
     // call the type's "str" function
     string_object* string_obj = AS_STRING(object->type->str(object));
@@ -39,6 +39,23 @@ void print(object* object) {
     printf("%s\r\n", buf);
 
 //    object->type->release(object);
+}
+
+void print(specialization_t* value) {
+
+    switch (value->tag) {
+        case SPEC_INT:
+            printf("%lld\r\n", value->integer);
+            break;
+        case SPEC_FLOAT:
+            printf("%f\r\n", value->floating_point);
+            break;
+        case SPEC_OBJECT:
+            print_object(value->object);
+            break;
+        default:
+            assert(NULL && "Encountered unexpected specialization type!");
+    }
 }
 
 object* len(object* object) {

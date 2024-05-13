@@ -16,7 +16,7 @@ extern type_object float_type;
 typedef struct float_object_t {
     ObjectHead
 
-    long double value;
+    double value;
 
 } float_object;
 

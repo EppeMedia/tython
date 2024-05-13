@@ -7,11 +7,27 @@
 
 #include "object.h"
 
+#define SPEC_INT    0
+#define SPEC_FLOAT  1
+#define SPEC_OBJECT 2
+
+typedef struct specialization {
+
+    uint32_t tag;
+
+    union {
+        long long integer;
+        double floating_point;
+        struct object_t* object;
+    };
+
+} specialization_t;
+
 /**
- * Prints the specified object to standard out.
- * @param object The object to print.
+ * Prints the specified speialization value to standard out.
+ * @param value The specialization value to print.
  */
-void print(object* object);
+void print(specialization_t* value);
 
 /**
  * Determines the length of the specified object instance. Throws an assertion error if the object is not of a sequence or mapping type.

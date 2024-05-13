@@ -10,10 +10,6 @@
 #include "model/Context.h"
 #include <string>
 
-#define SPEC_INT    0
-#define SPEC_FLOAT  1
-#define SPEC_OBJ    2
-
 class TythonBuilder : public llvm::IRBuilder<> {
 
     friend class SourceFileVisitor;
@@ -51,6 +47,15 @@ private:
 
     TythonModule* module;
     class Context* current_context;
+
+    /**
+     * Creates a call to the specified binary number function using the specified operands.
+     * @param number_function_slot The slot from which to load the number function.
+     * @param lhs The left-hand side of the binary operation (this must be an object pointer).
+     * @param rhs The right-hand side of the binary operation (this must be an object pointer).
+     * @return Returns the result of the number function call.
+     */
+    llvm::Value* CreateBinaryNumberFunctionCall(size_t number_function_slot, llvm::Value* lhs, llvm::Value* rhs);
 
 public:
     TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
@@ -93,9 +98,29 @@ public:
      */
     llvm::Value* CreateGetMappingFunctions(llvm::Value* type_object);
 
+    /**
+     * Generates the instructions for assigning one specialization union to another.
+     * @param assignee The specialization union to assign to.
+     * @param value The specialization union to assign.
+     * @return Returns a reference to the assignee.
+     */
+    llvm::Value* CreateAssign(llvm::Value* assignee, llvm::Value* value);
+
     llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
 
     llvm::Value* CreateResolveBuiltinMethod(llvm::Value* object, llvm::Value* name);
+
+    /**
+     * Wraps binary operations in a dynamic type guard.
+     * @param lhs The left-hand side of the binary operation.
+     * @param rhs The right-hand side of the binary operation.
+     * @param specialized_case_handler This receives two primitive values, perform a binop instruction and return the result of that operation.
+     * @param dynamic_runtime_handler This receives two OBJECT pointers, and should delegate control to the right runtime calls.
+     */
+    llvm::Value* CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& specialized_int_case_handler,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& specialized_float_case_handler,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& dynamic_runtime_handler);
 
     /**
      * Generates the instructions to numerically add two Tython objects.
@@ -238,8 +263,10 @@ public:
      * Creates a specialized type/value struct.
      * @param type_enum The type of the specialization.
      * @param value The value which is of type {type_enum}.
+     * @param isLocal Specifies whether this is a local (stack) instance, or a heap instance.
+     * @param name The name of the instance (only used if the instance is non-local).
      */
-    llvm::Value* CreateSpecInstance(int32_t type_enum, llvm::Value* value);
+    llvm::Value* CreateSpecInstance(int32_t type_enum, llvm::Value* value, bool isLocal = true, std::string name = "");
 
 };
 
