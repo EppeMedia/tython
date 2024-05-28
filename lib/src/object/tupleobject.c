@@ -231,8 +231,6 @@ static object* tuple_iterator_to_bool(object* obj) {
 
     tuple_iterator_object* it = AS_TUPLE_ITERATOR(obj);
 
-    printf("Tuple iterator to bool\r\n");
-
     if (AS_INT(it->idx)->value >= it->tuple_obj->size) {
         return TYTHON_FALSE;
     }

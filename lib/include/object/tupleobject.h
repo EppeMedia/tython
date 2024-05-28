@@ -34,9 +34,9 @@ typedef struct tuple_iterator_object_t {
 #define AS_TUPLE_ITERATOR(obj) ((tuple_iterator_object*)(obj))
 
 /**
- * Creates a new tuple object, provisioning for {size} elements.
- * @param size The number of elements of the tuple.
- * @return Returns a newly instantiated tuple object, with a capacity of {size} elements.
+ * Creates a new __tuple__ object, provisioning for {size} elements.
+ * @param size The number of elements of the __tuple__.
+ * @return Returns a newly instantiated __tuple__ object, with a capacity of {size} elements.
  */
 object* tuple_create(size_t size);
 

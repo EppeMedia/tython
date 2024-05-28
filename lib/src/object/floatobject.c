@@ -81,7 +81,6 @@ static float_object* convert_to_float(object* obj) {
 
     number_functions* nfs = obj->type->number_functions;
 
-    // todo: type error
     assert(nfs && nfs->to_float);
 
     return AS_FLOAT(nfs->to_float(obj));

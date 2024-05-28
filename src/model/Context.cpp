@@ -23,6 +23,10 @@ void Context::registerVariable(const std::string& name, llvm::Value* value) {
     this->variable_shadow_symbol_table.insert({ name, value });
 }
 
+unsigned int Context::getFlags() const {
+    return this->flags;
+}
+
 bool Context::isGlobal() const {
     return !this->parent;
 }

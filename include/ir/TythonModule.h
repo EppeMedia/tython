@@ -12,8 +12,11 @@
 class TythonModule : public llvm::Module {
 
     friend class TythonBuilder;
+    friend class SourceFileVisitor;
 
 private:
+    llvm::StructType* specialization_type;
+
     llvm::FunctionCallee* float_create_func;
     llvm::FunctionCallee* int_create_func;
     llvm::FunctionCallee* string_create_func;
@@ -21,13 +24,19 @@ private:
     llvm::FunctionCallee* list_create_func;
     llvm::FunctionCallee* tuple_create_func;
 
-    // basicland api
+    // basicland
     llvm::FunctionCallee* object_is_truthy_func;
     llvm::FunctionCallee* resolve_builtin_method_func;
     llvm::FunctionCallee* object_to_primitive;
 
+    // API
+    llvm::FunctionCallee* tython_throw_type_error_func;
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_range_func;
+    llvm::FunctionCallee* tython__tuple__func;
+    llvm::FunctionCallee* tython__list__func;
+    llvm::FunctionCallee* tython__dict__func;
+    llvm::FunctionCallee* tython__set__func;
     llvm::FunctionCallee* tython_len_func;
     llvm::FunctionCallee* tython_slice_func;
 
@@ -43,13 +52,19 @@ public:
 
     TythonModule(llvm::StringRef ModuleID, llvm::LLVMContext& C):
             llvm::Module(ModuleID, C),
+            specialization_type(nullptr),
             float_create_func(nullptr),
             int_create_func(nullptr),
             string_create_func(nullptr),
             dict_create_func(nullptr),
             list_create_func(nullptr),
+            tython_throw_type_error_func(nullptr),
             tython_print_func(nullptr),
             tython_range_func(nullptr),
+            tython__tuple__func(nullptr),
+            tython__list__func(nullptr),
+            tython__dict__func(nullptr),
+            tython__set__func(nullptr),
             tython_len_func(nullptr),
             tython_slice_func(nullptr),
             tuple_create_func(nullptr),

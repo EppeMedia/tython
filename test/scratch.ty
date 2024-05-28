@@ -213,10 +213,70 @@
 #
 #print("end")
 
+#c = 1 - 2
+#
+#for i in range(0, 10, 1):
+#    print(c)
 
-c = 1 - 2
+#tup = ("Hello", "World", "!")
+#print(tup)
+#
+#for e in tup:
+#    print(e)
+#
+#print("-----")
+#
+#l = ["Hello", "World", "!"]
+#print(l)
+#
+#for e in l:
+#    print(e)
+#
+#print("-----")
+#
+#d = {
+#    "1": "Hello",
+#    "2": "World",
+#    "3": "!"
+#}
+#print(d)
+#
+#print("-----")
+#
+#x = [tup, l, d]
+#print(x)
+#
+#y = [x]
+#print(y)
+#
+#for a in y:
+#    for b in a:
+#        print(b)
+#
+#s = [(1, 2, "three"), { "key": ["a", "b", "c"]}, "the end"]
+#print(s)
+#
+#b = list(s)
+#print(b)
+#
+#def foo(a):
+#    print(a)
+#
+#foo("Hello world!")
 
-for i in range()
-c += 1
+dx = -4.84143144246472090
+dy = 1.16032004402742839
+dz = 0.10362204447112311
+m2 = 0.03769367487038949
+m1 = 39.47841760435743197
 
-print(c)
+print("============")
+mass = m1 * m2
+print(mass)
+sum = (dx * dx + dy * dy + dz * dz)
+print(sum)
+print("Do EXP")
+sqrt = sum ** 0.5
+print(sqrt)
+ans = mass / sqrt
+print(ans)

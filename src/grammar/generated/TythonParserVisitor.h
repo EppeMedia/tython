@@ -107,7 +107,9 @@ public:
 
     virtual std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *context) = 0;
 
-    virtual std::any visitLval(TythonParser::LvalContext *context) = 0;
+    virtual std::any visitLbl_lval_key_access(TythonParser::Lbl_lval_key_accessContext *context) = 0;
+
+    virtual std::any visitLbl_lval_identifier(TythonParser::Lbl_lval_identifierContext *context) = 0;
 
     virtual std::any visitKey_value_pair(TythonParser::Key_value_pairContext *context) = 0;
 

@@ -12,6 +12,15 @@ void TythonModule::initialize() {
     llvm::Type* void_t = llvm::Type::getVoidTy(this->getContext());
     llvm::Type* ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
+    llvm::ArrayRef<llvm::Type*> specialization_type_types = {
+
+            int32_t,    // type enumerator
+
+            int64_t,    // this is a lie; it is a one-register wide value that will be bitcast depending on the type enumerator
+    };
+
+    this->specialization_type = llvm::StructType::create(this->getContext(), specialization_type_types, "SpecializationType");
+
     // instantiate library functions
 
     llvm::FunctionType* int_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false);
@@ -38,6 +47,11 @@ void TythonModule::initialize() {
     this->tuple_create_func = new llvm::FunctionCallee();
     *(this->tuple_create_func) = this->getOrInsertFunction("tuple_create", tuple_create_type);
 
+    llvm::FunctionType* tython_throw_type_error_type = llvm::FunctionType::get(void_t, { ptr_t, int32_t }, false); // todo: specialization type or opaque pointer type (langref says only ptr is valid for byval)?
+    this->tython_throw_type_error_func = new llvm::FunctionCallee();
+    *(this->tython_throw_type_error_func) = this->getOrInsertFunction("throw_type_error", tython_throw_type_error_type);
+    registerProcedure((llvm::Function*)this->tython_throw_type_error_func->getCallee(), "throw_type_error"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
     llvm::FunctionType* tython_print_type = llvm::FunctionType::get(void_t, { ptr_t }, false);
     this->tython_print_func = new llvm::FunctionCallee();
     *(this->tython_print_func) = this->getOrInsertFunction("print", tython_print_type);
@@ -45,8 +59,28 @@ void TythonModule::initialize() {
 
     llvm::FunctionType* tython_range_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t, ptr_t }, false);
     this->tython_range_func = new llvm::FunctionCallee();
-    *(this->tython_range_func) = this->getOrInsertFunction("range_create", tython_range_type);
+    *(this->tython_range_func) = this->getOrInsertFunction("range", tython_range_type);
     registerProcedure((llvm::Function*)this->tython_range_func->getCallee(), "range"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_dict_type = llvm::FunctionType::get(ptr_t, { int64_t }, true);
+    this->tython__dict__func = new llvm::FunctionCallee();
+    *(this->tython__dict__func) = this->getOrInsertFunction("__dict__", tython_dict_type);
+    registerProcedure((llvm::Function*)this->tython__dict__func->getCallee(), "__dict__"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_list_type = llvm::FunctionType::get(ptr_t, { int64_t }, true);
+    this->tython__list__func = new llvm::FunctionCallee();
+    *(this->tython__list__func) = this->getOrInsertFunction("__list__", tython_list_type);
+    registerProcedure((llvm::Function*)this->tython__list__func->getCallee(), "__list__"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_tuple_type = llvm::FunctionType::get(ptr_t, { int64_t }, true);
+    this->tython__tuple__func = new llvm::FunctionCallee();
+    *(this->tython__tuple__func) = this->getOrInsertFunction("__tuple__", tython_tuple_type);
+    registerProcedure((llvm::Function*)this->tython__tuple__func->getCallee(), "__tuple__"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_set_type = llvm::FunctionType::get(void_t, { ptr_t, ptr_t, ptr_t }, false);
+    this->tython__set__func = new llvm::FunctionCallee();
+    *(this->tython__set__func) = this->getOrInsertFunction("__set__", tython_set_type);
+    registerProcedure((llvm::Function*)this->tython__set__func->getCallee(), "__set__"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
     llvm::FunctionType* tython_len_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
     this->tython_len_func = new llvm::FunctionCallee();

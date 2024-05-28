@@ -129,7 +129,9 @@ expression          : SYM_LPAR expression SYM_RPAR                  #lbl_express
                     | IDENTIFIER                                    #lbl_identifier
                     ;
 
-lval                : expression;
+lval                : obj=expression SYM_LSQ key=expression SYM_RSQ #lbl_lval_key_access
+                    | IDENTIFIER                                    #lbl_lval_identifier
+                    ;
 
 key_value_pair      : key=expression SYM_COL value=expression;
 

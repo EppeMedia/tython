@@ -42,7 +42,8 @@ public:
     std::any visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plus_eqContext *ctx) override;
     std::any visitLbl_assign_minus_eq(TythonParser::Lbl_assign_minus_eqContext *ctx) override;
 
-    std::any visitLval(TythonParser::LvalContext *ctx) override;
+    std::any visitLbl_lval_key_access(TythonParser::Lbl_lval_key_accessContext *ctx) override;
+    std::any visitLbl_lval_identifier(TythonParser::Lbl_lval_identifierContext *ctx) override;
 
     std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override;
 

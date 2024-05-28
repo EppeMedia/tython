@@ -719,12 +719,37 @@ public:
   class  LvalContext : public antlr4::ParserRuleContext {
   public:
     LvalContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    ExpressionContext *expression();
+   
+    LvalContext() = default;
+    void copyFrom(LvalContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
 
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Lbl_lval_identifierContext : public LvalContext {
+  public:
+    Lbl_lval_identifierContext(LvalContext *ctx);
+
+    antlr4::tree::TerminalNode *IDENTIFIER();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+  };
+
+  class  Lbl_lval_key_accessContext : public LvalContext {
+  public:
+    Lbl_lval_key_accessContext(LvalContext *ctx);
+
+    TythonParser::ExpressionContext *obj = nullptr;
+    TythonParser::ExpressionContext *key = nullptr;
+    antlr4::tree::TerminalNode *SYM_LSQ();
+    antlr4::tree::TerminalNode *SYM_RSQ();
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   LvalContext* lval();

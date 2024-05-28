@@ -5,10 +5,10 @@
 #include <string>
 #include <llvm/IR/Value.h>
 
-#define TYTHON_CONTEXT_FLAG_LOOP        (0x1U) // set if this is the top-level context of a loop
-#define TYTHON_CONTEXT_FLAG_LEX_BLOCK   (0x2U) // a lexical block is pretty much a node in a control-flow graph
-#define TYTHON_CONTEXT_FLAG_COMPLETE    (0x4U) // a context is complete iff it is a lexical block and it is terminated
-#define TYTHON_CONTEXT_FLAG_ASSIGN      (0x8U) // an assignment context indicates that we are dealing in references instead of values
+#define TYTHON_CONTEXT_FLAG_LOOP        (0x1U)  // set if this is the top-level context of a loop
+#define TYTHON_CONTEXT_FLAG_LEX_BLOCK   (0x2U)  // a lexical block is pretty much a node in a control-flow graph
+#define TYTHON_CONTEXT_FLAG_COMPLETE    (0x4U)  // a context is complete iff it is a lexical block and it is terminated
+#define TYTHON_CONTEXT_FLAG_ASSIGN      (0x8U)  // an assignment context indicates that we are dealing in references instead of values
 
 class Context {
 
@@ -41,6 +41,9 @@ public:
      * @param value The value associated with the name.
      */
     void registerVariable(const std::string& name, llvm::Value* value);
+
+
+    [[nodiscard]] unsigned int getFlags() const;
 
     [[nodiscard]] bool isGlobal() const;
 

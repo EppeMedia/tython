@@ -13,7 +13,7 @@
 #Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 __contact__ = "collinwinter@google.com (Collin Winter)"
-DEFAULT_ITERATIONS = 1000 #20000
+DEFAULT_ITERATIONS = 100 #1000 #20000
 DEFAULT_REFERENCE = "sun"
 
 DEFAULT_LOOPS = 100

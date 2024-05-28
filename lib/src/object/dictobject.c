@@ -11,7 +11,6 @@
 #include "object/stringobject.h"
 #include "object/integerobject.h"
 #include "object/listobject.h"
-#include "object/noneobject.h"
 
 static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.

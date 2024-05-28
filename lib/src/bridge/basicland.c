@@ -62,11 +62,11 @@ primitive_t object_to_primitive(object* object, int32_t type) {
 
         case SPEC_INT:
             assert(IS_INT(object) && "The specified object is not an integer!");
-            return (primitive_t){ AS_INT(object)->value };
+            return (primitive_t){ .integer = AS_INT(object)->value };
 
         case SPEC_FLOAT:
             assert(IS_FLOAT(object) && "The specified object is not a float!");
-            return (primitive_t){ AS_FLOAT(object)->value };
+            return (primitive_t){ .floating_point = AS_FLOAT(object)->value };
 
         default:
             assert(NULL && "Requested invalid primitive type");
