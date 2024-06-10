@@ -47,6 +47,8 @@ public:
 
     virtual std::any visitReturn_statement(TythonParser::Return_statementContext *context) = 0;
 
+    virtual std::any visitEwout_statement(TythonParser::Ewout_statementContext *context) = 0;
+
     virtual std::any visitIf_statement(TythonParser::If_statementContext *context) = 0;
 
     virtual std::any visitFor_loop(TythonParser::For_loopContext *context) = 0;

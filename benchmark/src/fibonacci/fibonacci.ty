@@ -1,0 +1,21 @@
+
+def fib(n):
+
+    sum = 0
+    a = 0
+    b = 1
+
+    for i in range(0, 174000, 1):
+
+        a = 0
+        b = 1
+
+        for j in range(0, n, 1):
+            a = b
+            b = a + b
+
+        sum += a
+
+    print(sum)
+
+fib(20)

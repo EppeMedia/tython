@@ -146,13 +146,10 @@ static object* range_create_iterator(object* obj) {
 
     range_iterator_object* it = AS_RANGE_ITERATOR(range_iterator_type.alloc(&range_iterator_type));
 
-    it->start = TO_INT(range_obj->start);
-    it->step = TO_INT(range_obj->step);
-    it->length = range_length(obj);
-
-    GRAB_OBJECT(it->start);
-    GRAB_OBJECT(it->step);
-    GRAB_OBJECT(it->length);
+    it->start = range_obj->start;
+    it->step = range_obj->step;
+    it->length = range_length_c(range_obj);
+    it->cursor_cache = AS_INT(int_create(it->start));
 
     return AS_OBJECT(it);
 }
@@ -200,26 +197,21 @@ static object* range_iterator_next(object* obj) {
 
     range_iterator_object* it = AS_RANGE_ITERATOR(obj);
 
-    if (AS_INT(it->length)->value <= 0) {
+    if (it->length <= 0) {
         // this iterator has run off the end
         return AS_OBJECT(TYTHON_NONE);
     }
 
     // decrement length
-    it->length = TO_INT(AS_INT(it->length)->value - 1);
+    it->length--;
 
-    // todo: release old length object
-    GRAB_OBJECT(it->length);
+    const long long cur = it->start;
 
-    object* cur = it->start;
+    it->cursor_cache->value = cur;
 
-    const long long new_cur = AS_INT(it->start)->value + AS_INT(it->step)->value;
-    it->start = TO_INT(new_cur);
+    it->start += it->step;
 
-    // todo: release old start object
-    GRAB_OBJECT(it->start);
-
-    return cur;
+    return AS_OBJECT(it->cursor_cache);
 }
 
 static object* range_iterator_to_bool(object* obj) {
@@ -228,7 +220,7 @@ static object* range_iterator_to_bool(object* obj) {
 
     range_iterator_object* it_obj = AS_RANGE_ITERATOR(obj);
 
-    if (AS_INT(it_obj->length)->value <= 0) {
+    if (it_obj->length <= 0) {
         return TYTHON_FALSE;
     }
 

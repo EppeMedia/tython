@@ -1,0 +1,12 @@
+Globals cannot benefit from the constant propagation technique.
+LLVM optimizers cannot guarantee all uses (read/writes) of the global variable, so we cannot know if the type tag is constant.
+Solution is to use a local variable instead.
+
+The "slow" directory shows the results of a while loop of 10 iterations over a global induction variable.
+This requires a dynamic type check for the variable "a" at the test of the condition for each iteration.
+Additionally, type checks are inserted for the increment of "a".
+
+The "fast" directory shows how the optimizer can remove those type checks for a local variable,
+since all uses (read/write) are visible and the type tag of "a" has proven to be constant.
+
+Note that the optimizer was even able to unroll the loop at 10 iterations in the "fast" directory.

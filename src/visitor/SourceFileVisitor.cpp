@@ -145,7 +145,9 @@ std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plu
 
         if (auto variable = this->builder->current_context->findVariable(identifier)) {
 
-            assign_value = this->builder->CreateTythonAdd(variable, operand);
+            const auto variable_value = this->builder->CreateLoad(this->module->specialization_type, variable);
+
+            assign_value = this->builder->CreateTythonAdd(variable_value, operand);
 
         } else {
 
@@ -188,7 +190,9 @@ std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_mi
 
         if (auto variable = this->builder->current_context->findVariable(identifier)) {
 
-            assign_value = this->builder->CreateTythonSub(variable, operand);
+            const auto variable_value = this->builder->CreateLoad(this->module->specialization_type, variable);
+
+            assign_value = this->builder->CreateTythonSub(variable_value, operand);
 
         } else {
 
@@ -212,21 +216,19 @@ std::any SourceFileVisitor::visitLbl_expression_parentheses(TythonParser::Lbl_ex
 
 std::any SourceFileVisitor::visitSlice_lit(TythonParser::Slice_litContext *ctx) {
 
-    const auto none_spec = this->builder->CreateSpecInstance(SPEC_OBJECT, this->builder->none_object_instance);
-
-    llvm::Value* start = none_spec;
+    llvm::Value* start = this->builder->CreateNoneSpec();
 
     if (ctx->start) {
         start = any_cast<llvm::Value*>(visit(ctx->start));
     }
 
-    llvm::Value* end = none_spec;
+    llvm::Value* end = this->builder->CreateNoneSpec();
 
     if (ctx->end) {
         end = any_cast<llvm::Value*>(visit(ctx->end));
     }
 
-    llvm::Value* step = none_spec;
+    llvm::Value* step = this->builder->CreateNoneSpec();
 
     if (ctx->step) {
         step = any_cast<llvm::Value*>(visit(ctx->step));
@@ -244,7 +246,7 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 
     // check if the identifier exists, otherwise throw an exception
     if (auto variable = this->builder->current_context->findVariable(identifier)) {
-        return variable;
+        return (llvm::Value*)this->builder->CreateLoad(this->module->specialization_type, variable);
     }
 
     throw UnknownSymbolException("Unknown symbol " + identifier);
@@ -293,6 +295,13 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto int64_t = llvm::IntegerType::getInt64Ty(this->module->getContext());
         auto v = llvm::ConstantInt::get(int64_t, raw, true);
 
+        if (builder->config->no_specialize.has_value()) {
+
+            const auto integer_object = this->builder->CreateIntObject(v);
+
+            return this->builder->CreateSpecInstance(SPEC_OBJECT, integer_object);
+        }
+
         return this->builder->CreateSpecInstance(SPEC_INT, v);
 
     } else if (ctx->FLOAT_LIT()) {
@@ -300,6 +309,13 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto raw = stod(ctx->FLOAT_LIT()->getText());
         auto double_t = llvm::Type::getDoubleTy(this->module->getContext());
         auto v = llvm::ConstantFP::get(double_t, raw);
+
+        if (builder->config->no_specialize.has_value()) {
+
+            const auto float_object = this->builder->CreateFloatObject(v);
+
+            return this->builder->CreateSpecInstance(SPEC_OBJECT, float_object);
+        }
 
         return this->builder->CreateSpecInstance(SPEC_FLOAT, v);
 
@@ -324,9 +340,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
     } else if (ctx->NONE_LIT()) {
 
-        const auto content = this->builder->none_object_instance;
-
-        return this->builder->CreateSpecInstance(SPEC_OBJECT, content);
+        return this->builder->CreateNoneSpec();
 
     } else if (ctx->dict_lit()) {
 
@@ -436,44 +450,52 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
 
     this->builder->CreateCondBr(test, br_true, br_false);
 
-    { // if
+    // if
 
-        this->builder->SetInsertPoint(br_true);
+    this->builder->SetInsertPoint(br_true);
 
-        visit(ctx->br_if);
+    visit(ctx->br_if);
 
-        if (!br_true->getTerminator()) {
-            this->builder->CreateBr(br_end);
-        }
+    const auto if_is_complete = this->builder->current_context->isComplete();
+
+    if (!if_is_complete) {
+        this->builder->CreateBr(br_end);
     }
 
-    { // if_else
+    // else_if
 
-        this->builder->SetInsertPoint(br_else_if);
+    this->builder->SetInsertPoint(br_else_if);
 
-        if (ctx->br_else_if) {
-            visit(ctx->br_else_if);
-        }
-
-        if (!br_else_if->getTerminator()) {
-            this->builder->CreateBr(br_end);
-        }
+    if (ctx->br_else_if) {
+        visit(ctx->br_else_if);
     }
 
-    { // else
+    const auto else_if_is_complete = this->builder->current_context->isComplete();
 
-        this->builder->SetInsertPoint(br_else);
+    if (!else_if_is_complete) {
+        this->builder->CreateBr(br_end);
+    }
 
-        if (ctx->br_else) {
-            visit(ctx->br_else);
-        }
+    // else
 
-        if (!br_else->getTerminator()) {
-            this->builder->CreateBr(br_end);
-        }
+    this->builder->SetInsertPoint(br_else);
+
+    if (ctx->br_else) {
+        visit(ctx->br_else);
+    }
+
+    const auto else_is_complete = this->builder->current_context->isComplete();
+
+    if (!else_is_complete) {
+        this->builder->CreateBr(br_end);
     }
 
     this->builder->SetInsertPoint(br_end);
+
+    // if all branches are completing, the encompassing context is also completing
+    if (if_is_complete && else_if_is_complete && else_is_complete) {
+        this->builder->current_context->setComplete();
+    }
 
     return nullptr;
 }
@@ -592,6 +614,13 @@ std::any SourceFileVisitor::visitBlock(TythonParser::BlockContext *ctx) {
         this->builder->SetInsertPoint(terminator);
     }
 
+    if (this->builder->current_context->isComplete()) {
+        // the parent context may be interested to know that this basic block terminates explicitly;
+        if (auto parent = this->builder->current_context->parent) {
+            parent->setComplete();
+        }
+    }
+
     this->builder->popContext();
 
     if (terminator) {
@@ -656,13 +685,12 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     this->builder->nestContext();
 
     // function declarations are fully opaque; we only know that it will return an object (may be None), and that it takes either at most n, or a variable number of arguments
-    auto return_type = llvm::PointerType::get(this->builder->object_type, 0);
-    auto ptr_type = llvm::PointerType::get(this->builder->getContext(), 0);
+    auto return_type = this->module->specialization_type;
 
     std::vector<llvm::Type*> arg_types;
 
     for (int i = 0; i < ctx->arguments()->args.size(); ++i) {
-        arg_types.push_back(ptr_type);
+        arg_types.push_back(this->module->specialization_type);
     }
 
     const bool isVarArgs = ctx->SYM_ELLIPS();
@@ -708,7 +736,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
         this->builder->CreateBr(epilogue);
         this->builder->SetInsertPoint(epilogue);
 
-        this->builder->CreateRet(this->builder->none_object_instance);
+        this->builder->CreateRet(this->builder->CreateNoneSpec());
     }
 
     this->builder->SetInsertPoint(old_bb);
@@ -722,15 +750,18 @@ std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statement
 
     const auto ret_val = any_cast<llvm::Value*>(visit(ctx->expression()));
 
-    // return values must be copied to a global (locals cannot escape the stack frame)
-    const auto ret_copy = this->builder->CreateSpecInstance(SPEC_OBJECT, this->builder->none_object_instance, "return_copy", true); // todo: we can allocate one global (per thread!) for this and re-use it for this purpose
-    this->builder->CreateCopySpec(ret_val, ret_copy);
-
-    this->builder->CreateGrabObject(ret_copy);
-
     this->builder->current_context->setComplete();
 
-    return this->builder->CreateRet(ret_copy);
+    return this->builder->CreateRet(ret_val);
+}
+
+std::any SourceFileVisitor::visitEwout_statement(TythonParser::Ewout_statementContext *ctx) {
+
+    const auto expression = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    this->builder->CreateCall(*this->module->tython_ewout_func, { expression });
+
+    return nullptr;
 }
 
 std::any SourceFileVisitor::visitCall_expression(TythonParser::Call_expressionContext *ctx) {
@@ -815,19 +846,24 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
 
     // grab reference to parameters and mark them as pass-by-value
-    for (const auto& v : params) {
-
-        this->builder->CreateGrabObject(v);
-
-//        f->addParamAttr(i, llvm::Attribute::getWithByValType(this->builder->getContext(), this->module->specialization_type));
-    }
+//    for (int i = 0; i < params.size(); ++i) {
+//
+////        this->builder->CreateGrabObject(v);
+//
+////        f->addParamAttr(i, llvm::Attribute::getWithByValType(this->builder->getContext(), this->module->specialization_type));
+//    }
 
     llvm::Value* result = this->builder->CreateCall(f, params);
 
-    // release param objects
-    for (auto& v : params) {
-        this->builder->CreateReleaseObject(v);
+    if (result->getType()->isVoidTy()) {
+        // return None implicitly
+        return this->builder->CreateNoneSpec();
     }
+
+    // release param objects
+//    for (auto& v : params) {
+//        this->builder->CreateReleaseObject(v);
+//    }
 
     return result;
 }

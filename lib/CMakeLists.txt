@@ -1,5 +1,9 @@
 
 project(tython_lib)
 
+#ADD_COMPILE_DEFINITIONS(NDEBUG)
+
 INCLUDE_DIRECTORIES(include)
 ADD_SUBDIRECTORY(src)
+
+ADD_COMPILE_OPTIONS(-emit-llvm)

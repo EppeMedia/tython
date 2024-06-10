@@ -42,6 +42,15 @@ public:
      */
     void registerVariable(const std::string& name, llvm::Value* value);
 
+    /**
+     * Binds the specified value to the specified name.<br>
+     * The name could only be registered in a parent context, in which case the binding will happen in the first parent with the registered name.
+     * @param value The value to bind.
+     * @param name The name of the symbol to bind to.
+     * @return Returns a reference to the symbol.
+     * @throws UnknownSymbolException Thrown when the specified name is not registered in this scope.
+     */
+    llvm::Value* bind(llvm::Value* value, const std::string& name);
 
     [[nodiscard]] unsigned int getFlags() const;
 
@@ -51,7 +60,11 @@ public:
 
     [[nodiscard]] bool isLexicalBlock() const;
 
+    /**
+     * Flags this context as completed (see TYTHON_CONTEXT_FLAG_COMPLETE).
+     */
     void setComplete();
+
     [[nodiscard]] bool isComplete() const;
 
     [[nodiscard]] bool isAssign() const;

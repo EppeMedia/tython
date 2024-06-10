@@ -3,8 +3,8 @@
 //
 
 #include <list>
-#include "../../include/utils/Utils.h"
-#include "../../include/exception/CompileException.h"
+#include "utils/Utils.h"
+#include "exception/CompileException.h"
 #include <spdlog/spdlog.h>
 #include <Token.h>
 
@@ -208,6 +208,7 @@ namespace utils {
             .out = getFlagArgument(argc, argv, { FLAG_OUTPUT, FLAG_OUTPUT_SHORT }),
             .link_objects = getFlagArguments(argc, argv, { FLAG_LINK_OBJECTS, FLAG_LINK_OBJECTS_SHORT }),
             .emit_llvm = getFlagArgument(argc, argv, FLAG_EMIT_LLVM),
+            .no_specialize = hasFlag(argc, argv, { FLAG_NO_SPECIALIZE, FLAG_NO_SPECIALIZE_SHORT }),
             .debug = hasFlag(argc, argv, { FLAG_EMIT_DEBUG, FLAG_EMIT_DEBUG_SHORT }),
         };
     }

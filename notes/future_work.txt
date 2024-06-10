@@ -1,0 +1,14 @@
+Future work could include looking into analysis of the optimized program.
+It can very well happen that the compiler generates code which is guaranteed to result in a type error (after pruning all other control flow paths through optimizations).
+This could quite easily be found statically. An analysis pass could find all unconditional occurrences of throwing type errors
+
+Classes! By far the most-used python feature is about classes (this is also where duck-typing shines).
+The ommission of classes in this project are scope-related. There was simply not enough time to dive into them too.
+It warrants a seperate study, buuuut: Tython is an excellent platform to start from.
+It is a testbed for research into typeshifting away from ducktyping.
+
+static analysis on required heap space for a given program at rt. We can in some cases already determine the minimum heap space we will require (lower bound). With external input (user input or DB data) this lower bound gets further away from the upper bound (nothing can probably be said about the mean).
+
+The REPL: part of why Python is so popular. How would Tython implement this?
+
+Tython still uses late binding (the lookup of methods at runtime) for object methods (even though we currently only support built-in methods). A next version can look into early (/static) binding, which can significantly improve performance.

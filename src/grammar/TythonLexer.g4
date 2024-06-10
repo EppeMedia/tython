@@ -60,6 +60,7 @@ KW_BREAK            : 'break';
 KW_EXTERN           : 'extern';
 KW_IMPORT           : 'import';
 KW_SELF             : 'self';
+KW_EWOUT            : 'ewout';      // Error/Warning OUT
 
 // symbols
 SYM_LPAR            : '(' {this->openBrace();};

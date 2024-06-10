@@ -7,6 +7,7 @@
 
 #include "object.h"
 #include "type.h"
+#include "integerobject.h"
 
 extern type_object range_type;
 
@@ -27,9 +28,11 @@ extern type_object range_iterator_type;
 typedef struct range_iterator_object_t {
     ObjectHead
 
-    object* start;
-    object* step;
-    object* length;
+    long long start;
+    long long step;
+    long long length;
+
+    int_object* cursor_cache;
 
 } range_iterator_object;
 

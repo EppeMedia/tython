@@ -103,9 +103,8 @@ Context *TythonBuilder::popContext(bool free) {
         // free objects bound to variables that were declared in this scope
         for (auto &e: this->current_context->variable_shadow_symbol_table) {
 
-            const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+            const auto load = this->CreateLoad(this->module->specialization_type, e.second);
 
-            const auto load = this->CreateLoad(ptr_t, e.second);
             this->CreateReleaseObject(load);
         }
     }
@@ -146,19 +145,18 @@ llvm::Value *TythonBuilder::CreateAssign(llvm::Value *assignee, llvm::Value *val
      * Then LHS := RHS -> LHS = { 2, 0xABBA }
      */
 
-    auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-    auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    // todo: we should do a "deep copy" here iff the value is a "primitive object" such as integer_object, float_object, etc.
 
-    const auto assignee_tag_ref = this->CreateStructGEP(this->module->specialization_type, assignee, 0);
-    const auto addignee_content_ref = this->CreateStructGEP(this->module->specialization_type, assignee, 1);
+//    const auto assignee_tag_ref = this->CreateStructGEP(this->module->specialization_type, assignee, 0);
+//    const auto assignee_content_ref = this->CreateStructGEP(this->module->specialization_type, assignee, 1);
+//
+//    const auto tag = this->getTag(value);
+//    const auto content = this->getContent(value);
+//
+//    this->CreateStore(tag, assignee_tag_ref);
+//    this->CreateStore(content, assignee_content_ref);
 
-    const auto value_tag_ref = this->CreateStructGEP(this->module->specialization_type, value, 0);
-    const auto value_tag = this->CreateLoad(int32_t, value_tag_ref);
-    const auto value_content_ref = this->CreateStructGEP(this->module->specialization_type, value, 1);
-    const auto value_content = this->CreateLoad(int64_t, value_content_ref);
-
-    this->CreateStore(value_tag, assignee_tag_ref);
-    this->CreateStore(value_content, addignee_content_ref);
+    this->CreateStore(value, assignee);
 
     return assignee;
 }
@@ -166,14 +164,13 @@ llvm::Value *TythonBuilder::CreateAssign(llvm::Value *assignee, llvm::Value *val
 llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *subject) {
 
     const auto int1_t = llvm::IntegerType::getInt1Ty(this->getContext());
-    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
-    const auto int_handler = [this, subject](llvm::Value* int_primitive) -> llvm::Value* {
-        return this->CreateSpecInstance(SPEC_INT, subject);
+    const auto int_handler = [subject](llvm::Value* int_primitive) -> llvm::Value* {
+        return subject;
     };
 
-    const auto float_handler = [this, subject, int64_t](llvm::Value* float_primitive) -> llvm::Value* {
-        return this->CreateSpecInstance(SPEC_FLOAT, subject);
+    const auto float_handler = [subject](llvm::Value* float_primitive) -> llvm::Value* {
+        return subject; // todo: do FP check if the primitive is zero
     };
 
     const auto object_handler = [this](llvm::Value* object_primitive) -> llvm::Value* {
@@ -186,11 +183,9 @@ llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *subject) {
     const auto result_spec = this->CreateTypeGuard(subject, int_handler, float_handler, object_handler);
 
     // get the integer out of the result spec
-    const auto result_content_ref = this->CreateStructGEP(this->module->specialization_type, result_spec, 1);
+    const auto content = this->getContent(result_spec);
 
-    const auto truthiness = this->CreateLoad(int64_t, result_content_ref);
-
-    return this->CreateTrunc(truthiness, int1_t);
+    return this->CreateTrunc(content, int1_t);
 }
 
 llvm::Value *TythonBuilder::CreateResolveBuiltinMethod(llvm::Value *object, llvm::Value *name) {
@@ -207,19 +202,11 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
-    const auto lhs_type_tag_ref= this->CreateStructGEP(this->module->specialization_type, lhs, 0);
-    const auto lhs_type_tag = this->CreateLoad(int32_t, lhs_type_tag_ref, "lhs_type_tag");
+    const auto lhs_type_tag = this->getTag(lhs);
+    const auto lhs_value = this->getContent(lhs);
 
-    const auto lhs_value_ref = this->CreateStructGEP(this->module->specialization_type, lhs, 1);
-    const auto lhs_value = this->CreateLoad(int64_t, lhs_value_ref, "lhs_value");
-
-    const auto rhs_type_tag_ref = this->CreateStructGEP(this->module->specialization_type, rhs, 0, "rhs_type_tag");
-    const auto rhs_type_tag = this->CreateLoad(int32_t, rhs_type_tag_ref);
-
-    const auto rhs_value_ref = this->CreateStructGEP(this->module->specialization_type, rhs, 1);
-    const auto rhs_value = this->CreateLoad(int64_t, rhs_value_ref, "rhs_value");
-
-    llvm::Value* result_spec = this->CreateAlloca(this->module->specialization_type);
+    const auto rhs_type_tag = this->getTag(rhs);
+    const auto rhs_value = this->getContent(rhs);
 
     /*
      * The LHS is dictating in the Python language spec, where the type of the RHS of the binop must convert to the type of the LHS (or a type error occurs).
@@ -227,13 +214,21 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
      */
 
     // SWITCH on lhs type enumerator
-    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), "switch_exit_block", this->GetInsertBlock()->getParent());
-    const auto catchall_block = llvm::BasicBlock::Create(this->getContext(), "catchall_block", this->GetInsertBlock()->getParent(), exit_block);
-    const auto lhs_object_block = llvm::BasicBlock::Create(this->getContext(), "lhs_object_block",
+    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), "binop_switch_exit_block", this->GetInsertBlock()->getParent());
+
+    // prepare result PHI nodes
+    const auto current_block = this->GetInsertBlock();
+    this->SetInsertPoint(exit_block);
+    const auto result_tag = this->CreatePHI(int32_t, 10);
+    const auto result_content = this->CreatePHI(int64_t, 10);
+    this->SetInsertPoint(current_block);
+
+    const auto catchall_block = llvm::BasicBlock::Create(this->getContext(), "binop_catchall_block", this->GetInsertBlock()->getParent(), exit_block);
+    const auto lhs_object_block = llvm::BasicBlock::Create(this->getContext(), "binop_lhs_object_block",
                                                           this->GetInsertBlock()->getParent(), catchall_block);
-    const auto lhs_float_block = llvm::BasicBlock::Create(this->getContext(), "lhs_float_block",
+    const auto lhs_float_block = llvm::BasicBlock::Create(this->getContext(), "binop_lhs_float_block",
                                                           this->GetInsertBlock()->getParent(), lhs_object_block);
-    const auto lhs_int_block = llvm::BasicBlock::Create(this->getContext(), "lhs_int_block",
+    const auto lhs_int_block = llvm::BasicBlock::Create(this->getContext(), "binop_lhs_int_block",
                                                         this->GetInsertBlock()->getParent(), lhs_float_block);
 
     const auto switch_value = this->CreateSwitch(lhs_type_tag, catchall_block, 4);
@@ -246,7 +241,7 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
     switch_value->addCase(float_type_tag_value, lhs_float_block);
     switch_value->addCase(obj_type_tag_value, lhs_object_block);
 
-    const auto same_type_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler, result_spec](std::int32_t type_tag) -> void {
+    const auto same_type_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler, result_tag, result_content](std::int32_t type_tag) -> void {
 
         const auto float_t = llvm::Type::getDoubleTy(this->getContext());
 
@@ -265,19 +260,27 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
         }
 
         // initialize the result spec struct (result type matches LHS type)
-        this->CreateCopySpec(result, result_spec);
+        const auto tag = this->getTag(result);
+        const auto content = this->getContent(result);
+
+        result_tag->addIncoming(tag, this->GetInsertBlock());
+        result_content->addIncoming(content, this->GetInsertBlock());
     };
 
-    const auto type_error_handler = [this](llvm::Value* subject, uint32_t expected_type) -> void {
+    const auto type_error_handler = [this, result_tag, result_content](llvm::Value* subject, uint32_t expected_type) -> void {
 
         const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+        const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
         const auto expected_type_value = llvm::ConstantInt::get(int32_t, expected_type);
 
         this->CreateCall(*this->module->tython_throw_type_error_func, { subject, expected_type_value });
+
+        result_tag->addIncoming(llvm::UndefValue::get(int32_t), this->GetInsertBlock());
+        result_content->addIncoming(llvm::UndefValue::get(int64_t), this->GetInsertBlock());
     };
 
-    const auto object_dynamic_type_resolution_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler, result_spec](std::int32_t type_tag) -> void {
+    const auto object_dynamic_type_resolution_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler, result_tag, result_content](std::int32_t type_tag) -> void {
 
         const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
         const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
@@ -306,7 +309,11 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
         }
 
         // initialize the result spec struct
-        this->CreateCopySpec(result, result_spec);
+        const auto tag = this->getTag(result);
+        const auto content = this->getContent(result);
+
+        result_tag->addIncoming(tag, this->GetInsertBlock());
+        result_content->addIncoming(content, this->GetInsertBlock());
     };
 
     { // CASE lhs is INT
@@ -429,7 +436,7 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
         // if it is also FLOAT, we need to do a dynamic object type check,
         // if it is OBJECT, we delegate to the dynamic runtime.
 
-        const auto lhs_to_primitive_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler, result_spec](std::int32_t type_tag) -> llvm::Value* {
+        const auto lhs_to_primitive_handler = [this, lhs_value, rhs_value, specialized_int_case_handler, specialized_float_case_handler](std::int32_t type_tag) -> llvm::Value* {
 
             const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
             const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
@@ -458,9 +465,13 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             this->SetInsertPoint(rhs_int_block);
 
-            const auto lhs_primitive = lhs_to_primitive_handler(SPEC_INT);
+            const auto lhs_converted = lhs_to_primitive_handler(SPEC_INT);
 
-            this->CreateCopySpec(lhs_primitive, result_spec);
+            const auto tag = llvm::ConstantInt::get(int32_t, SPEC_INT);
+            const auto content = this->getContent(lhs_converted);
+
+            result_tag->addIncoming(tag, this->GetInsertBlock());
+            result_content->addIncoming(content, this->GetInsertBlock());
 
             this->CreateBr(exit_block);
         }
@@ -469,9 +480,13 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             this->SetInsertPoint(rhs_float_block);
 
-            const auto lhs_primitive = lhs_to_primitive_handler(SPEC_FLOAT);
+            const auto lhs_converted = lhs_to_primitive_handler(SPEC_FLOAT);
 
-            this->CreateCopySpec(lhs_primitive, result_spec);
+            const auto tag = llvm::ConstantInt::get(int32_t, SPEC_FLOAT);
+            const auto content = this->getContent(lhs_converted);
+
+            result_tag->addIncoming(tag, this->GetInsertBlock());
+            result_content->addIncoming(content, this->GetInsertBlock());
 
             this->CreateBr(exit_block);
         }
@@ -482,11 +497,17 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             // delegate to runtime handler
             const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
             const auto lhs_value_cast = this->CreateIntToPtr(lhs_value, ptr_t);
             const auto rhs_value_cast = this->CreateIntToPtr(rhs_value, ptr_t);
+
             const auto result = dynamic_runtime_handler(lhs_value_cast, rhs_value_cast);
 
-            this->CreateCopySpec(result, result_spec);
+            const auto tag = this->getTag(result);
+            const auto content = this->getContent(result);
+
+            result_tag->addIncoming(tag, this->GetInsertBlock());
+            result_content->addIncoming(content, this->GetInsertBlock());
 
             this->CreateBr(exit_block);
         }
@@ -500,7 +521,11 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
     this->SetInsertPoint(exit_block);
 
-    return result_spec;
+    const auto spec = this->CreateSpecInstance();
+    const auto spec1 = this->setTag(spec, result_tag);
+    const auto spec2 = this->setContent(spec1, result_content);
+
+    return spec2;
 }
 
 llvm::Value* TythonBuilder::CreateBinaryNumberFunctionCall(size_t number_function_slot, llvm::Value* lhs, llvm::Value* rhs) {
@@ -869,6 +894,10 @@ llvm::Value *TythonBuilder::CreateTakeSlice(llvm::Value *object, llvm::Value *sl
     return this->CreateObjectTypeGuard(slice, slice_object_handler);
 }
 
+llvm::Value *TythonBuilder::CreateNoneSpec() {
+    return this->CreateSpecInstance(SPEC_OBJECT, this->none_object_instance);
+}
+
 llvm::Value *TythonBuilder::CreateIntObject(llvm::Value *content) {
 
     if (!content->getType()->isIntegerTy()) {
@@ -955,33 +984,48 @@ llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<l
     std::vector<llvm::Value*> params = std::vector<llvm::Value*>(elements);
     params.insert(params.begin(), count);
 
-    auto f = this->module->tython__tuple__func;
+    auto f = (llvm::Function*)this->module->tython__tuple__func->getCallee();
 
     // the function returns a specialization instance; we do not need to wrap it
-    return this->CreateCall((llvm::Function*)f->getCallee(), params, "tuple_constructor");
+    return this->CreateCall(f, params, "tuple_constructor");
 }
 
 void TythonBuilder::CreateGrabObject(llvm::Value *object) {
 
 #if GC_ENABLED
 
-    // todo: specialization type check (only attempt to GC heap allocated objects)
+    const auto int_handler = [this](llvm::Value* int_primitive) -> llvm::Value* {
+        // do nothing
+        return this->CreateSpecInstance();
+    };
 
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+    const auto float_handler = [this](llvm::Value* float_primitive) -> llvm::Value* {
+        // do nothing
+        return this->CreateSpecInstance();
+    };
 
-    const auto typeobject_ref = this->CreateGetTypeObject(object);
-    const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
+    const auto object_handler = [this](llvm::Value* object_primitive) -> llvm::Value* {
 
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto grab_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_GRAB);
+        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+        const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
-    auto grab_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, grab_slot });
-    auto grab_f = this->CreateLoad(ptr_t, grab_ref);
+        const auto typeobject_ref = this->CreateGetTypeObject(object_primitive);
+        const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
 
-    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+        const auto zero = llvm::ConstantInt::get(int32_t, 0);
+        const auto grab_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_GRAB);
 
-    this->CreateCall(function_type, grab_f, {object }, "grab");
+        auto grab_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, grab_slot});
+        auto grab_f = this->CreateLoad(ptr_t, grab_ref);
+
+        auto function_type = llvm::FunctionType::get(ptr_t, {ptr_t}, false);
+
+        this->CreateCall(function_type, grab_f, {object_primitive}, "grab");
+
+        return this->CreateSpecInstance();
+    };
+
+    this->CreateTypeGuard(object, int_handler, float_handler, object_handler);
 
 #endif
 
@@ -991,51 +1035,62 @@ void TythonBuilder::CreateReleaseObject(llvm::Value *object) {
 
 #if GC_ENABLED
 
-    // todo: specialization type check (only attempt to GC heap allocated objects)
+    const auto int_handler = [this](llvm::Value* int_primitive) -> llvm::Value* {
+        // do nothing
+        return this->CreateSpecInstance();
+    };
 
-    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-    const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+    const auto float_handler = [this](llvm::Value* float_primitive) -> llvm::Value* {
+        // do nothing
+        return this->CreateSpecInstance();
+    };
 
-    const auto typeobject_ref = this->CreateGetTypeObject(object);
-    const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
+    const auto object_handler = [this](llvm::Value* object_primitive) -> llvm::Value* {
 
-    const auto zero = llvm::ConstantInt::get(int32_t, 0);
-    const auto release_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_RELEASE);
+        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+        const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
-    auto release_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, release_slot });
-    auto release_f = this->CreateLoad(ptr_t, release_ref);
+        const auto typeobject_ref = this->CreateGetTypeObject(object_primitive);
+        const auto typeobject = this->CreateLoad(ptr_t, typeobject_ref);
 
-    auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+        const auto zero = llvm::ConstantInt::get(int32_t, 0);
+        const auto release_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_RELEASE);
 
-    this->CreateCall(function_type, release_f, {object }, "release");
+        auto release_ref = this->CreateGEP(this->typeobject_type, typeobject, {zero, release_slot });
+        auto release_f = this->CreateLoad(ptr_t, release_ref);
+
+        auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t }, false);
+
+        this->CreateCall(function_type, release_f, { object_primitive }, "release");
+
+        return this->CreateSpecInstance();
+    };
+
+    this->CreateTypeGuard(object, int_handler, float_handler, object_handler);
 
 #endif
 
 }
 
+llvm::Value *TythonBuilder::CreateSpecInstance() {
+
+    const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+
+    const auto neg1 = llvm::ConstantInt::get(int32_t, -1);
+    const auto zero64 = llvm::ConstantInt::get(int64_t, 0);
+
+    return llvm::ConstantStruct::get(this->module->specialization_type, { neg1, zero64 });
+}
+
 llvm::Value* TythonBuilder::CreateSpecInstance(int32_t type_tag, llvm::Value *value, std::string name, bool forceGlobal) {
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+
     const auto type_tag_value = llvm::ConstantInt::get(int32_t, type_tag);
 
-    llvm::Value* instance;
-
-    if (this->current_context->isGlobal() || forceGlobal) {
-
-        llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->module->specialization_type);
-        instance = new llvm::GlobalVariable(*this->module, this->module->specialization_type, false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
-
-    } else {
-
-        instance = this->CreateAlloca(this->module->specialization_type, nullptr, name);
-    }
-
-    this->CreateStore(type_tag_value, instance);
-
-    // todo: cast value type to int64_t
-    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
     llvm::Value* bitcast;
-
     const auto value_t = value->getType();
 
     if (value_t->isPointerTy()) {
@@ -1062,11 +1117,12 @@ llvm::Value* TythonBuilder::CreateSpecInstance(int32_t type_tag, llvm::Value *va
         bitcast = this->CreateBitCast(value, int64_t);
     }
 
-    const auto ref = this->CreateStructGEP(this->module->specialization_type, instance, 1);
+    const auto spec = this->CreateSpecInstance();
 
-    this->CreateStore(bitcast, ref);
+    auto const spec1 = this->setTag(spec, type_tag_value);
+    auto const spec2 = this->setContent(spec1, bitcast);
 
-    return instance;
+    return spec2;
 }
 
 llvm::Value *TythonBuilder::CreateCopySpec(llvm::Value *spec_instance, llvm::Value *target) {
@@ -1093,20 +1149,24 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
-    const auto guardee_type_tag_ref= this->CreateStructGEP(this->module->specialization_type, guardee, 0);
-    const auto guardee_type_tag = this->CreateLoad(int32_t, guardee_type_tag_ref, "guardee_type_tag");
-
-    // keep track of any result values
-    const auto result = this->CreateAlloca(this->module->specialization_type, nullptr, "result");
+    const auto guardee_type_tag = this->getTag(guardee);
 
     // SWITCH on lhs type enumerator
-    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), "switch_exit_block", this->GetInsertBlock()->getParent());
-    const auto type_error_block = llvm::BasicBlock::Create(this->getContext(), "catchall_block", this->GetInsertBlock()->getParent(), exit_block);
-    const auto object_handler_block = llvm::BasicBlock::Create(this->getContext(), "object_handler_block",
+    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_exit_block", this->GetInsertBlock()->getParent());
+
+    // prepare result PHI nodes
+    const auto current_block = this->GetInsertBlock();
+    this->SetInsertPoint(exit_block);
+    auto tag_phi = this->CreatePHI(int32_t, 4);
+    auto content_phi = this->CreatePHI(int64_t, 4);
+    this->SetInsertPoint(current_block);
+
+    const auto type_error_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_catchall_block", this->GetInsertBlock()->getParent(), exit_block);
+    const auto object_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_object_handler_block",
                                                                this->GetInsertBlock()->getParent(), type_error_block);
-    const auto float_handler_block = llvm::BasicBlock::Create(this->getContext(), "float_handler_block",
+    const auto float_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_float_handler_block",
                                                               this->GetInsertBlock()->getParent(), object_handler_block);
-    const auto int_handler_block = llvm::BasicBlock::Create(this->getContext(), "int_handler_block",
+    const auto int_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_int_handler_block",
                                                             this->GetInsertBlock()->getParent(), float_handler_block);
 
     const auto int_type_tag_value = llvm::ConstantInt::get(int32_t, SPEC_INT);
@@ -1119,26 +1179,31 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     switch_value->addCase(float_type_tag_value, float_handler_block);
     switch_value->addCase(obj_type_tag_value, object_handler_block);
 
-    const auto throw_type_error = [this, int32_t](llvm::Value* subject, uint32_t expected_type) -> void {
+    const auto throw_type_error = [this, int32_t, int64_t, tag_phi, content_phi](llvm::Value* subject, uint32_t expected_type) -> void {
 
         const auto expected_type_value = llvm::ConstantInt::get(int32_t, expected_type);
 
         this->CreateCall(*this->module->tython_throw_type_error_func, { subject, expected_type_value });
 
+        tag_phi->addIncoming(llvm::UndefValue::get(int32_t), this->GetInsertBlock());
+        content_phi->addIncoming(llvm::UndefValue::get(int64_t), this->GetInsertBlock());
     };
 
     {
         this->SetInsertPoint(int_handler_block);
 
-        const auto int_ref = this->CreateStructGEP(this->module->specialization_type, guardee, 1);
-        const auto int_primitive = this->CreateLoad(int64_t, int_ref);
+        const auto int_primitive = this->getContent(guardee);
 
         // invoke handler
         if (int_handler) {
 
             if (const auto int_res = int_handler(int_primitive)) {
 
-                this->CreateCopySpec(int_res, result);
+                const auto tag = this->getTag(int_res);
+                const auto content = this->getContent(int_res);
+
+                tag_phi->addIncoming(tag, int_handler_block);
+                content_phi->addIncoming(content, int_handler_block);
             }
 
         } else {
@@ -1153,8 +1218,7 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
         this->SetInsertPoint(float_handler_block);
 
         const auto float_t = llvm::Type::getDoubleTy(this->getContext());
-        const auto float_ref = this->CreateStructGEP(this->module->specialization_type, guardee, 1);
-        const auto float_primitive = this->CreateLoad(int64_t, float_ref);
+        const auto float_primitive = this->getContent(guardee);
         const auto bitcast = this->CreateBitCast(float_primitive, float_t);
 
         // invoke handler
@@ -1162,7 +1226,11 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
 
             if (const auto float_res = float_handler(bitcast)) {
 
-                this->CreateCopySpec(float_res, result);
+                const auto tag = this->getTag(float_res);
+                const auto content = this->getContent(float_res);
+
+                tag_phi->addIncoming(tag, float_handler_block);
+                content_phi->addIncoming(content, float_handler_block);
             }
 
         } else {
@@ -1177,8 +1245,7 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
         this->SetInsertPoint(object_handler_block);
 
         const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
-        const auto object_ref = this->CreateStructGEP(this->module->specialization_type, guardee, 1);
-        const auto object = this->CreateLoad(int64_t, object_ref);
+        const auto object = this->getContent(guardee);
         const auto object_ptr = this->CreateIntToPtr(object, ptr_t);
 
         // invoke handler
@@ -1186,7 +1253,11 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
 
             if (const auto object_res = object_handler(object_ptr)) {
 
-                this->CreateCopySpec(object_res, result);
+                const auto tag = this->getTag(object_res);
+                const auto content = this->getContent(object_res);
+
+                tag_phi->addIncoming(tag, object_handler_block);
+                content_phi->addIncoming(content, object_handler_block);
             }
 
         } else {
@@ -1207,11 +1278,14 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
 
     this->SetInsertPoint(exit_block);
 
-    return result;
+    const auto spec = this->CreateSpecInstance();
+    const auto spec1 = this->setTag(spec, tag_phi);
+    const auto spec2 = this->setContent(spec1, content_phi);
+
+    return spec2;
 }
 
 llvm::Value* TythonBuilder::CreateObjectTypeGuard(llvm::Value *guardee, const std::function<llvm::Value* (llvm::Value*)> &object_handler) {
-
     return this->CreateTypeGuard(guardee, nullptr, nullptr, object_handler);
 }
 
@@ -1227,7 +1301,7 @@ llvm::Value *TythonBuilder::CreateBox(llvm::Value *value) {
         return this->CreateSpecInstance(SPEC_OBJECT, result);
     };
 
-    const auto object_handler = [this, value](llvm::Value* object_primitive) -> llvm::Value* {
+    const auto object_handler = [value](llvm::Value* object_primitive) -> llvm::Value* {
         return value;
     };
 
@@ -1240,11 +1314,27 @@ llvm::Value *TythonBuilder::CreateGetObjectPrimitive(llvm::Value *value) {
         return this->CreateSpecInstance(SPEC_OBJECT, object_primitive);
     };
 
-    const auto object_spec = this->CreateObjectTypeGuard(value, object_handler);
-
-    const auto content_ref = this->CreateStructGEP(this->module->specialization_type, object_spec, 1);
-
     const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
 
-    return this->CreateLoad(ptr_t, content_ref, "object_primitive");
+    const auto object_spec = this->CreateObjectTypeGuard(value, object_handler);
+
+    const auto content = this->getContent(object_spec);
+
+    return this->CreateIntToPtr(content, ptr_t, "object_primitive");
+}
+
+llvm::Value *TythonBuilder::getTag(llvm::Value *spec) {
+    return this->CreateExtractValue(spec, { 0 }, "tag");
+}
+
+llvm::Value *TythonBuilder::setTag(llvm::Value *spec, llvm::Value *value) {
+    return this->CreateInsertValue(spec, value, { 0 }, "tag");
+}
+
+llvm::Value *TythonBuilder::getContent(llvm::Value *spec) {
+    return this->CreateExtractValue(spec, { 1 }, "content");
+}
+
+llvm::Value *TythonBuilder::setContent(llvm::Value *spec, llvm::Value *value) {
+    return this->CreateInsertValue(spec, value, { 1 }, "content");
 }

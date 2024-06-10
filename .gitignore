@@ -19,7 +19,7 @@ build.ninja
 build/
 exec
 
-benchmark/
+benchmark/bin
 cmake-build-release/
 cmake-release/
 src/grammar/gen/

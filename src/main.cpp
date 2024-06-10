@@ -104,7 +104,7 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
 
     // Run compiler
     auto bb = BasicBlock::Create(*llvmContext);
-    TythonBuilder builder(module, bb);
+    TythonBuilder builder(module, bb, config);
 
     SourceFileVisitor sourceFileVisitor(module, &builder, object_symbol_table);
 
@@ -344,9 +344,12 @@ int main(int argc, char **argv) {
 
     std::cout << "Linking objects and building executable..." << endl;
 
-    std::string executable_filename;
+    std::string executable_filename = "exec";
 
-    executable_filename = configuration.out->value_or("exec");
+    if (configuration.out) {
+        executable_filename = configuration.out->value();
+    }
+
     const auto path_delimiter_pos = executable_filename.find_last_of('/');
 
     // make sure the requested path exists

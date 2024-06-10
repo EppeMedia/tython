@@ -71,6 +71,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitEwout_statement(TythonParser::Ewout_statementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitIf_statement(TythonParser::If_statementContext *ctx) override {
     return visitChildren(ctx);
   }

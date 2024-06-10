@@ -57,7 +57,8 @@ statement           : simple_statements
 simple_statement    : expression
                     | assign_statement
                     | break_statement
-                    | return_statement;
+                    | return_statement
+                    | ewout_statement;
 
 simple_statements   : simple_statement (SYM_SEMCOL simple_statement)* SYM_SEMCOL? NEWLINE;
 
@@ -73,6 +74,7 @@ assign_statement    : lval SYM_ASSIGN expression    #lbl_assign_statement
 
 break_statement     : KW_BREAK;
 return_statement    : KW_RETURN expression;
+ewout_statement     : KW_EWOUT expression;
 
 if_statement        : KW_IF expression SYM_COL
                         br_if=block

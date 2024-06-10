@@ -8,6 +8,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include "TythonModule.h"
 #include "model/Context.h"
+#include "utils/Utils.h"
 #include <string>
 
 class TythonBuilder : public llvm::IRBuilder<> {
@@ -15,6 +16,8 @@ class TythonBuilder : public llvm::IRBuilder<> {
     friend class SourceFileVisitor;
 
 private:
+
+    const configuration_t* config;
 
     llvm::StructType* object_type;
     llvm::StructType* typeobject_type;
@@ -56,8 +59,9 @@ private:
     llvm::Value* CreateBinaryNumberFunctionCall(size_t number_function_slot, llvm::Value* lhs, llvm::Value* rhs);
 
 public:
-    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
+    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb, const configuration_t* config) : llvm::IRBuilder<>(bb),
                                                                 module(module),
+                                                                config(config),
                                                                 current_context(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
@@ -204,6 +208,11 @@ public:
     llvm::Value* CallIteratorNext(llvm::Value* it_primitive);
 
     /**
+     * Creates a specialization struct around the global none instance.
+     */
+    llvm::Value* CreateNoneSpec();
+
+    /**
      * Generates the instructions to create a new integer object instance for the specified integer value.
      * @param content The integer value to create an integer object for.
      * @return Returns a reference to the new integer object.
@@ -260,6 +269,12 @@ public:
      * @param object The object to be released.
      */
     void CreateReleaseObject(llvm::Value* object);
+
+    /**
+     * Creates a zero-initialized instance of a specialization union.
+     * @return Returns a zero-initialized instance of a specialization struct.
+     */
+    llvm::Value* CreateSpecInstance();
 
     /**
      * Creates a specialized type/value struct.
@@ -322,6 +337,36 @@ public:
      * @return Returns the primitive object pointer contained inside the specified specialization value.
      */
     llvm::Value* CreateGetObjectPrimitive(llvm::Value* value);
+
+    /**
+     * Gets the type tag of the specified specialization union.
+     * @param spec The specialization union to get the type tag of.
+     * @return Returns the type tag related to the specified specialization union.
+     */
+    llvm::Value* getTag(llvm::Value* spec);
+
+    /**
+     * Sets the type tag of the specified specialization union to the specified value.
+     * @param spec The specialization union to set the type tag of.
+     * @param value The value to set the tag to.
+     * @return Returns the specialization union with the tag set.
+     */
+    llvm::Value* setTag(llvm::Value* spec, llvm::Value* value);
+
+    /**
+     * Gets the content of the specified specialization union.
+     * @param spec The specialization union to get the content of.
+     * @return Returns the content related to the specified specialization union.
+     */
+    llvm::Value* getContent(llvm::Value* spec);
+
+    /**
+     * Sets the content of the specified specialization union to the specified value.
+     * @param spec The specialization union to set the content of.
+     * @param value The value to set the content to.
+     * @return Returns the specialization union with the content set.
+     */
+    llvm::Value* setContent(llvm::Value* spec, llvm::Value* value);
 
 };
 

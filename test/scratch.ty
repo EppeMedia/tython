@@ -264,19 +264,36 @@
 #
 #foo("Hello world!")
 
-dx = -4.84143144246472090
-dy = 1.16032004402742839
-dz = 0.10362204447112311
-m2 = 0.03769367487038949
-m1 = 39.47841760435743197
+#dx = -4.84143144246472090
+#dy = 1.16032004402742839
+#dz = 0.10362204447112311
+#m2 = 0.03769367487038949
+#m1 = 39.47841760435743197
+#
+#print("============")
+#mass = m1 * m2
+#print(mass)
+#sum = (dx * dx + dy * dy + dz * dz)
+#print(sum)
+#sqrt = sum ** 0.5
+#print(sqrt)
+#ans = mass / sqrt
+#print(ans)
 
-print("============")
-mass = m1 * m2
-print(mass)
-sum = (dx * dx + dy * dy + dz * dz)
-print(sum)
-print("Do EXP")
-sqrt = sum ** 0.5
-print(sqrt)
-ans = mass / sqrt
-print(ans)
+#a = [0, 1, 2, 3, 4]
+#b = len(a)
+#print(b)
+
+#print(b - 1)
+
+a = ["hello", "world!", "how"]
+
+print(a)
+
+tup = (0, 1, 2, 3, 4)
+print(tup)
+
+dict = {
+    "key": tup
+}
+print(dict)
