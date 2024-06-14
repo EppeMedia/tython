@@ -23,7 +23,17 @@ typedef struct specialization {
 
 } specialization_t;
 
+/************************
+ * Hidden API functions *
+ ************************/
+
 void throw_type_error(specialization_t subject, uint32_t expected_type);
+
+specialization_t spec_pow(specialization_t base, specialization_t exponent);
+
+/*************************
+ * Visible API functions *
+ *************************/
 
 /**
  * Warning/Error OUT. Prints the specified value over stderr.

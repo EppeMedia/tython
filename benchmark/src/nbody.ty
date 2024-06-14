@@ -13,31 +13,13 @@
 #Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 __contact__ = "collinwinter@google.com (Collin Winter)"
-DEFAULT_ITERATIONS = 100 #1000 #20000
+DEFAULT_ITERATIONS = 1000 #20000
 DEFAULT_REFERENCE = "sun"
-
 DEFAULT_LOOPS = 100
-
-
-def combinations(l):
-#    """Pure-Python implementation of itertools.combinations(l, 2)."""
-    result = []
-    q = len(l) - 1
-    for x in range(0, q, 1):
-        i = x + 1
-        ls = l[i:]
-        for y in ls:
-            print("here")
-            result.append((l[x], y))
-            print("ok")
-    return result
-
 
 PI = 3.14159265358979323
 SOLAR_MASS = 4.0 * PI * PI
 DAYS_PER_YEAR = 365.24
-
-print("here")
 
 BODIES = {
     "sun": ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], SOLAR_MASS),
@@ -75,13 +57,22 @@ BODIES = {
                 5.15138902046611451e-05 * SOLAR_MASS)
 }
 
+def combinations(l):
+#    """Pure-Python implementation of itertools.combinations(l, 2)."""
+    result = []
+    q = len(l) - 1
+
+    for x in range(0, q, 1):
+        i = x + 1
+        ls = l[i:]
+
+        for y in ls:
+            result.append((l[x], y))
+
+    return result
+
 SYSTEM = list(BODIES.values())        # removed list constructor
 PAIRS = combinations(SYSTEM)
-
-print(BODIES)
-print(SYSTEM)
-print(PAIRS)
-
 
 def advance(dt, n):
     for i in range(0, n, 1):
@@ -193,10 +184,12 @@ def bench_nbody(loops, reference, iterations):
     range_it = range(0, loops, 1)
 
     for _ in range_it:
-#        print(report_energy())
+        e = report_energy()
+#        print(e)
         advance(0.01, iterations)
-#        print(report_energy())
+        e = report_energy()
+#        print(e)
 
-#print("Let's go")
+##print("Let's go")
 bench_nbody(DEFAULT_LOOPS, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
-#print("Done")
+##print("Done")

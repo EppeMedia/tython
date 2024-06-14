@@ -12,12 +12,13 @@
 #include "object/tupleobject.h"
 #include "object/floatobject.h"
 #include "object/dictobject.h"
+#include "error/error.h"
 #include <memory.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>
-#include <malloc.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <math.h>
 
 /**
  * Creates object wrappers for primitive types. Directly returns object types.
@@ -42,19 +43,56 @@ static object* box(specialization_t spec) {
     }
 }
 
-void throw_type_error(specialization_t subject, uint32_t expected_type) {
+static double spec_to_float(specialization_t s) {
 
-    switch (expected_type) {
+    switch(s.tag) {
+
         case SPEC_INT:
+            return (double)s.integer;
+
         case SPEC_FLOAT:
+            return s.floating_point;
+
         case SPEC_OBJECT:
-            printf("Type error: expected type %u, got type %u!\r\n", expected_type, subject.tag);
-            break;
+
+            // ducktype this thing
+
+            {} // when are we getting C23?
+
+            number_functions* nf = s.object->type->number_functions;
+
+            assert(nf && nf->to_float && "Object does not support type conversion to float!");
+            // in case assertions are disabled:
+            if (!nf || !nf->to_float) {
+                type_error();
+            }
+
+            const object* float_obj = nf->to_float(s.object);
+
+            return AS_FLOAT(float_obj)->value;
+
         default:
-            printf("Type error: type %u is not supported for this operation!\r\n", subject.tag);
+            type_error();
     }
 
-    assert(NULL && "Type error!");
+    return .0; // the type error will have exited the program before we get here
+}
+
+void throw_type_error(specialization_t subject, uint32_t expected_type) {
+    type_mismatch(subject.tag, expected_type);
+}
+
+specialization_t spec_pow(specialization_t base, specialization_t exponent) {
+
+    const double base_primitive = spec_to_float(base);
+    const double exponent_primitive = spec_to_float(exponent);
+
+    const double result = pow(base_primitive, exponent_primitive);
+
+    return (specialization_t) {
+        .tag = SPEC_FLOAT,
+        .floating_point = result,
+    };
 }
 
 static unsigned long string_obj_len(string_object* str) {

@@ -31,6 +31,7 @@ private:
 
     // API
     llvm::FunctionCallee* tython_throw_type_error_func;
+    llvm::FunctionCallee* tython_spec_pow;
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_ewout_func;
     llvm::FunctionCallee* tython_range_func;

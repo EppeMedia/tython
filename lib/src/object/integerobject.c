@@ -139,7 +139,7 @@ static object* int_exp(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(powl((long double)lhs_obj->value, (long double)rhs_obj->value));
+    return TO_INT(pow((double)lhs_obj->value, (double)rhs_obj->value));
 }
 
 static number_functions int_number_functions = {

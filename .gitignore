@@ -18,6 +18,8 @@ build.ninja
 
 build/
 exec
+*.ll
+*.out
 
 benchmark/bin
 cmake-build-release/

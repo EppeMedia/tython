@@ -286,14 +286,81 @@
 
 #print(b - 1)
 
-a = ["hello", "world!", "how"]
 
-print(a)
 
-tup = (0, 1, 2, 3, 4)
-print(tup)
+#a = ["hello", "world!", "how", "are", "you"]
+#
+#s = slice(0, 10, 1)
+#print(s)
+#
+#print(a)
+#print(a[0:3])
+#
+#tup = (0, 1, 2, 3, 4)
+#print("ok")
+#print(tup)
+#
+#dict = {
+#    "key": tup
+#}
+#print(dict)
 
-dict = {
-    "key": tup
-}
-print(dict)
+#def combinations(l):
+##    """Pure-Python implementation of itertools.combinations(l, 2)."""
+#    result = []
+#    q = len(l) - 1
+#
+#    for x in range(0, q, 1):
+#        i = x + 1
+##        ls = l[i:]
+#        ls = []
+#        for y in ls:
+#            print(x)
+#            print(l)
+#            print(y)
+##            t = (l[x], y)
+#            t = 0
+#            print(t)
+##            result.append(t)
+#
+#    print(result)
+#    return result
+
+#a = [([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 3.14), ([1.0, 1.0, 1.0], [1.0, 1.0, 1.0], 4.2)]
+#a.append("Hello world!")
+#print(a)
+#combinations(a)
+#
+#a = ["hi"]
+#b = a[0]
+
+#l = ["melli"]
+#q = 0
+#
+#l[q] = "cute"
+#
+#print(l[q])
+
+#result = []
+
+#for x in range(0, q, 1):
+#    i = x + 1
+#    ls = l[i:]
+#    ls = []
+
+#    t = (l[x], x)
+
+#    for y in ls:
+#        print(x)
+#        print(l)
+#        print(y)
+##        t = (l[x], y)
+#        t = 0
+#        print(t)
+#        result.append(t)
+
+#print(result)
+
+a = 24.79653854475821717
+b = a ** 0.5
+print(b)

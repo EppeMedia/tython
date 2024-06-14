@@ -3,13 +3,13 @@
 //
 
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 #include "object/boolobject.h"
 #include "bridge/basicland.h"
 #include "object/integerobject.h"
 #include "object/floatobject.h"
 #include "api/api.h"
+#include "error/error.h"
 
 bool object_is_truthy(object* obj) {
 
@@ -61,14 +61,27 @@ primitive_t object_to_primitive(object* object, int32_t type) {
     switch (type) {
 
         case SPEC_INT:
-            assert(IS_INT(object) && "The specified object is not an integer!");
-            return (primitive_t){ .integer = AS_INT(object)->value };
+            if (IS_INT(object)) {
+                return (primitive_t){ .integer = AS_INT(object)->value };
+            } else if (IS_FLOAT(object)) {
+                return (primitive_t){ .integer = AS_FLOAT(object)->value };
+            } else {
+                type_error();
+            }
 
         case SPEC_FLOAT:
-            assert(IS_FLOAT(object) && "The specified object is not a float!");
-            return (primitive_t){ .floating_point = AS_FLOAT(object)->value };
+
+            if (IS_INT(object)) {
+                return (primitive_t){ .floating_point = AS_INT(object)->value };
+            } else if (IS_FLOAT(object)) {
+                return (primitive_t){ .floating_point = AS_FLOAT(object)->value };
+            } else {
+                type_error();
+            }
 
         default:
-            assert(NULL && "Requested invalid primitive type");
+            type_error();
     }
+
+    return (primitive_t){ .integer = 0 };
 }

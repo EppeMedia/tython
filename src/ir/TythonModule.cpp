@@ -47,12 +47,20 @@ void TythonModule::initialize() {
     this->tuple_create_func = new llvm::FunctionCallee();
     *(this->tuple_create_func) = this->getOrInsertFunction("tuple_create", tuple_create_type);
 
-    // API functions
+    /*************************
+     * Runtime API functions *
+     *************************/
+
+    /*
+     * Hidden API functions (not user-accessible)
+     */
+    llvm::FunctionType* tython_spec_pow_type = llvm::FunctionType::get(this->specialization_type, { this->specialization_type, this->specialization_type }, false);
+    this->tython_spec_pow = new llvm::FunctionCallee();
+    *(this->tython_spec_pow) = this->getOrInsertFunction("spec_pow", tython_spec_pow_type);
 
     llvm::FunctionType* tython_throw_type_error_type = llvm::FunctionType::get(void_t, { this->specialization_type, int32_t }, false);
     this->tython_throw_type_error_func = new llvm::FunctionCallee();
     *(this->tython_throw_type_error_func) = this->getOrInsertFunction("throw_type_error", tython_throw_type_error_type);
-    registerProcedure((llvm::Function*)this->tython_throw_type_error_func->getCallee(), "throw_type_error"); // user accessible
 
     llvm::FunctionType* tython_ewout_type = llvm::FunctionType::get(void_t, { this->specialization_type }, false);
     this->tython_ewout_func = new llvm::FunctionCallee();

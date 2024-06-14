@@ -259,7 +259,7 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
                 throw CompileException("Encountered unexpected specialization type!");
         }
 
-        // initialize the result spec struct (result type matches LHS type)
+        // initialize the result spec struct
         const auto tag = this->getTag(result);
         const auto content = this->getContent(result);
 
@@ -467,7 +467,7 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             const auto lhs_converted = lhs_to_primitive_handler(SPEC_INT);
 
-            const auto tag = llvm::ConstantInt::get(int32_t, SPEC_INT);
+            const auto tag = this->getTag(lhs_converted);
             const auto content = this->getContent(lhs_converted);
 
             result_tag->addIncoming(tag, this->GetInsertBlock());
@@ -482,7 +482,7 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             const auto lhs_converted = lhs_to_primitive_handler(SPEC_FLOAT);
 
-            const auto tag = llvm::ConstantInt::get(int32_t, SPEC_FLOAT);
+            const auto tag = this->getTag(lhs_converted);
             const auto content = this->getContent(lhs_converted);
 
             result_tag->addIncoming(tag, this->GetInsertBlock());
@@ -640,28 +640,35 @@ llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) 
 
     const auto specialized_int_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
 
-        // create wrapper integer objects around the primitives
-        const auto lhs = this->CreateIntObject(lhs_primitive);
-        const auto rhs = this->CreateIntObject(rhs_primitive);
+        const auto lhs_spec = this->CreateSpecInstance(SPEC_INT, lhs_primitive);
+        const auto rhs_spec = this->CreateSpecInstance(SPEC_INT, rhs_primitive);
 
-        // invoke EXP on LHS
-        const auto content = this->CreateBinaryNumberFunctionCall(7, lhs, rhs);
-        return this->CreateSpecInstance(SPEC_OBJECT, content);
+        const auto f = this->module->tython_spec_pow;
+
+        const auto result = this->CreateCall((llvm::Function*)f->getCallee(), { lhs_spec, rhs_spec }, "int_spec_pow");
+
+        // we know that the function always returns a float by contract, so we encode this explicitly for LLVM (for the optimizer)
+        return this->CreateSpecInstance(SPEC_FLOAT, this->getContent(result));
     };
 
     const auto specialized_float_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
 
-        // create wrapper float objects around the primitives
-        const auto lhs = this->CreateFloatObject(lhs_primitive);
-        const auto rhs = this->CreateFloatObject(rhs_primitive);
+        const auto lhs_spec = this->CreateSpecInstance(SPEC_FLOAT, lhs_primitive);
+        const auto rhs_spec = this->CreateSpecInstance(SPEC_FLOAT, rhs_primitive);
 
-        // invoke EXP on LHS
-        const auto content = this->CreateBinaryNumberFunctionCall(7, lhs, rhs);
-        return this->CreateSpecInstance(SPEC_OBJECT, content, "exp_float_spec");
+        const auto f = this->module->tython_spec_pow;
+
+        const auto result = this->CreateCall((llvm::Function*)f->getCallee(), { lhs_spec, rhs_spec }, "int_spec_pow");
+
+        // we know that the function always returns a float by contract, so we encode this explicitly for LLVM (for the optimizer)
+        return this->CreateSpecInstance(SPEC_FLOAT, this->getContent(result));
     };
 
     const auto runtime_handler = [this](llvm::Value* lhs, llvm::Value* rhs) -> llvm::Value* {
+
+        // it is probably faster to avoid a call to spec_pow and just resolve the LHS type's function indirection in IR:
         const auto content = this->CreateBinaryNumberFunctionCall(7, lhs, rhs);
+
         return this->CreateSpecInstance(SPEC_OBJECT, content);
     };
 
@@ -828,13 +835,15 @@ llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, in
 
 llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *key) {
 
-    const auto object_handler = [this, key](llvm::Value* object_primitive) -> llvm::Value* {
+    const auto key_boxed = this->CreateBox(key);
+
+    const auto object_handler = [this, key_boxed](llvm::Value* object_primitive) -> llvm::Value* {
 
         const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
         const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
-        const auto key_boxed = this->CreateBox(key);
-        const auto key_primitive = this->CreateGetObjectPrimitive(key_boxed);
+        const auto key_primitive = this->getContent(key_boxed);
+        const auto key_object_ptr = this->CreateIntToPtr(key_primitive, ptr_t);
 
         const auto object_type_ref = this->CreateGetTypeObject(object_primitive);
         const auto object_type = this->CreateLoad(ptr_t, object_type_ref);
@@ -851,7 +860,7 @@ llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *ke
 
         auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
 
-        const auto result_ref = this->CreateCall(function_type, subscript_f, { object_primitive, key_primitive }, "subscript");
+        const auto result_ref = this->CreateCall(function_type, subscript_f, {object_primitive, key_object_ptr }, "subscript");
 
         return this->CreateSpecInstance(SPEC_OBJECT, result_ref);
     };
@@ -861,37 +870,33 @@ llvm::Value *TythonBuilder::CreateSubscript(llvm::Value *object, llvm::Value *ke
 
 llvm::Value *TythonBuilder::CreateTakeSlice(llvm::Value *object, llvm::Value *slice) {
 
-    const auto slice_object_handler = [this, object](llvm::Value* slice_primitive) -> llvm::Value* {
+    const auto object_handler = [this, slice](llvm::Value* object_primitive) -> llvm::Value* {
 
-        const auto object_handler = [this, slice_primitive](llvm::Value* object_primitive) -> llvm::Value* {
+        const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
+        const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
 
-            const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
-            const auto ptr_t = llvm::PointerType::get(this->object_type, 0);
+        const auto object_type_ref = this->CreateGetTypeObject(object_primitive);
+        const auto object_type = this->CreateLoad(ptr_t, object_type_ref);
 
-            const auto object_type_ref = this->CreateGetTypeObject(object_primitive);
-            const auto object_type = this->CreateLoad(ptr_t, object_type_ref);
+        const auto zero = llvm::ConstantInt::get(int32_t, 0);
+        const auto one = llvm::ConstantInt::get(int32_t, 1);
+        const auto mapping_functions_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS);
 
-            const auto zero = llvm::ConstantInt::get(int32_t, 0);
-            const auto one = llvm::ConstantInt::get(int32_t, 1);
-            const auto mapping_functions_slot = llvm::ConstantInt::get(int32_t, TYTHON_TYPE_SLOT_SEQUENCE_FUNCTIONS);
+        auto mapping_functions_ref = this->CreateGEP(this->typeobject_type, object_type, { zero, mapping_functions_slot });
+        auto mapping_functions = this->CreateLoad(ptr_t, mapping_functions_ref);
 
-            auto mapping_functions_ref = this->CreateGEP(this->typeobject_type, object_type, { zero, mapping_functions_slot });
-            auto mapping_functions = this->CreateLoad(ptr_t, mapping_functions_ref);
+        auto take_slice_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, {zero, one });
+        auto take_slice_f = this->CreateLoad(ptr_t, take_slice_ref);
 
-            auto take_slice_ref = this->CreateGEP(this->mapping_functions_type, mapping_functions, {zero, one });
-            auto take_slice_f = this->CreateLoad(ptr_t, take_slice_ref);
+        auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
 
-            auto function_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
+        const auto slice_primitive = this->CreateIntToPtr(this->getContent(slice), ptr_t);
+        const auto result = this->CreateCall(function_type, take_slice_f, { object_primitive, slice_primitive }, "take_slice");
 
-            const auto result = this->CreateCall(function_type, take_slice_f, { object_primitive, slice_primitive }, "take_slice");
-
-            return this->CreateSpecInstance(SPEC_OBJECT, result);
-        };
-
-        return this->CreateObjectTypeGuard(object, object_handler);
+        return this->CreateSpecInstance(SPEC_OBJECT, result);
     };
 
-    return this->CreateObjectTypeGuard(slice, slice_object_handler);
+    return this->CreateObjectTypeGuard(object, object_handler);
 }
 
 llvm::Value *TythonBuilder::CreateNoneSpec() {
@@ -937,6 +942,7 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
     } else {
 
+        // todo: this grows stack space unchecked if it's in a loop. In loops, we should avoid allocation (or save and restore the stack frame for each iteration...)
         alloc = this->CreateAlloca(this->module->specialization_type, nullptr, name);
     }
 
@@ -952,42 +958,127 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
 llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<std::pair<llvm::Value *, llvm::Value *>> &entries) {
 
-    std::vector<llvm::Value*> params;
-    params.reserve(entries.size() * 2 + 1);
+    auto f = this->module->dict_create_func;
 
-    for (const auto& e : entries) {
-        params.push_back(e.first);
-        params.push_back(e.second);
+    // the function returns an object instance; we need to wrap it!
+    const auto dict_ref = this->CreateCall((llvm::Function*)f->getCallee(), count, "dict_create");
+
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    // steal the elements reference off of the list object
+    const size_t offset = offsetof(dict_object, entries);
+    auto offset_value = llvm::ConstantInt::get(int64_t, offset);
+    auto list_ref_int = this->CreatePtrToInt(dict_ref, int64_t);
+
+    auto array_offset = this->CreateAdd(list_ref_int, offset_value, "array_offset");
+    auto array_ref = this->CreateIntToPtr(array_offset, ptr_t, "array_ref");
+    auto array_start = this->CreateLoad(ptr_t, array_ref, "array_start");
+    auto array_start_int = this->CreatePtrToInt(array_start, int64_t, "array_start_int");
+
+    for (int i = 0; i < entries.size(); ++i) {
+
+        // store the element
+        auto entry = entries.at(i);
+
+        size_t k_offset = (sizeof(dict_entry) * i) + offsetof(dict_entry, key);
+        auto k_offset_value = llvm::ConstantInt::get(int64_t, k_offset);
+        auto k_ptr_offset = this->CreateAdd(array_start_int, k_offset_value, "key_offset");
+        auto k_ref = this->CreateIntToPtr(k_ptr_offset, ptr_t, "key_ref");
+
+        auto key_content = this->getContent(this->CreateBox(entry.first));
+        auto key_ptr = this->CreatePtrToInt(key_content, int64_t, "key_ptr");
+        this->CreateStore(key_ptr, k_ref);
+
+        size_t v_offset = offsetof(dict_entry, value);
+        auto v_offset_value = llvm::ConstantInt::get(int64_t, v_offset);
+        auto v_ptr_offset = this->CreateAdd(k_ptr_offset, v_offset_value, "value_offset");
+        auto v_ref = this->CreateIntToPtr(v_ptr_offset, ptr_t, "value_ref");
+
+        auto value_content = this->getContent(this->CreateBox(entry.second));
+        auto value_ptr = this->CreatePtrToInt(value_content, int64_t, "value_ptr");
+        this->CreateStore(value_ptr, v_ref);
     }
 
-    params.insert(params.begin(), count);
-
-    auto f = this->module->tython__dict__func;
-
-    // the function returns a specialization instance; we do not need to wrap it
-    return this->CreateCall((llvm::Function*)f->getCallee(), params, "dict_constructor");
+    return this->CreateSpecInstance(SPEC_OBJECT, dict_ref, "dict");
 }
 
 llvm::Value* TythonBuilder::CreateListLiteral(llvm::Value *count, std::vector<llvm::Value *> &elements) {
 
-    std::vector<llvm::Value*> params = std::vector<llvm::Value*>(elements);
-    params.insert(params.begin(), count);
+    auto f = this->module->list_create_func;
 
-    auto f = this->module->tython__list__func;
+    // the function returns an object instance; we need to wrap it!
+    const auto list_ref = this->CreateCall((llvm::Function*)f->getCallee(), count, "list_create");
 
-    // the function returns a specialization instance; we do not need to wrap it
-    return this->CreateCall((llvm::Function*)f->getCallee(), params, "list_constructor");
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    // steal the elements reference off of the list object
+    const size_t offset = offsetof(list_object, elements);
+    auto offset_value = llvm::ConstantInt::get(int64_t, offset);
+    auto list_ref_int = this->CreatePtrToInt(list_ref, int64_t);
+
+    auto array_offset = this->CreateAdd(list_ref_int, offset_value, "array_offset");
+    auto array_ref = this->CreateIntToPtr(array_offset, ptr_t, "array_ref");
+    auto array_start = this->CreateLoad(ptr_t, array_ref, "array_start");
+    auto array_start_int = this->CreatePtrToInt(array_start, int64_t, "array_start_int");
+
+    for (int i = 0; i < elements.size(); ++i) {
+
+        // store the element
+        auto element = elements.at(i);
+
+        auto element_content = this->getContent(this->CreateBox(element));
+
+        const size_t element_offset = (sizeof(object*) * i);
+        const auto element_offset_value = llvm::ConstantInt::get(int64_t, element_offset);
+
+        auto target_int = this->CreateAdd(array_start_int, element_offset_value, "target_int");
+        auto target = this->CreateIntToPtr(target_int, ptr_t, "target");
+
+        this->CreateStore(element_content, target);
+    }
+
+    return this->CreateSpecInstance(SPEC_OBJECT, list_ref, "list");
 }
 
 llvm::Value* TythonBuilder::CreateTupleLiteral(llvm::Value *count, std::vector<llvm::Value *> &elements) {
 
-    std::vector<llvm::Value*> params = std::vector<llvm::Value*>(elements);
-    params.insert(params.begin(), count);
+    const auto f = this->module->tuple_create_func;
 
-    auto f = (llvm::Function*)this->module->tython__tuple__func->getCallee();
+    // the function returns an object instance; we need to wrap it!
+     const auto tuple_ref = this->CreateCall((llvm::Function*)f->getCallee(), count, "tuple_create");
 
-    // the function returns a specialization instance; we do not need to wrap it
-    return this->CreateCall(f, params, "tuple_constructor");
+    const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+    const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+    // steal the elements reference off of the tuple object
+    const size_t offset = offsetof(tuple_object, elements);
+    auto offset_value = llvm::ConstantInt::get(int64_t, offset);
+    auto tuple_ref_int = this->CreatePtrToInt(tuple_ref, int64_t);
+
+    auto array_offset = this->CreateAdd(tuple_ref_int, offset_value, "array_offset");
+    auto array_ref = this->CreateIntToPtr(array_offset, ptr_t, "array_ref");
+    auto array_start = this->CreateLoad(ptr_t, array_ref, "array_start");
+    auto array_start_int = this->CreatePtrToInt(array_start, int64_t, "array_start_int");
+
+    for (int i = 0; i < elements.size(); ++i) {
+
+        // store the element
+        auto element = elements.at(i);
+
+        auto element_content = this->getContent(this->CreateBox(element));
+
+        const size_t element_offset = (sizeof(object*) * i);
+        auto element_offset_value = llvm::ConstantInt::get(int64_t, element_offset);
+
+        auto target_int = this->CreateAdd(array_start_int, element_offset_value, "target_int");
+        auto target = this->CreateIntToPtr(target_int, ptr_t, "target");
+
+        this->CreateStore(element_content, target);
+    }
+
+    return this->CreateSpecInstance(SPEC_OBJECT, tuple_ref, "tuple");
 }
 
 void TythonBuilder::CreateGrabObject(llvm::Value *object) {
@@ -1120,7 +1211,7 @@ llvm::Value* TythonBuilder::CreateSpecInstance(int32_t type_tag, llvm::Value *va
     const auto spec = this->CreateSpecInstance();
 
     auto const spec1 = this->setTag(spec, type_tag_value);
-    auto const spec2 = this->setContent(spec1, bitcast);
+    auto const spec2 = this->setContent(spec1, bitcast, name);
 
     return spec2;
 }
@@ -1152,21 +1243,22 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     const auto guardee_type_tag = this->getTag(guardee);
 
     // SWITCH on lhs type enumerator
-    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_exit_block", this->GetInsertBlock()->getParent());
+    const auto exit_block = llvm::BasicBlock::Create(this->getContext(), guardee->getName() + "_typeguard_exit_block", this->GetInsertBlock()->getParent());
 
     // prepare result PHI nodes
     const auto current_block = this->GetInsertBlock();
     this->SetInsertPoint(exit_block);
-    auto tag_phi = this->CreatePHI(int32_t, 4);
-    auto content_phi = this->CreatePHI(int64_t, 4);
+    const auto phi_count = 4;
+    auto tag_phi = this->CreatePHI(int32_t, phi_count);
+    auto content_phi = this->CreatePHI(int64_t, phi_count);
     this->SetInsertPoint(current_block);
 
-    const auto type_error_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_catchall_block", this->GetInsertBlock()->getParent(), exit_block);
-    const auto object_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_object_handler_block",
+    const auto type_error_block = llvm::BasicBlock::Create(this->getContext(), guardee->getName() + "_typeguard_catchall_block", this->GetInsertBlock()->getParent(), exit_block);
+    const auto object_handler_block = llvm::BasicBlock::Create(this->getContext(), guardee->getName() + "_typeguard_object_handler_block",
                                                                this->GetInsertBlock()->getParent(), type_error_block);
-    const auto float_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_float_handler_block",
+    const auto float_handler_block = llvm::BasicBlock::Create(this->getContext(), guardee->getName() + "_typeguard_float_handler_block",
                                                               this->GetInsertBlock()->getParent(), object_handler_block);
-    const auto int_handler_block = llvm::BasicBlock::Create(this->getContext(), "typeguard_int_handler_block",
+    const auto int_handler_block = llvm::BasicBlock::Create(this->getContext(), guardee->getName() + "_typeguard_int_handler_block",
                                                             this->GetInsertBlock()->getParent(), float_handler_block);
 
     const auto int_type_tag_value = llvm::ConstantInt::get(int32_t, SPEC_INT);
@@ -1192,19 +1284,27 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     {
         this->SetInsertPoint(int_handler_block);
 
-        const auto int_primitive = this->getContent(guardee);
-
         // invoke handler
         if (int_handler) {
 
+            const auto int_primitive = this->getContent(guardee);
+
+            llvm::Value* tag;
+            llvm::Value* content;
+
             if (const auto int_res = int_handler(int_primitive)) {
 
-                const auto tag = this->getTag(int_res);
-                const auto content = this->getContent(int_res);
+                tag = this->getTag(int_res);
+                content = this->getContent(int_res);
 
-                tag_phi->addIncoming(tag, int_handler_block);
-                content_phi->addIncoming(content, int_handler_block);
+            } else {
+
+                tag = llvm::ConstantInt::get(int32_t, 0);
+                content = llvm::ConstantInt::get(int64_t, 0);
             }
+
+            tag_phi->addIncoming(tag, int_handler_block);
+            content_phi->addIncoming(content, int_handler_block);
 
         } else {
 
@@ -1217,21 +1317,30 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     {
         this->SetInsertPoint(float_handler_block);
 
-        const auto float_t = llvm::Type::getDoubleTy(this->getContext());
-        const auto float_primitive = this->getContent(guardee);
-        const auto bitcast = this->CreateBitCast(float_primitive, float_t);
-
         // invoke handler
         if (float_handler) {
 
+            const auto float_t = llvm::Type::getDoubleTy(this->getContext());
+
+            const auto float_primitive = this->getContent(guardee);
+            const auto bitcast = this->CreateBitCast(float_primitive, float_t);
+
+            llvm::Value* tag;
+            llvm::Value* content;
+
             if (const auto float_res = float_handler(bitcast)) {
 
-                const auto tag = this->getTag(float_res);
-                const auto content = this->getContent(float_res);
+                tag = this->getTag(float_res);
+                content = this->getContent(float_res);
 
-                tag_phi->addIncoming(tag, float_handler_block);
-                content_phi->addIncoming(content, float_handler_block);
+            } else {
+
+                tag = llvm::ConstantInt::get(int32_t, 0);
+                content = llvm::ConstantInt::get(int64_t, 0);
             }
+
+            tag_phi->addIncoming(tag, float_handler_block);
+            content_phi->addIncoming(content, float_handler_block);
 
         } else {
 
@@ -1244,21 +1353,30 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
     {
         this->SetInsertPoint(object_handler_block);
 
-        const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
-        const auto object = this->getContent(guardee);
-        const auto object_ptr = this->CreateIntToPtr(object, ptr_t);
-
         // invoke handler
         if (object_handler) {
 
+            const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+            const auto object = this->getContent(guardee);
+            const auto object_ptr = this->CreateIntToPtr(object, ptr_t);
+
+            llvm::Value* tag;
+            llvm::Value* content;
+
             if (const auto object_res = object_handler(object_ptr)) {
 
-                const auto tag = this->getTag(object_res);
-                const auto content = this->getContent(object_res);
+                tag = this->getTag(object_res);
+                content = this->getContent(object_res);
 
-                tag_phi->addIncoming(tag, object_handler_block);
-                content_phi->addIncoming(content, object_handler_block);
+            } else {
+
+                tag = llvm::ConstantInt::get(int32_t, 0);
+                content = llvm::ConstantInt::get(int64_t, 0);
             }
+
+            tag_phi->addIncoming(tag, object_handler_block);
+            content_phi->addIncoming(content, object_handler_block);
 
         } else {
 
@@ -1292,7 +1410,7 @@ llvm::Value* TythonBuilder::CreateObjectTypeGuard(llvm::Value *guardee, const st
 llvm::Value *TythonBuilder::CreateBox(llvm::Value *value) {
 
     const auto int_handler = [this](llvm::Value* int_primitive) -> llvm::Value* {
-        const auto result = this->CreateIntObject(int_primitive);
+        const auto result = this->CreateCall(*this->module->int_create_func, { int_primitive }, "my_integer_object");
         return this->CreateSpecInstance(SPEC_OBJECT, result);
     };
 
@@ -1335,6 +1453,6 @@ llvm::Value *TythonBuilder::getContent(llvm::Value *spec) {
     return this->CreateExtractValue(spec, { 1 }, "content");
 }
 
-llvm::Value *TythonBuilder::setContent(llvm::Value *spec, llvm::Value *value) {
-    return this->CreateInsertValue(spec, value, { 1 }, "content");
+llvm::Value *TythonBuilder::setContent(llvm::Value *spec, llvm::Value *value, const std::string& name) {
+    return this->CreateInsertValue(spec, value, { 1 }, name);
 }

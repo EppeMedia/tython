@@ -6,15 +6,12 @@
 #include <assert.h>
 #include <memory.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "object/listobject.h"
 #include "object/boolobject.h"
 #include "object/stringobject.h"
 #include "object/integerobject.h"
 #include "object/sliceobject.h"
 #include "object/noneobject.h"
-#include "object/dictobject.h"
-#include "object/functionobject.h"
 
 static object* list_rich_compare(object* lhs,  object* rhs, int op) {
     return TYTHON_FALSE; // todo: implement

@@ -237,7 +237,7 @@ std::any SourceFileVisitor::visitSlice_lit(TythonParser::Slice_litContext *ctx) 
     // create the slice object
     auto f = this->module->tython_slice_func;
 
-    return (llvm::Value*)this->builder->CreateCall(*f, { start, end, step }, "slice_construct");
+    return (llvm::Value*)this->builder->CreateCall((llvm::Function*)f->getCallee(), { start, end, step }, "slice_construct");
 }
 
 std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) {
@@ -246,7 +246,7 @@ std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierCont
 
     // check if the identifier exists, otherwise throw an exception
     if (auto variable = this->builder->current_context->findVariable(identifier)) {
-        return (llvm::Value*)this->builder->CreateLoad(this->module->specialization_type, variable);
+        return (llvm::Value*)this->builder->CreateLoad(this->module->specialization_type, variable, identifier);
     }
 
     throw UnknownSymbolException("Unknown symbol " + identifier);
@@ -256,23 +256,16 @@ std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessCont
 
     // avoid not loading the mapping object if we are in an assign context
     // (in an assign context we want a reference to the result of this WHOLE key access expression)
-    this->builder->nestContext();
     auto mapping_object = any_cast<llvm::Value*>(visit(ctx->obj));
-    this->builder->popContext();
-
-    this->builder->nestContext();
     auto key = any_cast<llvm::Value*>(visit(ctx->key));
-    this->builder->popContext();
 
     auto object_ptr_ptr_spec = this->builder->CreateSubscript(mapping_object, key);
 
-//    if (this->builder->current_context->isAssign()) {
-//        return object_ptr;
-//    }
-
-    auto object_ptr_ptr = this->builder->CreateGetObjectPrimitive(object_ptr_ptr_spec);
+    auto object_ptr_ptr_int = this->builder->getContent(object_ptr_ptr_spec);
 
     const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+
+    const auto object_ptr_ptr = this->builder->CreateIntToPtr(object_ptr_ptr_int, ptr_t);
     const auto object_ptr = (llvm::Value*)this->builder->CreateLoad(ptr_t, object_ptr_ptr);
 
     return this->builder->CreateSpecInstance(SPEC_OBJECT, object_ptr);
@@ -281,7 +274,6 @@ std::any SourceFileVisitor::visitLbl_key_access(TythonParser::Lbl_key_accessCont
 std::any SourceFileVisitor::visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *ctx) {
 
     auto sequence_object = any_cast<llvm::Value*>(visit(ctx->expression()));
-
     auto slice = any_cast<llvm::Value*>(visit(ctx->slice_lit()));
 
     return this->builder->CreateTakeSlice(sequence_object, slice);
@@ -1029,7 +1021,7 @@ std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callCo
 
         for (const auto& spec_arg : spec_args) {
             const auto boxed = this->builder->CreateBox(spec_arg);
-            const auto unpacked = this->builder->CreateGetObjectPrimitive(boxed);
+            const auto unpacked = this->builder->getContent(boxed);
             args.push_back(unpacked);
         }
 

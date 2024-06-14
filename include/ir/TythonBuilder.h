@@ -366,7 +366,7 @@ public:
      * @param value The value to set the content to.
      * @return Returns the specialization union with the content set.
      */
-    llvm::Value* setContent(llvm::Value* spec, llvm::Value* value);
+    llvm::Value* setContent(llvm::Value* spec, llvm::Value* value, const std::string& name = "content");
 
 };
 

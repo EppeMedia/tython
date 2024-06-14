@@ -150,6 +150,7 @@ static object* range_create_iterator(object* obj) {
     it->step = range_obj->step;
     it->length = range_length_c(range_obj);
     it->cursor_cache = AS_INT(int_create(it->start));
+    GRAB_OBJECT(AS_OBJECT(it->cursor_cache));
 
     return AS_OBJECT(it);
 }
@@ -207,7 +208,21 @@ static object* range_iterator_next(object* obj) {
 
     const long long cur = it->start;
 
-    it->cursor_cache->value = cur;
+    if (it->cursor_cache->obj_base.refs == 1) {
+
+        // the cursor is only referenced by this iterator; we can safely reuse the memory:
+        it->cursor_cache->value = cur;
+
+    } else {
+
+        // the cursor is referenced by another object. We cannot update its content.
+        // Release our reference to the cursor and overwrite it (the other referencing objects will take care of its cleanup when they release their reference).
+        it->cursor_cache->obj_base.type->release(AS_OBJECT(it->cursor_cache));
+
+        // create the new cursor
+        it->cursor_cache = AS_INT(int_create(cur));
+        GRAB_OBJECT(AS_OBJECT(it->cursor_cache));
+    }
 
     it->start += it->step;
 

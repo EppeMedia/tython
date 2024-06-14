@@ -133,7 +133,7 @@ static object* float_exp(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(powl(lhs_obj->value, rhs_obj->value));
+    return TO_FLOAT(pow(lhs_obj->value, rhs_obj->value));
 }
 
 static number_functions float_number_functions = {
