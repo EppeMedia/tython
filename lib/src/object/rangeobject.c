@@ -5,11 +5,23 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 #include "object/rangeobject.h"
 #include "object/integerobject.h"
 #include "object/stringobject.h"
 #include "object/boolobject.h"
 #include "object/noneobject.h"
+
+object* range_create_primitive(long long int start, long long int end, long long int step) {
+
+    range_object* range_obj = AS_RANGE(range_type.alloc(&range_type));
+
+    range_obj->start = start;
+    range_obj->end = end;
+    range_obj->step = step;
+
+    return AS_OBJECT(range_obj);
+}
 
 object* range_create(object* start, object* end, object* step) {
 
@@ -21,15 +33,9 @@ object* range_create(object* start, object* end, object* step) {
     int_object* end_obj = AS_INT(end);
     int_object* step_obj = AS_INT(step);
 
-    assert(step_obj->value != 0);
+    assert(step_obj->value != 0 && "Step size cannot be zero!");
 
-    range_object* range_obj = AS_RANGE(range_type.alloc(&range_type));
-
-    range_obj->start = start_obj->value;
-    range_obj->end = end_obj->value;
-    range_obj->step = step_obj->value;
-
-    return AS_OBJECT(range_obj);
+    return range_create_primitive(start_obj->value, end_obj->value, step_obj->value);
 }
 
 static object* range_to_string(object* object) {
@@ -97,7 +103,7 @@ static object* range_rich_compare(object* lhs, object* rhs, int op) {
 }
 
 static long long range_length_c(range_object* range_obj) {
-    return (range_obj->end - range_obj->start) / range_obj->step;
+    return (long long)ceill((long double)(range_obj->end - range_obj->start) / range_obj->step);
 }
 
 static object* range_length(object* obj) {

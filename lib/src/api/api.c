@@ -13,6 +13,7 @@
 #include "object/floatobject.h"
 #include "object/dictobject.h"
 #include "error/error.h"
+#include "object/noneobject.h"
 #include <memory.h>
 #include <stdio.h>
 #include <assert.h>
@@ -20,12 +21,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-/**
- * Creates object wrappers for primitive types. Directly returns object types.
- * @param spec The specialization to box.
- * @return Returns an object representation of the specified specialization.
- */
-static object* box(specialization_t spec) {
+static object* box_internal(specialization_t spec) {
 
     switch (spec.tag) {
 
@@ -41,6 +37,52 @@ static object* box(specialization_t spec) {
         default:
             assert(NULL && "Encountered unknown specialization tag!");
     }
+}
+
+specialization_t box(specialization_t spec) {
+    return (specialization_t) {
+            .tag    = SPEC_OBJECT,
+            .object = box_internal(spec),
+    };
+}
+
+static long long int range_parameter_spec_to_int(specialization_t spec, long long int default_value) {
+
+    switch (spec.tag) {
+
+        case SPEC_INT:
+            return spec.integer;
+
+        case SPEC_FLOAT:
+            type_mismatch(SPEC_FLOAT, SPEC_INT);
+
+        case SPEC_OBJECT:
+
+            // ducktype this thing
+
+            {} // when are we getting C23?
+
+            if (spec.object->type == &none_type) {
+                return default_value; // if unspecified, return the default
+            }
+
+            number_functions* nf = spec.object->type->number_functions;
+
+            assert(nf && nf->to_int && "Object does not support type conversion to float!");
+            // in case assertions are disabled:
+            if (!nf || !nf->to_int) {
+                type_error();
+            }
+
+            const object* int_obj = nf->to_int(spec.object);
+
+            return AS_INT(int_obj)->value;
+
+        default:
+            type_error();
+    }
+
+    return default_value;  // the type error will have exited the program before we get here
 }
 
 static double spec_to_float(specialization_t s) {
@@ -78,7 +120,7 @@ static double spec_to_float(specialization_t s) {
     return .0; // the type error will have exited the program before we get here
 }
 
-void throw_type_error(specialization_t subject, uint32_t expected_type) {
+void throw_type_error(specialization_t subject, int32_t expected_type) {
     type_mismatch(subject.tag, expected_type);
 }
 
@@ -118,7 +160,7 @@ void ewout(specialization_t value) {
 
     fprintf(stderr, "\033[0;31m"); // Set STDERR to print in red
 
-    object* object = box(value);
+    object* object = box_internal(value);
 
     string_object* string_obj = AS_STRING(object->type->str(object));
 
@@ -173,39 +215,13 @@ void print(specialization_t value) {
     }
 }
 
-/**
- * Returns an integer object from the specified specialization union.
- * Throws a type error when the type of the specialization is not integer.
- * @param spec The specialization union to obtain an integer object for.
- * @return Returns an integer object for the specified specialization.
- */
-static object* spec_to_int(specialization_t spec) {
-
-    switch (spec.tag) {
-
-        case SPEC_INT:
-            return TO_INT(spec.integer);
-
-        case SPEC_OBJECT:
-
-            assert(IS_INT(spec.object) && "Range start must be an integer!");
-            return spec.object;
-
-        case SPEC_FLOAT:
-            assert(NULL && "Range start must be an integer!");
-
-        default:
-            assert(NULL && "Encountered unknown specialization tag!");
-    }
-}
-
 specialization_t range(specialization_t start, specialization_t end, specialization_t step) {
 
-    object* start_obj = spec_to_int(start);
-    object* end_obj = spec_to_int(end);
-    object* step_obj = spec_to_int(step);
+    long long int start_obj = range_parameter_spec_to_int(start, 0);
+    long long int end_obj = range_parameter_spec_to_int(end, 0);
+    long long int step_obj = range_parameter_spec_to_int(step, 1);
 
-    object* range_obj = range_create(start_obj, end_obj, step_obj);
+    object* range_obj = range_create_primitive(start_obj, end_obj, step_obj);
 
     return (specialization_t) {
         .tag    = SPEC_OBJECT,
@@ -226,7 +242,7 @@ specialization_t __tuple__(size_t count, ...) {
 
         specialization_t e = va_arg(args, specialization_t);
 
-        object* e_obj = box(e);
+        object* e_obj = box_internal(e);
 
         // store the element object in the tuple
         object** e_ref = tuple_obj->elements + i;
@@ -254,7 +270,7 @@ specialization_t __list__(size_t count, ...) {
 
         specialization_t e = va_arg(args, specialization_t);
 
-        object* e_obj = box(e);
+        object* e_obj = box_internal(e);
 
         // store the element object in the list
         object** e_ref = list_obj->elements + i;
@@ -282,11 +298,11 @@ specialization_t __dict__(size_t count, ...) {
 
         specialization_t key = va_arg(args, specialization_t);
 
-        object* key_obj = box(key);
+        object* key_obj = box_internal(key);
 
         specialization_t value = va_arg(args, specialization_t);
 
-        object* value_obj = box(value);
+        object* value_obj = box_internal(value);
 
         // store the element object in the list
         dict_entry* e_ref = dict_obj->entries + i;
@@ -307,8 +323,8 @@ void __set__(specialization_t object_spec, specialization_t key_spec, specializa
     assert(object_spec.tag == SPEC_OBJECT && "Type error: cannot set by index on non-object type!");
 
     object* obj = object_spec.object;
-    object* key = box(key_spec);
-    object* value = box(value_spec);
+    object* key = box_internal(key_spec);
+    object* value = box_internal(value_spec);
 
     assert(obj->type->mapping_functions && obj->type->mapping_functions->subscript && "Type error: target object does not support key access!");
 
@@ -335,9 +351,9 @@ specialization_t len(specialization_t spec) {
 
 specialization_t slice(specialization_t start_spec, specialization_t end_spec, specialization_t step_spec) {
 
-    object* start = box(start_spec);
-    object* end = box(end_spec);
-    object* step = box(step_spec);
+    object* start = box_internal(start_spec);
+    object* end = box_internal(end_spec);
+    object* step = box_internal(step_spec);
 
     return (specialization_t) {
         .tag = SPEC_OBJECT,
@@ -375,5 +391,19 @@ specialization_t list(specialization_t spec) {
     return (specialization_t) {
         .tag = SPEC_OBJECT,
         .object = AS_OBJECT(list_obj),
+    };
+}
+
+specialization_t str(specialization_t spec) {
+
+    object* boxed = box_internal(spec);
+
+    if (!boxed->type->str) {
+        type_error();
+    }
+
+    return (specialization_t) {
+        .tag    = SPEC_OBJECT,
+        .object = boxed->type->str(boxed),
     };
 }

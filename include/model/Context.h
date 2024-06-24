@@ -9,6 +9,7 @@
 #define TYTHON_CONTEXT_FLAG_LEX_BLOCK   (0x2U)  // a lexical block is pretty much a node in a control-flow graph
 #define TYTHON_CONTEXT_FLAG_COMPLETE    (0x4U)  // a context is complete iff it is a lexical block and it is terminated
 #define TYTHON_CONTEXT_FLAG_ASSIGN      (0x8U)  // an assignment context indicates that we are dealing in references instead of values
+#define TYTHON_CONTEXT_FLAG_FUNCTION    (0x16U) // function context indicates that we are in the top-level context of a function
 
 class Context {
 
@@ -20,12 +21,14 @@ private:
 
 public:
     Context* parent;
+    llvm::BasicBlock* entry;
     llvm::BasicBlock* exit;
 
     explicit Context(Context* parent = nullptr, unsigned int flags = 0x0) :
         parent(parent),
         variable_shadow_symbol_table(),
         flags(flags),
+        entry(nullptr),
         exit(nullptr) {};
 
     /**
@@ -57,6 +60,12 @@ public:
     [[nodiscard]] bool isGlobal() const;
 
     [[nodiscard]] bool isLoop() const;
+
+    /**
+     * Checks if this context is a loop, or is transitively enclosed inside a context which is a loop, and returns a pointer to that loop context.
+     * @return Returns a context pointer to the enclosing loop iff this context is a loop, or is transitively enclosed inside a context which is a loop. Otherwise returns nullptr.
+     */
+    [[nodiscard]] Context* getEnclosingLoop();
 
     [[nodiscard]] bool isLexicalBlock() const;
 

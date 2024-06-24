@@ -31,6 +31,10 @@ void TythonModule::initialize() {
     this->float_create_func = new llvm::FunctionCallee();
     *(this->float_create_func) = this->getOrInsertFunction("float_create", float_create_type);
 
+    llvm::FunctionType* bool_create_type = llvm::FunctionType::get(ptr_t, { int64_t }, false);
+    this->bool_create_func = new llvm::FunctionCallee();
+    *(this->bool_create_func) = this->getOrInsertFunction("bool_create", bool_create_type);
+
     llvm::FunctionType* string_create_type = llvm::FunctionType::get(ptr_t, { ptr_t, int64_t }, false);
     this->string_create_func = new llvm::FunctionCallee();
     *(this->string_create_func) = this->getOrInsertFunction("string_create", string_create_type);
@@ -61,6 +65,20 @@ void TythonModule::initialize() {
     llvm::FunctionType* tython_throw_type_error_type = llvm::FunctionType::get(void_t, { this->specialization_type, int32_t }, false);
     this->tython_throw_type_error_func = new llvm::FunctionCallee();
     *(this->tython_throw_type_error_func) = this->getOrInsertFunction("throw_type_error", tython_throw_type_error_type);
+
+    /*
+     * Visible API functions (user-accessible)
+     */
+
+    llvm::FunctionType* tython_box_type = llvm::FunctionType::get(this->specialization_type, { this->specialization_type }, false);
+    this->tython_box_func = new llvm::FunctionCallee();
+    *(this->tython_box_func) = this->getOrInsertFunction("box", tython_box_type);
+    registerProcedure((llvm::Function*)this->tython_box_func->getCallee(), "box"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
+    llvm::FunctionType* tython_str_type = llvm::FunctionType::get(this->specialization_type, { this->specialization_type }, false);
+    this->tython_str_func = new llvm::FunctionCallee();
+    *(this->tython_str_func) = this->getOrInsertFunction("str", tython_str_type);
+    registerProcedure((llvm::Function*)this->tython_str_func->getCallee(), "str"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
     llvm::FunctionType* tython_ewout_type = llvm::FunctionType::get(void_t, { this->specialization_type }, false);
     this->tython_ewout_func = new llvm::FunctionCallee();
@@ -111,11 +129,15 @@ void TythonModule::initialize() {
     *(tython_list_constructor_func) = this->getOrInsertFunction("list", tython_list_constructor_type);
     registerProcedure((llvm::Function*)tython_list_constructor_func->getCallee(), "list"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
+    /*
+     * Basicland functions
+     */
+
     llvm::FunctionType* object_is_truthy_type = llvm::FunctionType::get(int64_t, {ptr_t }, false);
     this->object_is_truthy_func = new llvm::FunctionCallee();
     *(this->object_is_truthy_func) = this->getOrInsertFunction("object_is_truthy", object_is_truthy_type);
 
-    llvm::FunctionType* resolve_builtin_method_type = llvm::FunctionType::get(ptr_t, {ptr_t, ptr_t }, false);
+    llvm::FunctionType* resolve_builtin_method_type = llvm::FunctionType::get(ptr_t, { ptr_t, ptr_t }, false);
     this->resolve_builtin_method_func = new llvm::FunctionCallee();
     *(this->resolve_builtin_method_func) = this->getOrInsertFunction("resolve_builtin_method", resolve_builtin_method_type);
 

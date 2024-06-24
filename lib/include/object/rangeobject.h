@@ -51,4 +51,13 @@ typedef struct range_iterator_object_t {
  */
 object* range_create(object* start, object* end, object* step);
 
+/**
+ * Creates an range object instance with its parameters set to the specified start, end and step size.
+ * @param start The starting point of the range.
+ * @param end The ending point of the range.
+ * @param step The step size of the range.
+ * @return Returns a new range object instance with its parameters set to the specified start, end and step size.
+ */
+object* range_create_primitive(long long int start, long long int end, long long int step);
+
 #endif //TYTHON_RANGEOBJECT_H

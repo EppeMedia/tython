@@ -8,6 +8,7 @@
 #include "object/stringobject.h"
 #include "object/floatobject.h"
 #include "object/integerobject.h"
+#include "error/error.h"
 
 char* to_cstr(string_object* string_obj) {
 
@@ -53,7 +54,7 @@ object* string_length(object* str) {
 
     size_t length = AS_STRING(str)->length;
 
-    return float_create(length);
+    return int_create(length);
 }
 
 /**
@@ -78,6 +79,33 @@ static object* identity(object* str) {
     return str;
 }
 
+static object* string_concat(object* str, object* rhs) {
+
+    assert(IS_STRING(str));
+
+    // make sure rhs has a string representation
+    if (!rhs->type->str) {
+        type_error();
+    }
+
+    string_object* lhs_str = AS_STRING(str);
+    string_object* rhs_str = AS_STRING(rhs->type->str(rhs));
+
+    // create a buffer large enough for the concatenated string
+    const size_t len = lhs_str->length + rhs_str->length;
+    char buf[len];
+
+    // copy the contents of the string buffers
+    memcpy(buf, lhs_str->str, lhs_str->length);
+    memcpy(buf + lhs_str->length, rhs_str->str, rhs_str->length);
+
+    return string_create(buf, len);
+}
+
+static number_functions string_number_functions = {
+        .add            = &string_concat,
+};
+
 static sequence_functions string_sequence_functions = {
     .length = &string_length,
 };
@@ -101,7 +129,7 @@ type_object string_type = {
         .str                = &identity,
         .hash               = &string_hash,
 
-        .number_functions   = NULL,
+        .number_functions   = &string_number_functions,
         .mapping_functions  = NULL,
         .sequence_functions = &string_sequence_functions,
 

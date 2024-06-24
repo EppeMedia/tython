@@ -57,6 +57,19 @@ bool Context::isLoop() const {
     return this->flags & TYTHON_CONTEXT_FLAG_LOOP;
 }
 
+Context* Context::getEnclosingLoop() {
+
+    if (this->isGlobal()) {
+        return nullptr;
+    }
+
+    if (this->isLoop()) {
+        return this;
+    }
+
+    return this->parent->getEnclosingLoop();
+}
+
 bool Context::isLexicalBlock() const {
     return this->flags & TYTHON_CONTEXT_FLAG_LEX_BLOCK;
 }

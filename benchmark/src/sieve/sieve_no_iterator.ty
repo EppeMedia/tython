@@ -1,0 +1,30 @@
+# Adapted from https://www.geeksforgeeks.org/python-program-for-sieve-of-eratosthenes/
+
+def SieveOfEratosthenes(num):
+
+    prime = []
+    i = 0
+    while i < num + 1:
+        prime.append(True)
+        i += 1
+
+    p = 2
+    while (p * p <= num):
+
+        if (prime[p] == True):
+            j = p * p
+            while j < num + 1: # range(p * p, num+1, p):
+                prime[j] = False
+                j += p
+        p += 1
+
+    count = 0
+    k = 2
+    while k < num + 1: # in range(2, num+1):
+        if prime[k]:
+            count += 1
+        k += 1
+
+    print("count: " + str(count))
+
+SieveOfEratosthenes(1000000)

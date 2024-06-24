@@ -126,6 +126,16 @@ static object* float_div(object* lhs, object* rhs) {
     return TO_FLOAT(lhs_obj->value / rhs_obj->value);
 }
 
+static object* float_floor_div(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_INT((long long int)(lhs_obj->value / rhs_obj->value));
+}
+
 static object* float_exp(object* lhs, object* rhs) {
 
     assert(IS_FLOAT(lhs));
@@ -134,6 +144,16 @@ static object* float_exp(object* lhs, object* rhs) {
     float_object* rhs_obj = convert_to_float(rhs);
 
     return TO_FLOAT(pow(lhs_obj->value, rhs_obj->value));
+}
+
+static object* float_mod(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    return TO_FLOAT((long long int)lhs_obj->value % (long long int)rhs_obj->value);
 }
 
 static number_functions float_number_functions = {
@@ -145,7 +165,9 @@ static number_functions float_number_functions = {
     .sub                = &float_sub,
     .mult               = &float_mult,
     .div                = &float_div,
+    .floor_div          = &float_floor_div,
     .exp                = &float_exp,
+    .mod                = &float_mod,
 } ;
 
 type_object float_type = {

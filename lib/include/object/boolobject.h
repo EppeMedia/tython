@@ -18,8 +18,8 @@ typedef struct bool_object_t {
 
 } bool_object;
 
-#define IS_BOOL(instance) (instance->type == &bool_type)
-#define AS_BOOL(instance) ((bool_object*)instance)
+#define IS_BOOL(instance) ((instance)->type == &bool_type)
+#define AS_BOOL(instance) ((bool_object*)(instance))
 
 /**
  * Creates a boolean object instance with the value set to {v}.
@@ -28,11 +28,11 @@ typedef struct bool_object_t {
  */
 object* bool_create(bool v);
 
-#define TO_BOOL(value)    (bool_create(value))
-
 extern bool_object bool_true, bool_false;
 
-#define TYTHON_TRUE ((object*)&bool_true)
-#define TYTHON_FALSE ((object*)&bool_false)
+#define TYTHON_TRUE ((struct object_t*)&bool_true)
+#define TYTHON_FALSE ((struct object_t*)&bool_false)
+
+#define TO_BOOL(value)    ((value) ? TYTHON_TRUE : TYTHON_FALSE)
 
 #endif //TYTHON_BOOLOBJECT_H

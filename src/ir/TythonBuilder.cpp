@@ -42,7 +42,9 @@ void TythonBuilder::initFirstClassTypes() {
         ptr_t,      // sub      (function ptr)
         ptr_t,      // mult     (function ptr)
         ptr_t,      // div      (function ptr)
+        ptr_t,      // floor_div(function ptr)
         ptr_t,      // exp      (function ptr)
+        ptr_t,      // mod      (function ptr)
     };
 
     this->number_functions_type = llvm::StructType::get(this->getContext(), number_functions_types, "Object.Number.Functions");
@@ -631,6 +633,34 @@ llvm::Value *TythonBuilder::CreateTythonDiv(llvm::Value *lhs, llvm::Value *rhs) 
     return this->CreateBinop(lhs, rhs, specialized_int_handler, specialized_float_handler, runtime_handler);
 }
 
+llvm::Value *TythonBuilder::CreateTythonFloorDiv(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto specialized_int_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
+
+        const auto content = this->CreateSDiv(lhs_primitive, rhs_primitive, "floor_div");
+
+        return this->CreateSpecInstance(SPEC_INT, content, "floor_div_spec_int");
+    };
+
+    const auto specialized_float_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
+
+        const auto content = this->CreateFDiv(lhs_primitive, rhs_primitive, "floor_div");
+
+        // truncate to int
+        const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
+        const auto convert = this->CreateFPToSI(content, int64_t, "convert");
+
+        return this->CreateSpecInstance(SPEC_INT, convert, "floor_div_float_spec");
+    };
+
+    const auto runtime_handler = [this](llvm::Value* lhs, llvm::Value* rhs) -> llvm::Value* {
+        const auto content = this->CreateBinaryNumberFunctionCall(7, lhs, rhs);
+        return this->CreateSpecInstance(SPEC_OBJECT, content, "floor_div_obj_spec");
+    };
+
+    return this->CreateBinop(lhs, rhs, specialized_int_handler, specialized_float_handler, runtime_handler);
+}
+
 llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) {
 
     /*
@@ -667,9 +697,35 @@ llvm::Value *TythonBuilder::CreateTythonExp(llvm::Value *lhs, llvm::Value *rhs) 
     const auto runtime_handler = [this](llvm::Value* lhs, llvm::Value* rhs) -> llvm::Value* {
 
         // it is probably faster to avoid a call to spec_pow and just resolve the LHS type's function indirection in IR:
-        const auto content = this->CreateBinaryNumberFunctionCall(7, lhs, rhs);
+        const auto content = this->CreateBinaryNumberFunctionCall(8, lhs, rhs);
 
         return this->CreateSpecInstance(SPEC_OBJECT, content);
+    };
+
+    return this->CreateBinop(lhs, rhs, specialized_int_handler, specialized_float_handler, runtime_handler);
+}
+
+llvm::Value *TythonBuilder::CreateTythonMod(llvm::Value *lhs, llvm::Value *rhs) {
+
+    const auto specialized_int_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
+
+        const auto content = this->CreateSRem(lhs_primitive, rhs_primitive, "mod");
+
+        return this->CreateSpecInstance(SPEC_INT, content, "mod_spec_int");
+    };
+
+    const auto specialized_float_handler = [this](llvm::Value* lhs_primitive, llvm::Value* rhs_primitive) -> llvm::Value* {
+
+        const auto content = this->CreateFRem(lhs_primitive, rhs_primitive, "mod");
+
+        return this->CreateSpecInstance(SPEC_FLOAT, content, "mod_float_spec");
+    };
+
+    const auto runtime_handler = [this](llvm::Value* lhs, llvm::Value* rhs) -> llvm::Value* {
+
+        const auto content = this->CreateBinaryNumberFunctionCall(9, lhs, rhs);
+
+        return this->CreateSpecInstance(SPEC_OBJECT, content, "mod_obj_spec");
     };
 
     return this->CreateBinop(lhs, rhs, specialized_int_handler, specialized_float_handler, runtime_handler);
@@ -740,19 +796,19 @@ llvm::Value *TythonBuilder::CreateRichCmp(llvm::Value *lhs, llvm::Value *rhs, in
                 break;
 
             case TYTHON_CMP_OP_GT:
-                predicate = llvm::CmpInst::Predicate::ICMP_UGT;
+                predicate = llvm::CmpInst::Predicate::ICMP_SGT;
                 break;
 
             case TYTHON_CMP_OP_GTE:
-                predicate = llvm::CmpInst::Predicate::ICMP_UGE;
+                predicate = llvm::CmpInst::Predicate::ICMP_SGE;
                 break;
 
             case TYTHON_CMP_OP_LT:
-                predicate = llvm::CmpInst::Predicate::ICMP_ULT;
+                predicate = llvm::CmpInst::Predicate::ICMP_SLT;
                 break;
 
             case TYTHON_CMP_OP_LTE:
-                predicate = llvm::CmpInst::Predicate::ICMP_ULE;
+                predicate = llvm::CmpInst::Predicate::ICMP_SLE;
                 break;
 
             case TYTHON_CMP_OP_NEQ:
@@ -903,6 +959,21 @@ llvm::Value *TythonBuilder::CreateNoneSpec() {
     return this->CreateSpecInstance(SPEC_OBJECT, this->none_object_instance);
 }
 
+llvm::Value *TythonBuilder::CreateBoolObject(bool truthiness) {
+
+    auto int64_t = llvm::IntegerType::getInt64Ty(this->module->getContext());
+
+    llvm::Value* content;
+
+    if (truthiness) {
+        content = llvm::ConstantInt::get(int64_t, 1, true);
+    } else {
+        content = llvm::ConstantInt::get(int64_t, 0, true);
+    }
+
+    return this->CreateCall(*this->module->bool_create_func, { content }, "boolobject");
+}
+
 llvm::Value *TythonBuilder::CreateIntObject(llvm::Value *content) {
 
     if (!content->getType()->isIntegerTy()) {
@@ -940,9 +1011,33 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
         llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->module->specialization_type);
         alloc = new llvm::GlobalVariable(*this->module, this->module->specialization_type, false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
 
+    } else if (auto loopContext = this->current_context->getEnclosingLoop()) { // check if we are nested in a loop
+
+        // go to the top-level loop;
+        ::Context* parentLoop = nullptr;
+        ::Context* it = loopContext;
+        while ((it = it->parent)) {
+            if (it->isLoop()) {
+                parentLoop = it;
+            }
+        }
+
+        if (parentLoop) {
+            loopContext = parentLoop;
+        }
+
+        // do not allocate in loops! We will hop into the loop preheader and allocate there instead
+        const auto current_bb = this->GetInsertBlock();
+        const auto current_insert = this->GetInsertPoint();
+
+        this->SetInsertPoint(loopContext->entry, loopContext->entry->begin());
+
+        alloc = this->CreateAlloca(this->module->specialization_type, nullptr, name);
+
+        this->SetInsertPoint(current_bb, current_insert);
+
     } else {
 
-        // todo: this grows stack space unchecked if it's in a loop. In loops, we should avoid allocation (or save and restore the stack frame for each iteration...)
         alloc = this->CreateAlloca(this->module->specialization_type, nullptr, name);
     }
 
@@ -1168,10 +1263,10 @@ llvm::Value *TythonBuilder::CreateSpecInstance() {
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
-    const auto neg1 = llvm::ConstantInt::get(int32_t, -1);
-    const auto zero64 = llvm::ConstantInt::get(int64_t, 0);
+    const auto undef32 = llvm::UndefValue::get(int32_t);
+    const auto undef64 = llvm::UndefValue::get(int64_t);
 
-    return llvm::ConstantStruct::get(this->module->specialization_type, { neg1, zero64 });
+    return llvm::ConstantStruct::get(this->module->specialization_type, { undef32, undef64} );
 }
 
 llvm::Value* TythonBuilder::CreateSpecInstance(int32_t type_tag, llvm::Value *value, std::string name, bool forceGlobal) {

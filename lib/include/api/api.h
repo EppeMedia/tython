@@ -13,7 +13,7 @@
 
 typedef struct specialization {
 
-    uint32_t tag;
+    int32_t tag;
 
     union {
         long long integer;
@@ -27,13 +27,21 @@ typedef struct specialization {
  * Hidden API functions *
  ************************/
 
-void throw_type_error(specialization_t subject, uint32_t expected_type);
+void throw_type_error(specialization_t subject, int32_t expected_type);
 
 specialization_t spec_pow(specialization_t base, specialization_t exponent);
 
 /*************************
  * Visible API functions *
  *************************/
+
+/**
+ * Creates object wrappers for primitive types. Returns a specialization struct containing the object wrapper.<br>
+ * If the specified specialization is already an object type, this is effectively a no-op.
+ * @param spec The specialization to box.
+ * @return Returns an specialization struct containing the object representation of the specified specialization.
+ */
+specialization_t box(specialization_t spec);
 
 /**
  * Warning/Error OUT. Prints the specified value over stderr.
@@ -110,5 +118,11 @@ specialization_t slice(specialization_t start, specialization_t end, specializat
  * @return Returns a new list containing the ordered elements of the iterable object. Order is determined by the object's iterator.
  */
 specialization_t list(specialization_t obj);
+
+/*
+ * Creates a string representation of the specified specialization instance.
+ * @return Returns a new string instance, representing the specified specialization instance.
+ */
+specialization_t str(specialization_t spec);
 
 #endif //TYTHON_API_H

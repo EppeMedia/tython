@@ -120,7 +120,19 @@ static object* int_mul(object* lhs, object* rhs) {
 
 static object* int_div(object* lhs, object* rhs) {
 
-    assert(IS_INT(lhs) && IS_INT(rhs));
+    assert(IS_INT(lhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value / rhs_obj->value);
+}
+
+static object* int_floor_div(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs));
 
     int_object* lhs_obj = AS_INT(lhs);
 
@@ -132,7 +144,7 @@ static object* int_div(object* lhs, object* rhs) {
 
 static object* int_exp(object* lhs, object* rhs) {
 
-    assert(IS_INT(lhs) && IS_INT(rhs));
+    assert(IS_INT(lhs));
 
     int_object* lhs_obj = AS_INT(lhs);
 
@@ -140,6 +152,18 @@ static object* int_exp(object* lhs, object* rhs) {
     int_object* rhs_obj = convert_to_int(rhs);
 
     return TO_INT(pow((double)lhs_obj->value, (double)rhs_obj->value));
+}
+
+static object* int_mod(object* lhs, object* rhs) {
+
+    assert(IS_INT(lhs));
+
+    int_object* lhs_obj = AS_INT(lhs);
+
+    // left-hand side is leading in type, so we will try to convert the rhs value into an integer
+    int_object* rhs_obj = convert_to_int(rhs);
+
+    return TO_INT(lhs_obj->value % rhs_obj->value);
 }
 
 static number_functions int_number_functions = {
@@ -151,7 +175,9 @@ static number_functions int_number_functions = {
         .sub                = &int_sub,
         .mult               = &int_mul,
         .div                = &int_div,
+        .floor_div          = &int_floor_div,
         .exp                = &int_exp,
+        .mod                = &int_mod,
 } ;
 
 type_object int_type = {

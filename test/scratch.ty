@@ -361,6 +361,7 @@
 
 #print(result)
 
-a = 24.79653854475821717
-b = a ** 0.5
-print(b)
+a = []
+a.append("Hello")
+print(a)
+

@@ -127,27 +127,11 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitLbl_dec_prefix(TythonParser::Lbl_dec_prefixContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitLbl_dec_suffix(TythonParser::Lbl_dec_suffixContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -163,10 +147,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -175,11 +155,39 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) override {
+  virtual std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) override {
+  virtual std::any visitLbl_mod_expr(TythonParser::Lbl_mod_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -191,7 +199,7 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *ctx) override {
+  virtual std::any visitLbl_floor_div_expr(TythonParser::Lbl_floor_div_exprContext *ctx) override {
     return visitChildren(ctx);
   }
 

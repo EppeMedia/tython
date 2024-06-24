@@ -153,21 +153,36 @@ public:
     llvm::Value* CreateTythonMult(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
- * Generates the instructions to numerically divide two Tython objects.
- * @param lhs The lhs object of the division.
- * @param rhs The rhs object of the division.
- * @return Returns a reference to the result of the division of the specified lhs and rhs.
- */
+     * Generates the instructions to numerically divide two two numbers.
+     * @param lhs The lhs object of the division.
+     * @param rhs The rhs object of the division.
+     * @return Returns a reference to the result of the division of the specified lhs and rhs.
+     */
     llvm::Value* CreateTythonDiv(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
- * Generates the instructions to numerically exponentiate the lhs (base) object by the rhs (exponent) object.
- * @param lhs The lhs object (base) of the exponentiation.
- * @param rhs The rhs object of the exponent.
- * @return Returns a reference to the result of the exponentiation of the specified lhs (base) and rhs (exponent).
- */
+     * Generates the instructions to numerically floor-divide two numbers.
+     * @param lhs The lhs object of the floor division.
+     * @param rhs The rhs object of the floor division.
+     * @return Returns a reference to the result of the floor division of the specified lhs and rhs.
+     */
+    llvm::Value* CreateTythonFloorDiv(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
+     * Generates the instructions to numerically exponentiate the lhs (base) object by the rhs (exponent) object.
+     * @param lhs The lhs object (base) of the exponentiation.
+     * @param rhs The rhs object of the exponent.
+     * @return Returns a reference to the result of the exponentiation of the specified lhs (base) and rhs (exponent).
+     */
     llvm::Value* CreateTythonExp(llvm::Value* lhs, llvm::Value* rhs);
 
+    /**
+     * Generates the instructions to take the modulo of two numbers.
+     * @param lhs The lhs object of the modulo.
+     * @param rhs The rhs object of the modulo.
+     * @return Returns a reference to the result of the modulo of the specified lhs and rhs.
+     */
+    llvm::Value* CreateTythonMod(llvm::Value* lhs, llvm::Value* rhs);
     /**
      * Generates the instructions to perform a rich comparison between to the specified objects.
      * @param lhs The left-hand side of the comparison operation.
@@ -211,6 +226,13 @@ public:
      * Creates a specialization struct around the global none instance.
      */
     llvm::Value* CreateNoneSpec();
+
+    /**
+     * Generates the instructions to create a new boolean object instance for the specified boolean truthiness.
+     * @param truthiness The boolean value to create a boolean object for.
+     * @return Returns a reference to the new boolean object.
+     */
+    llvm::Value* CreateBoolObject(bool truthiness);
 
     /**
      * Generates the instructions to create a new integer object instance for the specified integer value.

@@ -19,6 +19,7 @@ private:
 
     llvm::FunctionCallee* float_create_func;
     llvm::FunctionCallee* int_create_func;
+    llvm::FunctionCallee* bool_create_func;
     llvm::FunctionCallee* string_create_func;
     llvm::FunctionCallee* dict_create_func;
     llvm::FunctionCallee* list_create_func;
@@ -32,6 +33,7 @@ private:
     // API
     llvm::FunctionCallee* tython_throw_type_error_func;
     llvm::FunctionCallee* tython_spec_pow;
+    llvm::FunctionCallee* tython_box_func;
     llvm::FunctionCallee* tython_print_func;
     llvm::FunctionCallee* tython_ewout_func;
     llvm::FunctionCallee* tython_range_func;
@@ -41,6 +43,7 @@ private:
     llvm::FunctionCallee* tython__set__func;
     llvm::FunctionCallee* tython_len_func;
     llvm::FunctionCallee* tython_slice_func;
+    llvm::FunctionCallee* tython_str_func;
 
     std::map<std::string, llvm::Function*> function_shadow_symbol_table;
 
@@ -57,6 +60,7 @@ public:
             specialization_type(nullptr),
             float_create_func(nullptr),
             int_create_func(nullptr),
+            bool_create_func(nullptr),
             string_create_func(nullptr),
             dict_create_func(nullptr),
             list_create_func(nullptr),
@@ -70,6 +74,7 @@ public:
             tython__set__func(nullptr),
             tython_len_func(nullptr),
             tython_slice_func(nullptr),
+            tython_str_func(nullptr),
             tuple_create_func(nullptr),
             object_is_truthy_func(nullptr),
             resolve_builtin_method_func(nullptr),

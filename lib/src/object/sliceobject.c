@@ -10,6 +10,7 @@
 #include "object/stringobject.h"
 #include "object/boolobject.h"
 #include "object/noneobject.h"
+#include "error/error.h"
 
 object* slice_create(object* start, object* end, object* step) {
 
@@ -73,12 +74,22 @@ static object* slice_to_bool(object* object) {
 
     slice_object* slice_obj = AS_SLICE(object);
 
-    return TO_BOOL(slice_obj->start < slice_obj->end);
+    if (!slice_obj->end->type->number_functions || !slice_obj->end->type->number_functions->to_int) {
+        type_error();
+    }
+
+    int_object* end_obj = AS_INT(slice_obj->end->type->number_functions->to_int(slice_obj->end));
+
+    return TO_BOOL(slice_obj->start < end_obj->value);
 }
 
 static inline bool slice_eq(slice_object* lhs, slice_object* rhs) {
+
+    int_object* lhs_end_obj = AS_INT(lhs->end->type->number_functions->to_int(lhs->end));
+    int_object* rhs_end_obj = AS_INT(rhs->end->type->number_functions->to_int(rhs->end));
+
     return lhs->start == rhs->start
-        && lhs->end == rhs->end
+        && lhs_end_obj->value == rhs_end_obj->value
         && lhs->step == rhs->step;
 }
 

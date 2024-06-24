@@ -23,8 +23,6 @@ bool object_is_truthy(object* obj) {
 
     object* bool_obj = (*nf->to_bool)(obj);
 
-    assert(IS_BOOL(bool_obj));
-
     return AS_BOOL(bool_obj)->value;
 }
 

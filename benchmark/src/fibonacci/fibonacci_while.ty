@@ -20,7 +20,6 @@ def fib(n):
             j += 1
 
         sum += a
-
     print(sum)
 
 fib(20)

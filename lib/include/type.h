@@ -139,7 +139,9 @@ typedef struct number_functions_t {
     binary_f sub;   // subtracts the right-hand argument from the first-hand argument
     binary_f mult;  // multiplies lhs with rhs
     binary_f div;   // divides lhs by rhs
+    binary_f floor_div;   // floor-divides lhs by rhs
     binary_f exp;   // exponentiates lhs by rhs
+    binary_f mod;   // modulo: lhs mod rhs
 
 } number_functions;
 

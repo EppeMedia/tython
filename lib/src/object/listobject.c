@@ -342,10 +342,7 @@ static object* list_iterator_next(object* obj) {
     object* e = *list_subscript(AS_OBJECT(it->list_obj), it->idx);
 
     // increment index
-    it->idx = TO_INT(AS_INT(it->idx)->value + 1);
-
-    // todo: release old idx object
-    GRAB_OBJECT(it->idx);
+    AS_INT(it->idx)->value++;
 
     return e;
 }

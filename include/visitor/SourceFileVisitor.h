@@ -88,8 +88,10 @@ public:
     std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) override;
     std::any visitLbl_mult_expr(TythonParser::Lbl_mult_exprContext *ctx) override;
     std::any visitLbl_div_expr(TythonParser::Lbl_div_exprContext *ctx) override;
+    std::any visitLbl_floor_div_expr(TythonParser::Lbl_floor_div_exprContext *ctx) override;
     std::any visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) override;
     std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) override;
+    std::any visitLbl_mod_expr(TythonParser::Lbl_mod_exprContext *ctx) override;
 
     std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) override;
     std::any visitLbl_or_expr(TythonParser::Lbl_or_exprContext *ctx) override;
