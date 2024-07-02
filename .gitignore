@@ -21,7 +21,7 @@ exec
 *.ll
 *.out
 
-benchmark/bin
+benchmarks/tython
 cmake-build-release/
 cmake-release/
 src/grammar/gen/

@@ -1,0 +1,46 @@
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive & 1.2283 & 1.2598 & 1.2505 & 1.3210 & 0.0010 \\
+\midrule
+fibonacci\_while & 1.1963 & 1.2561 & 1.2357 & 1.3219 & 0.0021 \\
+\midrule
+nbody & 1.6105 & 1.6379 & 1.6323 & 1.6866 & 0.0006 \\
+\midrule
+nqueens & 2.2326 & 2.2628 & 2.2542 & 2.3072 & 0.0006 \\
+\midrule
+pi & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+quicksort & 1.5144 & 1.5410 & 1.5418 & 1.5563 & 0.0001 \\
+\midrule
+sieve & 2.2668 & 2.2987 & 2.2973 & 2.3249 & 0.0003 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Codon (interpreted).}\label{tab:benchmark_results_codon_interpreted}
+\end{table}
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive & 0.0254 & 0.0274 & 0.0273 & 0.0292 & 0.0000 \\
+\midrule
+fibonacci\_while & 0.0099 & 0.0107 & 0.0109 & 0.0114 & 0.0000 \\
+\midrule
+nbody & 0.1244 & 0.1257 & 0.1256 & 0.1273 & 0.0000 \\
+\midrule
+nqueens & 0.6957 & 0.7213 & 0.7262 & 0.7321 & 0.0001 \\
+\midrule
+pi & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+quicksort & 0.2723 & 0.2769 & 0.2770 & 0.2824 & 0.0000 \\
+\midrule
+sieve & 1.0315 & 1.0420 & 1.0389 & 1.0578 & 0.0001 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Codon (compiled).}\label{tab:benchmark_results_codon_compiled}
+\end{table}

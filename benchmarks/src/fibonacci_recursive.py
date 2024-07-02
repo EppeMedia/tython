@@ -4,9 +4,9 @@ def fib(n):
     if n == 0:
         return 0
 
-    else if n == 1:
+    elif n == 1:
         return 1
-    else if n == 2:
+    elif n == 2:
         return 1
 
     else:
@@ -16,7 +16,7 @@ def bench(n):
 
     sum = 0
 
-    for i in range(0, 174000, 1):
+    for i in range(0, 1000, 1):
         sum += fib(n)
 
     print(sum)
