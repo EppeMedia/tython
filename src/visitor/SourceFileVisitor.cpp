@@ -288,7 +288,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto int64_t = llvm::IntegerType::getInt64Ty(this->module->getContext());
         auto v = llvm::ConstantInt::get(int64_t, raw, true);
 
-        if (builder->config->no_specialize.has_value()) {
+        if (builder->config->no_specialize) {
 
             const auto integer_object = this->builder->CreateIntObject(v);
 
@@ -303,7 +303,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
         auto double_t = llvm::Type::getDoubleTy(this->module->getContext());
         auto v = llvm::ConstantFP::get(double_t, raw);
 
-        if (builder->config->no_specialize.has_value()) {
+        if (builder->config->no_specialize) {
 
             const auto float_object = this->builder->CreateFloatObject(v);
 
@@ -338,7 +338,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
     } else if (ctx->TRUE_LIT()) {
 
 
-        if (builder->config->no_specialize.has_value()) {
+        if (builder->config->no_specialize) {
 
             const auto bool_obj = this->builder->CreateBoolObject(true);
 
@@ -352,7 +352,7 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
     } else if (ctx->FALSE_LIT()) {
 
-        if (builder->config->no_specialize.has_value()) {
+        if (builder->config->no_specialize) {
 
             const auto bool_obj = this->builder->CreateBoolObject(false);
 

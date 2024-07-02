@@ -204,11 +204,22 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
 
-    const auto lhs_type_tag = this->getTag(lhs);
     const auto lhs_value = this->getContent(lhs);
-
-    const auto rhs_type_tag = this->getTag(rhs);
     const auto rhs_value = this->getContent(rhs);
+
+    if (config->no_guards && config->no_specialize) {
+
+        // delegate to runtime handler
+        const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+        const auto lhs_value_cast = this->CreateIntToPtr(lhs_value, ptr_t);
+        const auto rhs_value_cast = this->CreateIntToPtr(rhs_value, ptr_t);
+
+        return dynamic_runtime_handler(lhs_value_cast, rhs_value_cast);
+    }
+
+    const auto lhs_type_tag = this->getTag(lhs);
+    const auto rhs_type_tag = this->getTag(rhs);
 
     /*
      * The LHS is dictating in the Python language spec, where the type of the RHS of the binop must convert to the type of the LHS (or a type error occurs).
@@ -1331,6 +1342,20 @@ llvm::Value* TythonBuilder::CreateTypeGuard(llvm::Value *guardee,
                                             const std::function<llvm::Value* (llvm::Value*)> &int_handler,
                                             const std::function<llvm::Value* (llvm::Value*)> &float_handler,
                                             const std::function<llvm::Value* (llvm::Value*)> &object_handler) {
+
+    if (config->no_guards && config->no_specialize) {
+
+        if (!object_handler) {
+            throw CompileException("Cannot create an unguarded operation without an object handler!");
+        }
+
+        const auto ptr_t = llvm::PointerType::get(this->getContext(), 0);
+
+        const auto object = this->getContent(guardee);
+        const auto object_ptr = this->CreateIntToPtr(object, ptr_t);
+
+        return object_handler(object_ptr);
+    }
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());

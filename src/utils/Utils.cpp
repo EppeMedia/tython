@@ -209,6 +209,7 @@ namespace utils {
             .link_objects = getFlagArguments(argc, argv, { FLAG_LINK_OBJECTS, FLAG_LINK_OBJECTS_SHORT }),
             .emit_llvm = getFlagArgument(argc, argv, FLAG_EMIT_LLVM),
             .no_specialize = hasFlag(argc, argv, { FLAG_NO_SPECIALIZE, FLAG_NO_SPECIALIZE_SHORT }),
+            .no_guards = hasFlag(argc, argv, { FLAG_NO_TYPE_GUARDS }),
             .debug = hasFlag(argc, argv, { FLAG_EMIT_DEBUG, FLAG_EMIT_DEBUG_SHORT }),
         };
     }

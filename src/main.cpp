@@ -304,6 +304,10 @@ int main(int argc, char **argv) {
         std::cerr << "Warning: garbage collection is disabled in this build." << std::endl;
 #endif
 
+    if (configuration.no_guards && !configuration.no_specialize) {
+        std::cerr << "Warning: --no-guards flag is set, but has no effect without --no-specialize also set." << std::endl;
+    }
+
     // initialize compilation target
     init_target();
 

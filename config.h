@@ -27,10 +27,11 @@
 #define FLAG_BUILD_DIR_SHORT        "-b"
 #define FLAG_OUTPUT                 "--out"             // specifies the executable artefact's filename
 #define FLAG_OUTPUT_SHORT           "-o"
-#define FLAG_NO_SPECIALIZE          "--no-specialize"   // determines whether or not to apply the specialization on literals
+#define FLAG_NO_SPECIALIZE          "--no-specialize"   // determines whether to apply the specialization on literals
 #define FLAG_NO_SPECIALIZE_SHORT    "-n"
+#define FLAG_NO_TYPE_GUARDS         "--no-guards"       // determines whether to generate type guards. This option is only applied if the --no-specialize flag is also set.
 
-#define MSG_HELP                    "USAGE: tython <src...> <options>\n\nWhere <src...> are the space-separated (relative) paths to the tython source files. Does not support directories.\n\nOPTIONS:\n\n--help, -?, -🤔: Display this help message and exit.\n\n--verbose, -v: Print more messages to STD out.\n\n--main, -m <src>: Specifies the artefact entry point. If the target artefact is an executable, exactly one source file must be specified as the entry point. Note: if the specified source file is also included in the list of sources (the first compiler argument <src...>), it is not compiled twice, and its order or inclusion is still the order of inclusion as specified in the first argument.\n\n--build-dir, -b <directory>: Specifies a custom path for build artefacts (default is ./build).\n\n--out, -o <filename>: Specifies the output filename.\n\n-emit-llvm <filename>: Writes the generated LLVM IR to the specified directory.\n\n--debug, -d: Include debug symbols in the executable artefact, and disable optimizations.\n\n--link <filename...>, -l <filename...>: Specifies the object files to include in linking.\n\n--no-specialize, -n: Do not create specialized values for literals."
+#define MSG_HELP                    "USAGE: tython <src...> <options>\n\nWhere <src...> are the space-separated (relative) paths to the tython source files. Does not support directories.\n\nOPTIONS:\n\n--help, -?, -🤔: Display this help message and exit.\n\n--verbose, -v: Print more messages to STD out.\n\n--main, -m <src>: Specifies the artefact entry point. If the target artefact is an executable, exactly one source file must be specified as the entry point. Note: if the specified source file is also included in the list of sources (the first compiler argument <src...>), it is not compiled twice, and its order or inclusion is still the order of inclusion as specified in the first argument.\n\n--build-dir, -b <directory>: Specifies a custom path for build artefacts (default is ./build).\n\n--out, -o <filename>: Specifies the output filename.\n\n-emit-llvm <filename>: Writes the generated LLVM IR to the specified directory.\n\n--debug, -d: Include debug symbols in the executable artefact, and disable optimizations.\n\n--link <filename...>, -l <filename...>: Specifies the object files to include in linking.\n\n--no-specialize, -n: Do not create specialized values for literals.\n\n--no-guards: Do not generate type guards. This option is only applied if the --no-specialize flag is also set."
 
 using namespace std;
 typedef struct configuration {
@@ -43,6 +44,7 @@ typedef struct configuration {
     optional<vector<string>> link_objects;
     optional<optional<string>> emit_llvm;          // may be specified as just a flag
     optional<string> no_specialize;
+    optional<string> no_guards;
     optional<string> debug;
 } configuration_t;
 

@@ -361,7 +361,5 @@
 
 #print(result)
 
-a = []
-a.append("Hello")
-print(a)
 
+print(41 + 1)
