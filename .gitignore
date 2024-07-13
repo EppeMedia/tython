@@ -27,3 +27,5 @@ cmake-release/
 src/grammar/gen/
 
 .gdbinit
+
+**/*.aux

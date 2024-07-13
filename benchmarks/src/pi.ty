@@ -2,38 +2,42 @@
 
 LIMIT = 2800
 
-for k in range(0, 100):
+def bench(limit):
 
-    r = []; # len(r) will be LIMIT + 1
-    i = 0
-    b = 0
-    c = 0
+    for k in range(0, 100):
 
-    for _ in range(0, LIMIT):
-        r.append(2000)
+        r = []; # len(r) will be limit + 1
+        i = 0
+        b = 0
+        c = 0
 
-    r.append(0)
+        for _ in range(0, limit):
+            r.append(2000)
 
-    result = []
+        r.append(0)
 
-    for k in range(LIMIT, 0, -14):
+        result = []
 
-        d = 0
-        i = k
+        for k in range(limit, 0, -14):
 
-        while True:
+            d = 0
+            i = k
 
-            d += r[i] * 10000
-            b = 2 * i - 1
+            while True:
 
-            r[i] = d % b
-            d = d / b
-            i -= 1
+                d += r[i] * 10000
+                b = 2 * i - 1
 
-            if (i == 0):
-                break
+                r[i] = d % b
+                d = d / b
+                i -= 1
 
-            d = d * i
+                if (i == 0):
+                    break
 
-        result.append(c + d / 10000)
-        c = d % 10000
+                d = d * i
+
+            result.append(c + d / 10000)
+            c = d % 10000
+
+bench(LIMIT)

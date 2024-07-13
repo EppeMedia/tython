@@ -7,6 +7,7 @@ There are three prerequisite dependencies to be installed before you can build t
 1. ```spdlog```
 2. ```llvm```
 3. ```clang```
+4. ```gperftools```
 
 Additionally, make sure you have a Java runtime environment (```JRE```) installed.
 

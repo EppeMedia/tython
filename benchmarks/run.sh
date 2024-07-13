@@ -264,7 +264,7 @@ if [ $run_tython -eq 1 ]; then
 
     # Finalize the LaTeX table
     echo "\end{tabular}" >> $TYTHON_OUTPUT_FILE
-    echo "\caption{The benchmark results for Configuration$it.}\label{tab:benchmark_results$it}" >> $TYTHON_OUTPUT_FILE
+    echo "\caption{The benchmark results for Configuration$it ($ITERATIONS iterations).}\label{tab:benchmark_results$it}" >> $TYTHON_OUTPUT_FILE
     echo "\end{table}" >> $TYTHON_OUTPUT_FILE
 
   done
@@ -344,7 +344,7 @@ if [ $run_cpython -eq 1 ]; then
 
   # Finalize the LaTeX table
   echo "\end{tabular}" >> $CPYTHON_OUTPUT_FILE
-  echo "\caption{The benchmark results for CPython.}\label{tab:benchmark_results_cpython}" >> $CPYTHON_OUTPUT_FILE
+  echo "\caption{The benchmark results for CPython ($ITERATIONS iterations).}\label{tab:benchmark_results_cpython}" >> $CPYTHON_OUTPUT_FILE
   echo "\end{table}" >> $CPYTHON_OUTPUT_FILE
 
 
@@ -360,160 +360,87 @@ fi
 ## END CPYTHON ##
 #################
 
-###############################
-## START CODON (INTERPRETED) ##
-###############################
+#################
+## START CODON ##
+#################
 
-if [ $run_codon -eq 1 ]; then
+echo "+--------------------+"
+echo "| BENCHMARKING CODON |"
+echo "+--------------------+"
 
+# Initialize the LaTeX table
+echo "\noindent" >> $CODON_OUTPUT_FILE
+echo "\begin{table}[hbt]" >> $CODON_OUTPUT_FILE
+echo "\centering" >> $CODON_OUTPUT_FILE
+echo "\begin{tabular}{lllllllll}" >> $CODON_OUTPUT_FILE
 
-  echo "+--------------------+"
-  echo "| BENCHMARKING CODON |"
-  echo "+--------------------+"
-  echo "|   (interpreter)    |"
-  echo "+--------------------+"
+echo "    & \thead{Fastest \\ Time (s)} & \thead{Mean \\ Time (s)} & \thead{Median \\ Time (s)} & \thead{Max \\ Time (s)} & \thead{Variance (s\$^2\$)} \\\\" >> $CODON_OUTPUT_FILE
 
-  truncate -s 0 "$CODON_OUTPUT_FILE"
+echo "\toprule" >> $CODON_OUTPUT_FILE
 
-  # Initialize the LaTeX table
-  echo "\noindent" >> $CODON_OUTPUT_FILE
-  echo "\begin{table}[hbt]" >> $CODON_OUTPUT_FILE
-  echo "\centering" >> $CODON_OUTPUT_FILE
-  echo "\begin{tabular}{lllllllll}" >> $CODON_OUTPUT_FILE
+# Loop over all Python files in the directory
+for FILE in "$DIR_PATH"/*.py; do
 
-  echo "    & \thead{Fastest \\ Time (s)} & \thead{Mean \\ Time (s)} & \thead{Median \\ Time (s)} & \thead{Max \\ Time (s)} & \thead{Variance (s\$^2\$)} \\\\" >> $CODON_OUTPUT_FILE
+  # extract executable name
+  EXECUTABLE_NAME=$(get_filename_without_extension "$FILE")
 
-  echo "\toprule" >> $CODON_OUTPUT_FILE
+  BUILD_COMMAND="codon build -release --exe -o build/$EXECUTABLE_NAME $FILE"
 
-  # Loop over all Python files in the directory
-  for FILE in "$DIR_PATH"/*.py; do
+  echo "+---------------------+"
+  echo "| Build configuration : $BUILD_COMMAND"
+  echo "+---------------------+"
 
-    # extract executable name
-    EXECUTABLE_NAME=$(get_filename_without_extension "$FILE")
+  eval "$BUILD_COMMAND"
 
-    times=()
+  times=()
 
-    # Run the benchmark for the specified number of iterations
-      for (( i=1; i<=ITERATIONS; i++ )); do
+  # Run the benchmark for the specified number of iterations
+    for (( i=1; i<=ITERATIONS; i++ )); do
 
-        EXECUTION_TIME=$(measure_time "codon run $FILE")
-        
-        echo -e "|- $EXECUTABLE_NAME: $EXECUTION_TIME"
+      EXECUTION_TIME=$(measure_time "build/$EXECUTABLE_NAME")
 
-        times+=($EXECUTION_TIME)
+      echo "|- $EXECUTABLE_NAME: $EXECUTION_TIME"
 
-      done
-      
-      # Log the fastest time to the LaTeX table
-      escaped_name=$(escape_underscores "$EXECUTABLE_NAME")
+      times+=($EXECUTION_TIME)
 
-      # Calculate statistics
-      r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | head -n 1)
-      fastest_time=$(truncate_number "$r" 4)
-      r=$(calculate_mean "${times[@]}")
-      mean_time=$(truncate_number "$r" 4)
-      r=$(calculate_median "${times[@]}")
-      median_time=$(truncate_number "$r" 4)
-      r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | tail -n 1)
-      max_time=$(truncate_number "$r" 4)
-      r=$(calculate_variance "${times[@]}")
-      variance_time=$(truncate_number "$r" 4)
+    done
+    
+    # Log the fastest time to the LaTeX table
+    escaped_name=$(escape_underscores "$EXECUTABLE_NAME")
 
-      echo "$escaped_name & $fastest_time & $mean_time & $median_time & $max_time & $variance_time \\\\" >> $CODON_OUTPUT_FILE
-      echo "\midrule" >> $CODON_OUTPUT_FILE
+    # Calculate statistics
+    r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | head -n 1)
+    fastest_time=$(truncate_number "$r" 4)
+    r=$(calculate_mean "${times[@]}")
+    mean_time=$(truncate_number "$r" 4)
+    r=$(calculate_median "${times[@]}")
+    median_time=$(truncate_number "$r" 4)
+    r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | tail -n 1)
+    max_time=$(truncate_number "$r" 4)
+    r=$(calculate_variance "${times[@]}")
+    variance_time=$(truncate_number "$r" 4)
 
-  done
+    echo "$escaped_name & $fastest_time & $mean_time & $median_time & $max_time & $variance_time \\\\" >> $CODON_OUTPUT_FILE
+    echo "\midrule" >> $CODON_OUTPUT_FILE
 
-  # Finalize the LaTeX table
-  echo "\end{tabular}" >> $CODON_OUTPUT_FILE
-  echo "\caption{The benchmark results for Codon (interpreted).}\label{tab:benchmark_results_codon_interpreted}" >> $CODON_OUTPUT_FILE
-  echo "\end{table}" >> $CODON_OUTPUT_FILE
+done
 
-  #############################
-  ## END CODON (INTERPRETED) ##
-  #############################
+# Finalize the LaTeX table
+echo "\end{tabular}" >> $CODON_OUTPUT_FILE
+echo "\caption{The benchmark results for Codon ($ITERATIONS iterations).}\label{tab:benchmark_results_codon}" >> $CODON_OUTPUT_FILE
+echo "\end{table}" >> $CODON_OUTPUT_FILE
 
-  ############################
-  ## START CODON (COMPILED) ##
-  ############################
-
-  echo "+-----------------+"
-  echo "|   (compiler)    |"
-  echo "+-----------------+"
-
-  # Initialize the LaTeX table
-  echo "\noindent" >> $CODON_OUTPUT_FILE
-  echo "\begin{table}[hbt]" >> $CODON_OUTPUT_FILE
-  echo "\centering" >> $CODON_OUTPUT_FILE
-  echo "\begin{tabular}{lllllllll}" >> $CODON_OUTPUT_FILE
-
-  echo "    & \thead{Fastest \\ Time (s)} & \thead{Mean \\ Time (s)} & \thead{Median \\ Time (s)} & \thead{Max \\ Time (s)} & \thead{Variance (s\$^2\$)} \\\\" >> $CODON_OUTPUT_FILE
-
-  echo "\toprule" >> $CODON_OUTPUT_FILE
-
-  # Loop over all Python files in the directory
-  for FILE in "$DIR_PATH"/*.py; do
-
-    # extract executable name
-    EXECUTABLE_NAME=$(get_filename_without_extension "$FILE")
-
-    BUILD_COMMAND="codon build --exe -o build/$EXECUTABLE_NAME $FILE"
-
-    echo "+---------------------+"
-    echo "| Build configuration : $BUILD_COMMAND"
-    echo "+---------------------+"
-
-    eval "$BUILD_COMMAND"
-
-    times=()
-
-    # Run the benchmark for the specified number of iterations
-      for (( i=1; i<=ITERATIONS; i++ )); do
-
-        EXECUTION_TIME=$(measure_time "build/$EXECUTABLE_NAME")
-
-        echo "|- $EXECUTABLE_NAME: $EXECUTION_TIME"
-
-        times+=($EXECUTION_TIME)
-
-      done
-      
-      # Log the fastest time to the LaTeX table
-      escaped_name=$(escape_underscores "$EXECUTABLE_NAME")
-
-      # Calculate statistics
-      r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | head -n 1)
-      fastest_time=$(truncate_number "$r" 4)
-      r=$(calculate_mean "${times[@]}")
-      mean_time=$(truncate_number "$r" 4)
-      r=$(calculate_median "${times[@]}")
-      median_time=$(truncate_number "$r" 4)
-      r=$(echo "${times[@]}" | tr ' ' '\n' | sort -n | tail -n 1)
-      max_time=$(truncate_number "$r" 4)
-      r=$(calculate_variance "${times[@]}")
-      variance_time=$(truncate_number "$r" 4)
-
-      echo "$escaped_name & $fastest_time & $mean_time & $median_time & $max_time & $variance_time \\\\" >> $CODON_OUTPUT_FILE
-      echo "\midrule" >> $CODON_OUTPUT_FILE
-
-  done
-
-  # Finalize the LaTeX table
-  echo "\end{tabular}" >> $CODON_OUTPUT_FILE
-  echo "\caption{The benchmark results for Codon (compiled).}\label{tab:benchmark_results_codon_compiled}" >> $CODON_OUTPUT_FILE
-  echo "\end{table}" >> $CODON_OUTPUT_FILE
-
-  echo "+----------------+"
-  echo "| FINISHED CODON |"
-  echo "+----------------+"
-  echo "| output written:| $CODON_OUTPUT_FILE"
-  echo "+----------------+"
+echo "+----------------+"
+echo "| FINISHED CODON |"
+echo "+----------------+"
+echo "| output written:| $CODON_OUTPUT_FILE"
+echo "+----------------+"
 
 fi
 
-##########################
-## END CODON (COMPILED) ##
-##########################
+###############
+## END CODON ##
+###############
 
 ####################
 ## END BENCHMARKS ##
