@@ -28,7 +28,10 @@ static object* list_to_string(object* obj) {
     size_t element_strings_total_length = 0;
 
     for (int i = 0; i < list_obj->size; ++i) {
+
         string_object* str = GET_STRING(list_obj->elements[i]);
+
+        GRAB_OBJECT(str);
 
         element_strings[i] = AS_OBJECT(str);
         element_strings_total_length += str->length;
@@ -37,7 +40,7 @@ static object* list_to_string(object* obj) {
     // allocate memory for the final string, which includes two square brackets for the list and a comma and space between each element
     size_t separator_count = list_obj->size > 0 ? ((list_obj->size - 1) * 2) : 0; // the last entry is not followed by a comma and a space
     size_t str_len = (element_strings_total_length * sizeof(char)) + 2 + (separator_count * sizeof(char));
-    char* string = malloc(str_len);
+    char string[str_len];
     string[0] = '[';
     string[str_len - 1] = ']';
 
@@ -48,12 +51,15 @@ static object* list_to_string(object* obj) {
         string_object* element_str = AS_STRING(element_strings[i]);
         memcpy(offset, element_str->str, element_str->length);
         offset += element_str->length;
+        RELEASE_OBJECT(element_str);
 
         if (i != list_obj->size - 1) {
             *offset++ = ',';
             *offset++ = ' ';
         }
     }
+
+    free(element_strings);
 
     return TO_STRING(string, str_len);
 }
@@ -87,6 +93,7 @@ static object** list_subscript(object* obj, object* idx) {
     }
 
     assert("Only integers are allowed as indexes for list subscripts!" && NULL);
+    return NULL;
 }
 
 static object* list_take_slice(object* obj, object* slice) {
@@ -97,11 +104,16 @@ static object* list_take_slice(object* obj, object* slice) {
     list_object* list_obj = AS_LIST(obj);
     slice_object* slice_obj = AS_SLICE(slice);
 
+    GRAB_OBJECT(list_obj);
+    GRAB_OBJECT(slice_obj);
+
     // determine the size of the new list to create
     object* length_obj = slice_type.mapping_functions->length(AS_OBJECT(slice_obj));
 
+    GRAB_OBJECT(length_obj);
+
     long long start = slice_obj->start;
-    long long len;
+    long long len = 0;
 
     if (IS_INT(length_obj)) {
 
@@ -141,12 +153,21 @@ static object* list_take_slice(object* obj, object* slice) {
 
         const size_t k = slice_obj->start + (slice_obj->step * i);
 
-        object* v = *list_subscript(obj, TO_INT(k));
+        object* k_obj = TO_INT(k);
+        GRAB_OBJECT(k_obj);
+
+        object* v = *list_subscript(obj, k_obj);
+
+        RELEASE_OBJECT(k_obj);
 
         GRAB_OBJECT(v); // the new list has a reference to the element
 
         new_list->elements[i] = v;
     }
+
+    RELEASE_OBJECT(length_obj);
+    RELEASE_OBJECT(list_obj);
+    RELEASE_OBJECT(slice_obj);
 
     return AS_OBJECT(new_list);
 }
@@ -252,28 +273,23 @@ static object* list_create_iterator(object* obj) {
 
 static void list_release(object* obj) {
 
-//    printf("--- releasing list...\r\n");
-
     assert(IS_LIST(obj));
 
     list_object* list_obj = AS_LIST(obj);
 
     // only release elements if we are about to be freed!
-    if (obj->refs != 1) {
-        return default_release(obj);
+    if (obj->refs == 1) {
+
+        // release all the elements this list references
+        for (size_t i = 0; i < list_obj->size; ++i) {
+
+            object *e = list_obj->elements[i];
+
+            RELEASE_OBJECT(e);
+        }
+
+        free(list_obj->elements);
     }
-
-    // release all the elements this list references
-    for (size_t i = 0; i < list_obj->size; ++i) {
-
-//        printf("- releasing element %lu..\r\n", i);
-
-        object* e = list_obj->elements[i];
-
-        e->type->release(e);
-    }
-
-//    printf("--- released all list elements.\r\n");
 
     // delegate the list object to default release
     default_release(obj);
@@ -360,6 +376,17 @@ static object* list_iterator_to_bool(object* obj) {
     return TYTHON_TRUE;
 }
 
+static void list_iterator_release(object* obj) {
+
+    // if we are about to be GC'ed, release the index object and list references
+    if (obj->refs == 1) {
+        RELEASE_OBJECT(AS_LIST_ITERATOR(obj)->idx);
+        RELEASE_OBJECT(AS_LIST_ITERATOR(obj)->list_obj);
+    }
+
+    default_release(obj);
+}
+
 static number_functions list_iterator_number_functions = {
         .to_bool            = &list_iterator_to_bool,
 };
@@ -389,5 +416,5 @@ type_object list_iterator_type = {
         .iterator_next      = &list_iterator_next,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &list_iterator_release,
 };

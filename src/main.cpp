@@ -114,19 +114,27 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     auto entry_function_name = isMain ? "main" : "__module_entry__";
     auto entry_function_linkage = isMain ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
     auto entry_function = llvm::Function::Create(entry_function_type, entry_function_linkage, entry_function_name, module);
-    auto entry_function_bb = llvm::BasicBlock::Create(builder.getContext(), "entry", entry_function);
+    auto entry_function_exit = llvm::BasicBlock::Create(builder.getContext(), "exit", entry_function);
+    auto entry_function_entry = llvm::BasicBlock::Create(builder.getContext(), "entry", entry_function, entry_function_exit);
 
     // all top-level instructions are inside a main procedure
-    builder.SetInsertPoint(entry_function_bb);
+    builder.SetInsertPoint(entry_function_entry);
 
     // descend into the source file
     sourceFileVisitor.visitProgram(ast);
 
-    // finish up the main function
     if (!builder.GetInsertBlock()->getTerminator()) {
-        auto zero = llvm::ConstantInt::get(int64_type, 0);
-        builder.CreateRet(zero);
+        builder.CreateBr(entry_function_exit);
     }
+
+    builder.SetInsertPoint(entry_function_exit);
+
+    // GC global variables
+    builder.popGlobalContext();
+
+    // finish up the main function
+    auto zero = llvm::ConstantInt::get(int64_type, 0);
+    builder.CreateRet(zero);
 
     // update compilation unit - symbol table map
     object_symbol_table.insert({ objectname, module->listProcedures() });

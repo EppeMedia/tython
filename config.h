@@ -8,7 +8,7 @@
 
 #define TYTHON_VERSION              "v0.1"
 
-#define GC_ENABLED                  false
+#define GC_ENABLED                  true
 
 // program arguments
 #define FLAG_HELP                   "--help"            // prints a help message and exits

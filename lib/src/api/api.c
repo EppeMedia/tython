@@ -74,9 +74,15 @@ static long long int range_parameter_spec_to_int(specialization_t spec, long lon
                 type_error();
             }
 
-            const object* int_obj = nf->to_int(spec.object);
+            object* int_obj = nf->to_int(spec.object);
 
-            return AS_INT(int_obj)->value;
+            GRAB_OBJECT(int_obj);
+
+            const long long v = AS_INT(int_obj)->value;
+
+            RELEASE_OBJECT(int_obj);
+
+            return v;
 
         default:
             type_error();
@@ -109,9 +115,15 @@ static double spec_to_float(specialization_t s) {
                 type_error();
             }
 
-            const object* float_obj = nf->to_float(s.object);
+            object* float_obj = nf->to_float(s.object);
 
-            return AS_FLOAT(float_obj)->value;
+            GRAB_OBJECT(float_obj);
+
+            const double v = AS_FLOAT(float_obj)->value;
+
+            RELEASE_OBJECT(float_obj);
+
+            return v;
 
         default:
             type_error();
@@ -160,14 +172,21 @@ void ewout(specialization_t value) {
 
     fprintf(stderr, "\033[0;31m"); // Set STDERR to print in red
 
-    object* object = box_internal(value);
+    object* obj = box_internal(value);
 
-    string_object* string_obj = AS_STRING(object->type->str(object));
+    GRAB_OBJECT(obj);
+
+    string_object* string_obj = GET_STRING(obj);
+
+    GRAB_OBJECT(string_obj);
+    RELEASE_OBJECT(obj);
 
     const unsigned long buf_size = string_obj_len(string_obj);
     char buf[buf_size];
 
     sprint_string_object(buf, string_obj, buf_size);
+
+    RELEASE_OBJECT(string_obj);
 
     // transform to uppercase, to increase urgency
     for (int i = 0; i < buf_size; ++i) {
@@ -181,21 +200,21 @@ void ewout(specialization_t value) {
     fprintf(stderr, "\033[0m"); // Reset STDERR to its default color
 }
 
-static void print_object(object* object) {
-
-    //    GRAB_OBJECT(object);
+static void print_object(object* obj) {
 
     // call the type's "str" function
-    string_object* string_obj = AS_STRING(object->type->str(object));
+    string_object* string_obj = GET_STRING(obj);
+
+    GRAB_OBJECT(string_obj);
 
     const unsigned long buf_size = string_obj_len(string_obj);
     char buf[buf_size];
 
     sprint_string_object(buf, string_obj, buf_size);
 
-    printf("%s\r\n", buf);
+    RELEASE_OBJECT(string_obj);
 
-//    object->type->release(object);
+    printf("%s\r\n", buf);
 }
 
 void print(specialization_t value) {
@@ -217,11 +236,11 @@ void print(specialization_t value) {
 
 specialization_t range(specialization_t start, specialization_t end, specialization_t step) {
 
-    long long int start_obj = range_parameter_spec_to_int(start, 0);
-    long long int end_obj = range_parameter_spec_to_int(end, 0);
-    long long int step_obj = range_parameter_spec_to_int(step, 1);
+    long long int start_int = range_parameter_spec_to_int(start, 0);
+    long long int end_int = range_parameter_spec_to_int(end, 0);
+    long long int step_int = range_parameter_spec_to_int(step, 1);
 
-    object* range_obj = range_create_primitive(start_obj, end_obj, step_obj);
+    object* range_obj = range_create_primitive(start_int, end_int, step_int);
 
     return (specialization_t) {
         .tag    = SPEC_OBJECT,
@@ -243,6 +262,8 @@ specialization_t __tuple__(size_t count, ...) {
         specialization_t e = va_arg(args, specialization_t);
 
         object* e_obj = box_internal(e);
+
+        GRAB_OBJECT(e_obj);
 
         // store the element object in the tuple
         object** e_ref = tuple_obj->elements + i;
@@ -272,6 +293,8 @@ specialization_t __list__(size_t count, ...) {
 
         object* e_obj = box_internal(e);
 
+        GRAB_OBJECT(e_obj);
+
         // store the element object in the list
         object** e_ref = list_obj->elements + i;
         (*e_ref) = e_obj;
@@ -297,12 +320,14 @@ specialization_t __dict__(size_t count, ...) {
     for (int i = 0; i < count; ++i) {
 
         specialization_t key = va_arg(args, specialization_t);
-
         object* key_obj = box_internal(key);
 
-        specialization_t value = va_arg(args, specialization_t);
+        GRAB_OBJECT(key_obj);
 
+        specialization_t value = va_arg(args, specialization_t);
         object* value_obj = box_internal(value);
+
+        GRAB_OBJECT(value_obj);
 
         // store the element object in the list
         dict_entry* e_ref = dict_obj->entries + i;
@@ -326,10 +351,17 @@ void __set__(specialization_t object_spec, specialization_t key_spec, specializa
     object* key = box_internal(key_spec);
     object* value = box_internal(value_spec);
 
+    GRAB_OBJECT(obj);
+    GRAB_OBJECT(key);
+    GRAB_OBJECT(value); // do not release here; we grab it for the instance we are setting it to
+
     assert(obj->type->mapping_functions && obj->type->mapping_functions->subscript && "Type error: target object does not support key access!");
 
     object** ref = obj->type->mapping_functions->subscript(obj, key);
     (*ref) = value;
+
+    RELEASE_OBJECT(obj);
+    RELEASE_OBJECT(key);
 }
 
 specialization_t len(specialization_t spec) {
@@ -374,7 +406,7 @@ specialization_t list(specialization_t spec) {
 
     GRAB_OBJECT(it);
 
-    function_object_function* list_append = resolve_builtin_method(AS_OBJECT(list_obj), "append");
+    object* (*list_append)(object*, object*) = resolve_builtin_method(AS_OBJECT(list_obj), "append");
 
     while (object_is_truthy(it)) {
 
@@ -383,10 +415,10 @@ specialization_t list(specialization_t spec) {
 
         (*list_append)(AS_OBJECT(list_obj), e);
 
-        e->type->release(e);
+        RELEASE_OBJECT(e);
     }
 
-    it->type->release(it);
+    RELEASE_OBJECT(it);
 
     return (specialization_t) {
         .tag = SPEC_OBJECT,
@@ -398,12 +430,18 @@ specialization_t str(specialization_t spec) {
 
     object* boxed = box_internal(spec);
 
+    GRAB_OBJECT(boxed);
+
     if (!boxed->type->str) {
         type_error();
     }
 
+    object* str = AS_OBJECT(GET_STRING(boxed));
+
+    RELEASE_OBJECT(boxed);
+
     return (specialization_t) {
         .tag    = SPEC_OBJECT,
-        .object = boxed->type->str(boxed),
+        .object = str,
     };
 }

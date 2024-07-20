@@ -10,10 +10,11 @@
 #include "object/stringobject.h"
 #include "object/floatobject.h"
 #include "object/boolobject.h"
+#include "error/error.h"
 
 object* int_create(long long v) {
 
-    object* a = int_type.alloc(&int_type);
+    object* a = ALLOC(int_type);
 
     AS_INT(a)->value = v;
 
@@ -22,11 +23,13 @@ object* int_create(long long v) {
 
 static object* int_to_string(object* object) {
 
+    assert(IS_INT(object));
+
     // determine length
     const int str_len = snprintf(NULL, 0, "%lld", AS_INT(object)->value);
 
     // allocate string buffer
-    char* str = malloc(sizeof(char) * str_len);
+    char str[str_len];
 
     // fill string
     sprintf(str, "%lld", AS_INT(object)->value);
@@ -50,6 +53,8 @@ static object* int_rich_compare(object* lhs, object* rhs, int op) {
         rhs_value = (long long)AS_FLOAT(rhs)->value;
     } else if (IS_INT(rhs)) {
         rhs_value = AS_INT(rhs)->value;
+    } else {
+        type_error();
     }
 
     NUMBER_RICH_COMPARE(lhs_value, rhs_value, op)
@@ -76,7 +81,6 @@ static int_object* convert_to_int(object* obj) {
 
     number_functions* nfs = obj->type->number_functions;
 
-    // todo: type error
     assert(nfs && nfs->to_int);
 
     return AS_INT(nfs->to_int(obj));
@@ -91,7 +95,13 @@ static object* int_add(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value + rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value + rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_sub(object* lhs, object* rhs) {
@@ -103,7 +113,13 @@ static object* int_sub(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value - rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value - rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_mul(object* lhs, object* rhs) {
@@ -115,7 +131,13 @@ static object* int_mul(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value * rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value * rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_div(object* lhs, object* rhs) {
@@ -127,7 +149,13 @@ static object* int_div(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value / rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value / rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_floor_div(object* lhs, object* rhs) {
@@ -139,7 +167,13 @@ static object* int_floor_div(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value / rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value / rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_exp(object* lhs, object* rhs) {
@@ -151,7 +185,13 @@ static object* int_exp(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(pow((double)lhs_obj->value, (double)rhs_obj->value));
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(pow((double)lhs_obj->value, (double)rhs_obj->value));
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* int_mod(object* lhs, object* rhs) {
@@ -163,7 +203,13 @@ static object* int_mod(object* lhs, object* rhs) {
     // left-hand side is leading in type, so we will try to convert the rhs value into an integer
     int_object* rhs_obj = convert_to_int(rhs);
 
-    return TO_INT(lhs_obj->value % rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT(lhs_obj->value % rhs_obj->value);
+
+    RELEASE_OBJECT(result);
+
+    return result;
 }
 
 static number_functions int_number_functions = {
@@ -187,7 +233,7 @@ type_object int_type = {
                 .refs       = 0,
         },
 
-        .alloc              = &pool_alloc,
+        .alloc              = &default_alloc,
         .seqalloc           = NULL,
 
         .base               = NULL,

@@ -27,8 +27,8 @@ void type_mismatch(int32_t encountered_type, int32_t expected_type) {
 
     if (encountered_type == expected_type) {
 
-        // strange to throw a type error for a matching type, but OK...
-        fprintf(stderr, "TypeError: type mismatch for types of queal tag [%u]!\r\n", expected_type);
+        // strange to throw a type mismatch error for a matching type, but OK...
+        fprintf(stderr, "TypeError: type mismatch for types of equal tag [%u]!\r\n", expected_type);
 
     } else {
 

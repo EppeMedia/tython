@@ -71,6 +71,8 @@ public:
         init();
     };
 
+    ::Context* popGlobalContext();
+
     /**
      * Creates a variable in the current context.
      * @param name The name of the variable to create.
@@ -287,10 +289,16 @@ public:
     void CreateGrabObject(llvm::Value* object);
 
     /**
-     * Generates the instructions to release a reference to the specified object.
-     * @param object The object to be released.
+     * Generates the guarded instructions to release a reference to the specified value.
+     * @param object The value to be released.
      */
     void CreateReleaseObject(llvm::Value* object);
+
+    /**
+     * Generates the instructions to release a reference to the specified object primitive.
+     * @param object The object primitiveto be released.
+     */
+    void CreateReleaseObjectPrimitive(llvm::Value* object);
 
     /**
      * Creates a zero-initialized instance of a specialization union.

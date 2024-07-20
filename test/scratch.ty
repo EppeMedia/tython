@@ -361,5 +361,8 @@
 
 #print(result)
 
+def foo(a):
+    print(a)
+    return 42
 
-print(41 + 1)
+print(foo(7))

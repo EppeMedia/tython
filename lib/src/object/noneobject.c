@@ -20,17 +20,19 @@ none_object none_instance = {
         },
 };
 
-static void grab_none_noop(object* instance) {
-
-    assert(IS_NONE(instance));
-
+/**
+ * None is a singleton. It's never GC'ed. Calling this function is effectively a no-op.
+ * @param unused Parameter is unused. No type check is performed to ensure if this is a None object.
+ */
+static void grab_none_noop(object* unused) {
     (void)0;
 }
 
+/**
+ * None is a singleton. It's never GC'ed. Calling this function is effectively a no-op.
+ * @param unused Parameter is unused. No type check is performed to ensure if this is a None object.
+ */
 static void release_none_noop(object* instance) {
-
-    assert(IS_NONE(instance));
-
     (void)0;
 }
 

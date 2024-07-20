@@ -29,7 +29,10 @@ static object* tuple_to_string(object* obj) {
     size_t element_strings_total_length = 0;
 
     for (int i = 0; i < tuple_obj->size; ++i) {
+
         string_object* str = GET_STRING(tuple_obj->elements[i]);
+
+        GRAB_OBJECT(str);
 
         element_strings[i] = AS_OBJECT(str);
         element_strings_total_length += str->length;
@@ -38,7 +41,7 @@ static object* tuple_to_string(object* obj) {
     // allocate memory for the final string, which includes two parentheses for the tuple and a comma and space between each element
     size_t separator_count = ((tuple_obj->size - 1) * 2); // the last entry is not followed by a comma and a space
     size_t str_len = (element_strings_total_length * sizeof(char)) + 2 + (separator_count * sizeof(char));
-    char* string = malloc(str_len);
+    char string[str_len];
     string[0] = '(';
     string[str_len - 1] = ')';
 
@@ -50,11 +53,15 @@ static object* tuple_to_string(object* obj) {
         memcpy(offset, element_str->str, element_str->length);
         offset += element_str->length;
 
+        RELEASE_OBJECT(element_str);
+
         if (i != tuple_obj->size - 1) {
             *offset++ = ',';
             *offset++ = ' ';
         }
     }
+
+    free(element_strings);
 
     return TO_STRING(string, str_len);
 }
@@ -124,7 +131,7 @@ static object* tuple_create_iterator(object* obj) {
 
     tuple_object* tuple_obj = AS_TUPLE(obj);
 
-    tuple_iterator_object* it = AS_TUPLE_ITERATOR(tuple_iterator_type.alloc(&tuple_iterator_type));
+    tuple_iterator_object* it = AS_TUPLE_ITERATOR(ALLOC(tuple_iterator_type));
 
     it->idx = TO_INT(0);
     it->tuple_obj = tuple_obj;
@@ -137,30 +144,23 @@ static object* tuple_create_iterator(object* obj) {
 
 static void tuple_release(object* obj) {
 
-//    printf("--- releasing tuple...\r\n");
-
     assert(IS_TUPLE(obj));
 
     tuple_object* tuple_obj = AS_TUPLE(obj);
 
     // only release elements if we are about to be freed!
-    if (obj->refs != 1) {
-        return default_release(obj);
+    if (obj->refs == 1) {
+
+        // release all the elements this tuple references
+        for (size_t i = 0; i < tuple_obj->size; ++i) {
+
+            object *e = tuple_obj->elements[i];
+
+            RELEASE_OBJECT(e);
+        }
+
+        free(tuple_obj->elements);
     }
-
-    // release all the elements this tuple references
-    for (size_t i = 0; i < tuple_obj->size; ++i) {
-
-//        printf("- releasing element %lu..\r\n", i);
-
-        object* e = tuple_obj->elements[i];
-
-        printf("(element is %p)\r\n", e);
-
-        e->type->release(e);
-    }
-
-//    printf("--- released all tuple elements.\r\n");
 
     // delegate the tuple object to default release
     default_release(obj);
@@ -217,9 +217,9 @@ static object* tuple_iterator_next(object* obj) {
     object* e = *tuple_subscript(AS_OBJECT(it->tuple_obj), it->idx);
 
     // increment index
-    it->idx = TO_INT(AS_INT(it->idx)->value + 1);
-
-    // TODO: release old idx object
+    object* new_idx = TO_INT(AS_INT(it->idx)->value + 1);
+    RELEASE_OBJECT(it->idx);
+    it->idx = new_idx;
     GRAB_OBJECT(it->idx);
 
     return e;
@@ -236,6 +236,16 @@ static object* tuple_iterator_to_bool(object* obj) {
     }
 
     return TYTHON_TRUE;
+}
+
+static void tuple_iterator_release(object* obj) {
+
+    if (obj->refs == 1) {
+        RELEASE_OBJECT(AS_TUPLE_ITERATOR(obj)->idx);
+        RELEASE_OBJECT(AS_TUPLE_ITERATOR(obj)->tuple_obj);
+    }
+
+    default_release(obj);
 }
 
 static number_functions tuple_iterator_number_functions = {
@@ -267,5 +277,5 @@ type_object tuple_iterator_type = {
         .iterator_next      = &tuple_iterator_next,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &tuple_iterator_release,
 };

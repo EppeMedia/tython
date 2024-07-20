@@ -18,6 +18,10 @@ object* slice_create(object* start, object* end, object* step) {
     assert(IS_INT(end) || IS_NONE(end));
     assert(IS_INT(step) || IS_NONE(step));
 
+    GRAB_OBJECT(start);
+    GRAB_OBJECT(end);
+    GRAB_OBJECT(step);
+
     int_object* start_obj;
 
     if (IS_INT(start)) {
@@ -40,18 +44,25 @@ object* slice_create(object* start, object* end, object* step) {
 
     slice_obj->start = start_obj->value;
     slice_obj->end = end;
+    GRAB_OBJECT(end);
     slice_obj->step = step_obj->value;
+
+    RELEASE_OBJECT(start);
+    RELEASE_OBJECT(end);
+    RELEASE_OBJECT(step);
 
     return AS_OBJECT(slice_obj);
 }
 
-static object* slice_to_string(object* object) {
+static object* slice_to_string(object* obj) {
 
-    assert(IS_SLICE(object));
+    assert(IS_SLICE(obj));
 
-    slice_object* slice_obj = AS_SLICE(object);
+    slice_object* slice_obj = AS_SLICE(obj);
 
     string_object* end_str = GET_STRING(slice_obj->end);
+
+    GRAB_OBJECT(end_str);
 
     // determine length
     const size_t fields_len = snprintf(NULL, 0, "%lld", slice_obj->start)
@@ -60,10 +71,14 @@ static object* slice_to_string(object* object) {
 
     // allocate string buffer ("slice" + braces + commas + spaces)
     const size_t str_len = fields_len + (5 + 2 + 2 + 2);
-    char* str = malloc(str_len * sizeof(char));
+    char str[str_len];
 
     // fill string
-    sprintf(str, "slice(%lld, %s, %lld)", slice_obj->start, to_cstr(end_str), slice_obj->step);
+    char* c_end_str = to_cstr(end_str);
+    sprintf(str, "slice(%lld, %s, %lld)", slice_obj->start, c_end_str, slice_obj->step);
+
+    free(c_end_str);
+    RELEASE_OBJECT(end_str);
 
     return string_create(str, str_len);
 }

@@ -18,6 +18,13 @@ typedef struct range_object_t {
     long long end;
     long long step;
 
+    /**
+     * The following field is a bit hacky. It solves the issue of creating memory leaks for the indirection required for the current subscript API.
+     * What makes this work is that setting to a range object through subscript access is not allowed. It raises a type error in CPython. Here now it leads to undefined behaviour.
+     * The better solution would be to pull apart subscript read and write access (i.e. subscript (read) and set (write))
+     */
+    object** subscript_cache;
+
 } range_object;
 
 extern type_object range_iterator_type;

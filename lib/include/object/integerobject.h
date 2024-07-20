@@ -29,6 +29,6 @@ object* int_create(long long v);
 
 #define TO_INT(value)    (int_create(value))
 
-#define HASH_OBJECT(instance) (AS_INT((*instance->type->hash)(instance)))
+#define HASH_OBJECT(instance) (AS_INT((*(instance)->type->hash)(instance)))
 
 #endif //TYTHON_INTEGEROBJECT_H

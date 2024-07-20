@@ -91,10 +91,6 @@ std::any SourceFileVisitor::visitLbl_lval_identifier(TythonParser::Lbl_lval_iden
     if (auto variable = this->builder->current_context->findVariable(identifier)) {
 
         std::function<void (llvm::Value*)> rhs_handler = [this, variable](llvm::Value* rhs) -> void {
-
-            this->builder->CreateGrabObject(rhs); // increment RHS reference counter
-            this->builder->CreateReleaseObject(rhs); // decrement LHS ref count
-
             this->builder->CreateAssign(variable, rhs);
         };
 
@@ -155,9 +151,6 @@ std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plu
         }
     }
 
-//    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
-//    this->builder->CreateGrabObject(assign_value);
-
     const auto rhs_handler = any_cast<std::function<void (llvm::Value*)>>(visit(ctx->lval()));
 
     rhs_handler(assign_value);
@@ -200,9 +193,6 @@ std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_mi
         }
     }
 
-//    this->builder->CreateReleaseObject(lhs_deref); // decrement LHS ref count
-//    this->builder->CreateGrabObject(assign_value);
-
     const auto rhs_handler = any_cast<std::function<void (llvm::Value*)>>(visit(ctx->lval()));
 
     rhs_handler(assign_value);
@@ -220,24 +210,34 @@ std::any SourceFileVisitor::visitSlice_lit(TythonParser::Slice_litContext *ctx) 
 
     if (ctx->start) {
         start = any_cast<llvm::Value*>(visit(ctx->start));
+        this->builder->CreateGrabObject(start);
     }
 
     llvm::Value* end = this->builder->CreateNoneSpec();
 
     if (ctx->end) {
         end = any_cast<llvm::Value*>(visit(ctx->end));
+        this->builder->CreateGrabObject(end);
     }
 
     llvm::Value* step = this->builder->CreateNoneSpec();
 
     if (ctx->step) {
         step = any_cast<llvm::Value*>(visit(ctx->step));
+        this->builder->CreateGrabObject(step);
     }
 
     // create the slice object
     auto f = this->module->tython_slice_func;
 
-    return (llvm::Value*)this->builder->CreateCall((llvm::Function*)f->getCallee(), { start, end, step }, "slice_construct");
+    const auto slice_obj = (llvm::Value*)this->builder->CreateCall((llvm::Function*)f->getCallee(), { start, end, step }, "slice_construct");
+
+    // release start, end, step
+    this->builder->CreateReleaseObject(start);
+    this->builder->CreateReleaseObject(end);
+    this->builder->CreateReleaseObject(step);
+
+    return slice_obj;
 }
 
 std::any SourceFileVisitor::visitLbl_identifier(TythonParser::Lbl_identifierContext *ctx) {
@@ -277,7 +277,13 @@ std::any SourceFileVisitor::visitLbl_slice_access(TythonParser::Lbl_slice_access
     auto sequence_object = any_cast<llvm::Value*>(visit(ctx->expression()));
     auto slice = any_cast<llvm::Value*>(visit(ctx->slice_lit()));
 
-    return this->builder->CreateTakeSlice(sequence_object, slice);
+    this->builder->CreateGrabObject(slice);
+
+    const auto result = this->builder->CreateTakeSlice(sequence_object, slice);
+
+    this->builder->CreateReleaseObject(slice);
+
+    return result;
 }
 
 std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
@@ -314,7 +320,6 @@ std::any SourceFileVisitor::visitLiteral(TythonParser::LiteralContext *ctx) {
 
     } else if (ctx->STR_LIT()) {
 
-        // create string literal character array
         auto raw = ctx->STR_LIT()->getText();
         // trim double quotes
         auto trim = raw.substr(1, raw.size() - 2);
@@ -393,10 +398,6 @@ std::any SourceFileVisitor::visitDict_lit(TythonParser::Dict_litContext *ctx) {
         auto key = any_cast<llvm::Value*>(visit(entry->key));
         auto value = any_cast<llvm::Value*>(visit(entry->value));
 
-        // grab both key and value (the dictionary references them of course)
-        this->builder->CreateGrabObject(key);
-        this->builder->CreateGrabObject(value);
-
         entries.emplace_back(key, value);
     }
 
@@ -415,9 +416,6 @@ std::any SourceFileVisitor::visitList_lit(TythonParser::List_litContext *ctx) {
 
         auto v = any_cast<llvm::Value*>(visit(element));
 
-        // grab a reference to the value (the list references it)
-        this->builder->CreateGrabObject(v);
-
         elements.push_back(v);
     }
 
@@ -435,9 +433,6 @@ std::any SourceFileVisitor::visitTuple_lit(TythonParser::Tuple_litContext *ctx) 
     for (auto& element : ctx->elements) {
 
         auto v = any_cast<llvm::Value*>(visit(element));
-
-        // grab a reference to the value (the tuple references it)
-        this->builder->CreateGrabObject(v);
 
         elements.push_back(v);
     }
@@ -458,7 +453,12 @@ std::any SourceFileVisitor::visitIf_statement(TythonParser::If_statementContext 
     llvm::BasicBlock* br_end = llvm::BasicBlock::Create(this->builder->getContext(), "end_if", f, nullptr);
 
     auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
+
+    this->builder->CreateGrabObject(expression_value);
+
     auto test = this->builder->CreateObjectIsTruthy(expression_value);
+
+    this->builder->CreateReleaseObject(expression_value);
 
     llvm::BasicBlock* br_false;
 
@@ -545,6 +545,8 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     this->builder->CreateBr(br_pre);
     this->builder->SetInsertPoint(br_pre);
 
+    llvm::Value* it = nullptr;
+
     if (ctx->KW_IN()) {
 
         // create or obtain the induction variable
@@ -557,12 +559,17 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
         // obtain an iterator for the iterable
         const auto iterable = any_cast<llvm::Value*>(visit(ctx->expression()));
-        const auto it = this->builder->CreateGetIterator(iterable);
+
+        this->builder->CreateGrabObject(iterable);
+
+        it = this->builder->CreateGetIterator(iterable);
+
+        this->builder->CreateReleaseObject(iterable);
 
         // grab a reference to the iterator
         this->builder->CreateGrabObject(it);
 
-        // start pre header
+        // start header
         this->builder->CreateBr(br_head);
         this->builder->SetInsertPoint(br_head);
 
@@ -571,9 +578,6 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
         // increment iterator, obtains stale value
         auto it_value = this->builder->CallIteratorNext(it);
-
-        // grab a reference to the iterator value
-        this->builder->CreateGrabObject(it_value);
 
         // bind the stale iterator value to the induction variable
         this->builder->CreateAssign(it_var, it_value);
@@ -587,7 +591,11 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
         auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
 
+        this->builder->CreateGrabObject(expression_value);
+
         auto test = this->builder->CreateObjectIsTruthy(expression_value); // todo: this could happen as a comparison (magic method) between the result of the expression and the True (or False) unique objects instead
+
+        this->builder->CreateReleaseObject(expression_value);
 
         this->builder->CreateCondBr(test, br_for, br_end);
     }
@@ -597,6 +605,10 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
     this->builder->CreateBr(br_head);
 
     this->builder->SetInsertPoint(br_end);
+
+    if (it) {
+        this->builder->CreateReleaseObject(it);
+    }
 
     this->builder->popContext();
 
@@ -624,7 +636,11 @@ std::any SourceFileVisitor::visitWhile_loop(TythonParser::While_loopContext *ctx
 
     auto expression_value = any_cast<llvm::Value*>(visit(ctx->expression()));
 
+    this->builder->CreateGrabObject(expression_value);
+
     auto test = this->builder->CreateObjectIsTruthy(expression_value);
+
+    this->builder->CreateReleaseObject(expression_value);
 
     this->builder->CreateCondBr(test, br_while, br_end);
 
@@ -764,12 +780,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
 
     this->builder->popContext();
 
-    if (terminator) {
-
-        // resume at the end of the block (at the terminating instruction)
-        this->builder->SetInsertPoint(this->builder->GetInsertBlock());
-
-    } else {
+    if (!terminator) {
 
         // create implicit return None
 
@@ -795,6 +806,8 @@ std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statement
 
         ret_val = any_cast<llvm::Value*>(visit(ctx->expression()));
 
+        this->builder->CreateGrabObject(ret_val);
+
     } else {
 
         ret_val = this->builder->CreateNoneSpec();
@@ -809,7 +822,11 @@ std::any SourceFileVisitor::visitEwout_statement(TythonParser::Ewout_statementCo
 
     const auto expression = any_cast<llvm::Value*>(visit(ctx->expression()));
 
+    this->builder->CreateGrabObject(expression);
+
     this->builder->CreateCall(*this->module->tython_ewout_func, { expression });
+
+    this->builder->CreateReleaseObject(expression);
 
     return nullptr;
 }
@@ -916,25 +933,17 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
         throw CompileException("Undefined reference to function \"" + function_name + "\".");
     }
 
-    // grab reference to parameters and mark them as pass-by-value
-//    for (int i = 0; i < params.size(); ++i) {
-//
-////        this->builder->CreateGrabObject(v);
-//
-////        f->addParamAttr(i, llvm::Attribute::getWithByValType(this->builder->getContext(), this->module->specialization_type));
-//    }
-
     llvm::Value* result = this->builder->CreateCall(f, params);
+
+    // release param objects
+    for (auto& p : params) {
+        this->builder->CreateReleaseObject(p);
+    }
 
     if (result->getType()->isVoidTy()) {
         // return None implicitly
         return this->builder->CreateNoneSpec();
     }
-
-    // release param objects
-//    for (auto& v : params) {
-//        this->builder->CreateReleaseObject(v);
-//    }
 
     return result;
 }
@@ -946,6 +955,7 @@ std::vector<llvm::Value*> SourceFileVisitor::visitInternalCallParameters(TythonP
 
     for (auto p : ctx->params) {
         const auto param = any_cast<llvm::Value*>(visit(p));
+        this->builder->CreateGrabObject(param);
         values.push_back(param);
     }
 
@@ -969,9 +979,6 @@ std::any SourceFileVisitor::visitArguments(TythonParser::ArgumentsContext *ctx) 
          * Implementation-wise, this is probably already partly achieved by our setup (i.e. a value pass of a sequence is a new sequence referencing the same elements as the original)
          * We'll have to have another look when we implement objects (class instances)
          */
-
-        // grab a reference to the argument value
-        this->builder->CreateGrabObject(v);
 
         // assign the passed argument value to the new variable
         this->builder->CreateAssign(dataEntry, v);
@@ -1023,6 +1030,7 @@ std::any SourceFileVisitor::visitLbl_mod_expr(TythonParser::Lbl_mod_exprContext 
 }
 
 std::any SourceFileVisitor::visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) {
+
     auto lhs = any_cast<llvm::Value*>(visit(ctx->lhs));
     auto rhs = any_cast<llvm::Value*>(visit(ctx->rhs));
 
@@ -1099,6 +1107,8 @@ std::any SourceFileVisitor::visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext 
 
 std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callContext *ctx) {
 
+    const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
+
     const auto instance = any_cast<llvm::Value*>(visit(ctx->expression()));
 
     const auto method_name_str = ctx->call_expression()->IDENTIFIER()->getText();
@@ -1110,12 +1120,16 @@ std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callCo
     args.reserve(spec_args.size() + 1);
 
     for (const auto& spec_arg : spec_args) {
+
         const auto boxed = this->builder->CreateBox(spec_arg);
-        const auto unpacked = this->builder->getContent(boxed);
+
+        this->builder->CreateGrabObject(boxed);
+
+        const auto unpacked = this->builder->CreateBitCast(this->builder->getContent(boxed), ptr_t);
         args.push_back(unpacked);
     }
 
-    const auto object_handler = [this, args, method_name](llvm::Value* object_primitive) -> llvm::Value* {
+    const auto object_handler = [this, args, method_name, ptr_t](llvm::Value* object_primitive) -> llvm::Value* {
 
         std::vector<llvm::Value*> m_args;
         for (const auto v : args) {
@@ -1126,15 +1140,20 @@ std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callCo
         // todo: implement non-builtin methods (class-member callables)
         auto f_ptr = this->builder->CreateResolveBuiltinMethod(object_primitive, method_name);
 
-        const auto ptr_t = llvm::PointerType::get(this->builder->getContext(), 0);
         auto f_type = llvm::FunctionType::get(ptr_t, true);
 
         const auto result = (llvm::Value*)this->builder->CreateCall(f_type, f_ptr, m_args);
+
+        for (auto& arg : args) {
+            this->builder->CreateReleaseObjectPrimitive(arg);
+        }
 
         return this->builder->CreateSpecInstance(SPEC_OBJECT, result);
     };
 
     const auto int_handler = [this, object_handler](llvm::Value* integer_primitive) -> llvm::Value* {
+
+        // delegate method calls on spec integers to the object runtime
 
         const auto object_primitive = this->builder->CreateIntObject(integer_primitive);
 
@@ -1142,6 +1161,8 @@ std::any SourceFileVisitor::visitLbl_method_call(TythonParser::Lbl_method_callCo
     };
 
     const auto float_handler = [this, object_handler](llvm::Value* float_primitive) -> llvm::Value* {
+
+        // delegate method calls on spec FPs to the object runtime
 
         const auto object_primitive = this->builder->CreateFloatObject(float_primitive);
 

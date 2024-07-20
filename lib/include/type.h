@@ -54,7 +54,10 @@
             return TO_INT(TYTHON_CMP_RES_ERR);                      \
     }
 
-#define GRAB_OBJECT(instance) (++instance->refs)
+#define GRAB_OBJECT(instance) (++(AS_OBJECT(instance))->refs)
+#define RELEASE_OBJECT(instance) ((AS_OBJECT(instance))->type->release(AS_OBJECT(instance)))
+
+#define ALLOC(type_object) ((type_object).alloc(&(type_object)))
 
 /*
  * Function type defs
@@ -238,7 +241,7 @@ object* pool_alloc(type_object* typeobj);
  * @param n The number of elements the memory space should provision for.
  * @return Returns a pointer to freshly a allocated object with its core properties initialised.
  */
-object* default_seqalloc(type_object* typeobj, size_t n);
+extern inline object* default_seqalloc(type_object* typeobj, size_t n);
 
 /**
  * Increments the reference counter of the specified object instance.
@@ -250,6 +253,6 @@ void default_grab(object* instance);
  * Decrements the reference counter of the specified object instance.
  * @param instance The object instance to decrement the reference counter of.
  */
-void default_release(object* instance);
+extern inline void default_release(object* instance);
 
 #endif //TYTHON_TYPE_H

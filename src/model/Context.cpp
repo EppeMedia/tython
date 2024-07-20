@@ -23,28 +23,6 @@ void Context::registerVariable(const std::string& name, llvm::Value* value) {
     this->variable_shadow_symbol_table.insert({ name, value });
 }
 
-llvm::Value *Context::bind(llvm::Value *value, const std::string &name) {
-
-    const auto it = this->variable_shadow_symbol_table.find(name);
-
-    if (it != this->variable_shadow_symbol_table.end()) {
-
-        // todo: GC the old value
-
-        it->second = value;
-
-        return it->second;
-
-    }
-
-    // check the parent context
-    if (this->parent) {
-        this->parent->bind(value, name);
-    }
-
-    return nullptr;
-}
-
 unsigned int Context::getFlags() const {
     return this->flags;
 }

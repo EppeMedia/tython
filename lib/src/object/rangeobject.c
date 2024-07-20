@@ -20,6 +20,8 @@ object* range_create_primitive(long long int start, long long int end, long long
     range_obj->end = end;
     range_obj->step = step;
 
+    range_obj->subscript_cache = malloc(sizeof(object*));
+
     return AS_OBJECT(range_obj);
 }
 
@@ -51,7 +53,7 @@ static object* range_to_string(object* object) {
 
     // allocate string buffer ("range" + braces + commas + spaces)
     const int str_len = fields_len + (5 + 2 + 2 + 2);
-    char* str = malloc(str_len * sizeof(char));
+    char str[str_len];
 
     // fill string
     sprintf(str, "range(%lld, %lld, %lld)", range_obj->start, range_obj->end, range_obj->step);
@@ -138,10 +140,9 @@ static object** range_subscript(object* obj, object* idx) {
 
     object* v = TO_INT((index * range_obj->step) + range_obj->start);
 
-    object** r = malloc(sizeof(object**));
-    *r = v;
+    *range_obj->subscript_cache = v;
 
-    return r;
+    return range_obj->subscript_cache;
 }
 
 static object* range_create_iterator(object* obj) {
@@ -150,15 +151,26 @@ static object* range_create_iterator(object* obj) {
 
     range_object* range_obj = AS_RANGE(obj);
 
-    range_iterator_object* it = AS_RANGE_ITERATOR(range_iterator_type.alloc(&range_iterator_type));
+    range_iterator_object* it = AS_RANGE_ITERATOR(ALLOC(range_iterator_type));
 
     it->start = range_obj->start;
     it->step = range_obj->step;
     it->length = range_length_c(range_obj);
     it->cursor_cache = AS_INT(int_create(it->start));
-    GRAB_OBJECT(AS_OBJECT(it->cursor_cache));
+    GRAB_OBJECT(it->cursor_cache);
 
     return AS_OBJECT(it);
+}
+
+static void range_release(object* obj) {
+
+    assert(IS_RANGE(obj));
+
+    if (obj->refs == 1) {
+        free(AS_RANGE(obj)->subscript_cache);
+    }
+
+    default_release(obj);
 }
 
 static number_functions range_number_functions = {
@@ -195,7 +207,7 @@ type_object range_type = {
         .create_iterator    = &range_create_iterator,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &range_release,
 };
 
 static object* range_iterator_next(object* obj) {
@@ -223,11 +235,13 @@ static object* range_iterator_next(object* obj) {
 
         // the cursor is referenced by another object. We cannot update its content.
         // Release our reference to the cursor and overwrite it (the other referencing objects will take care of its cleanup when they release their reference).
-        it->cursor_cache->obj_base.type->release(AS_OBJECT(it->cursor_cache));
+
+        RELEASE_OBJECT(it->cursor_cache);
 
         // create the new cursor
         it->cursor_cache = AS_INT(int_create(cur));
-        GRAB_OBJECT(AS_OBJECT(it->cursor_cache));
+
+        GRAB_OBJECT(it->cursor_cache);
     }
 
     it->start += it->step;
@@ -251,6 +265,18 @@ static object* range_iterator_to_bool(object* obj) {
 static number_functions range_iterator_number_functions = {
         .to_bool            = &range_iterator_to_bool,
 };
+
+static void range_iterator_release(object* obj) {
+
+    assert(IS_RANGE_ITERATOR(obj));
+
+    // if we are cleaning up, release cursor first
+    if (obj->refs == 1) {
+        RELEASE_OBJECT(AS_RANGE_ITERATOR(obj)->cursor_cache);
+    }
+
+    default_release(obj);
+}
 
 type_object range_iterator_type = {
         .obj_base = {
@@ -277,5 +303,5 @@ type_object range_iterator_type = {
         .iterator_next      = &range_iterator_next,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &range_iterator_release,
 };

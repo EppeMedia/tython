@@ -24,7 +24,7 @@ static object* bool_to_string(object* object) {
     const size_t str_len = value ? 5 : 6;
 
     // allocate string buffer
-    char* str = malloc(sizeof(char) * str_len);
+    char str[str_len];
 
     // fill string
     sprintf(str, "%s", value ? "true" : "false");
@@ -65,6 +65,22 @@ static object* bool_to_float(object* obj) {
     return TO_FLOAT((double)v);
 }
 
+/**
+ * Booleans are singletons. They're never GC'ed. Calling this function is effectively a no-op.
+ * @param unused Parameter is unused. No type check is performed to ensure if this is a boolean.
+ */
+static void bool_grab(object* unused) {
+    (void)(0);
+}
+
+/**
+ * Booleans are singletons. They're never GC'ed. Calling this function is effectively a no-op.
+ * @param unused Parameter is unused. No type check is performed to ensure if this is a boolean.
+ */
+static void bool_release(object* unused) {
+    (void)(0);
+}
+
 static number_functions int_number_functions = {
         .to_bool            = &identity,
         .to_int             = &bool_to_int,
@@ -93,8 +109,8 @@ type_object bool_type = {
         .mapping_functions  = NULL,
         .sequence_functions = NULL,                     // not a sequence type
 
-        .grab               = &default_grab,
-        .release            = &default_release,
+        .grab               = &bool_grab,
+        .release            = &bool_release,
 };
 
 bool_object bool_true = {

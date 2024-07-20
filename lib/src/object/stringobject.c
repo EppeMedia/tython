@@ -39,7 +39,7 @@ object* string_create(const char* cstr, size_t length) {
         content[i] = cstr[i];
     }
 
-    object* obj = string_type.alloc(&string_type);
+    object* obj = ALLOC(string_type);
 
     AS_STRING(obj)->str = content;
     AS_STRING(obj)->length = length;
@@ -54,7 +54,7 @@ object* string_length(object* str) {
 
     size_t length = AS_STRING(str)->length;
 
-    return int_create(length);
+    return TO_INT(length);
 }
 
 /**
@@ -102,6 +102,16 @@ static object* string_concat(object* str, object* rhs) {
     return string_create(buf, len);
 }
 
+static void string_release(object* obj) {
+
+    // If we are about to be GC'ed, free the string buffer
+    if (obj->refs == 1) {
+        free(AS_STRING(obj)->str);
+    }
+
+    default_release(obj);
+}
+
 static number_functions string_number_functions = {
         .add            = &string_concat,
 };
@@ -134,5 +144,5 @@ type_object string_type = {
         .sequence_functions = &string_sequence_functions,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &string_release,
 };

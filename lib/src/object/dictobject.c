@@ -13,7 +13,7 @@
 #include "object/listobject.h"
 
 static object* dict_rich_compare(object* lhs,  object* rhs, int op) {
-    return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. Inequaltity should be implemented.
+    return TYTHON_FALSE; // todo: implement a default handler that prints a type error for all ORDINAL comparisons on dicts. (In)equaltity should be implemented.
 }
 
 static object* dict_to_string(object* obj) {
@@ -29,16 +29,20 @@ static object* dict_to_string(object* obj) {
         dict_entry entry = dict_obj->entries[i];
 
         object* key_string = entry.key->type->str(entry.key);
+        GRAB_OBJECT(key_string);
         entries_string_length += AS_STRING(key_string)->length;
+        RELEASE_OBJECT(key_string);
 
         object* value_string = entry.value->type->str(entry.value);
+        GRAB_OBJECT(value_string);
         entries_string_length += AS_STRING(value_string)->length;
+        RELEASE_OBJECT(value_string);
     }
 
     // allocate memory for the final string, which includes two curly braces for the dict, a colon and a space between each key and value, and a comma and space between each entry
     size_t separator_count = (dict_obj->size * 4) - 2; // the last entry is not followed by a comma and a space
     size_t str_len = (entries_string_length * sizeof(char)) + 2 + (separator_count * sizeof(char));
-    char* string = malloc(str_len);
+    char string[str_len];
     string[0] = '{';
     string[str_len - 1] = '}';
 
@@ -48,15 +52,19 @@ static object* dict_to_string(object* obj) {
 
         // copy the string representation of each entry
         string_object* key_string = GET_STRING(entry.key);
+        GRAB_OBJECT(key_string);
         memcpy(offset, key_string->str, key_string->length);
         offset += key_string->length;
+        RELEASE_OBJECT(key_string);
 
         *offset++ = ':';
         *offset++ = ' ';
 
         string_object* value_string = GET_STRING(entry.value);
+        GRAB_OBJECT(value_string);
         memcpy(offset, value_string->str, value_string->length);
         offset += value_string->length;
+        RELEASE_OBJECT(value_string);
 
         if (i != dict_obj->size - 1) {
             *offset++ = ',';
@@ -80,8 +88,16 @@ static object** dict_subscript(object* obj, object* key) {
 
         const dict_entry dict_entry = dict_obj->entries[i];
 
-        if (HASH_OBJECT(key)->value == HASH_OBJECT(dict_entry.key)->value) {
+        int_object* key_hash = HASH_OBJECT(key);
+        int_object* entry_key_hash = HASH_OBJECT(dict_entry.key);
+
+        GRAB_OBJECT(key_hash);
+        GRAB_OBJECT(entry_key_hash);
+
+        if (key_hash->value == entry_key_hash->value) {
             // found it, return a pointer to the value
+            RELEASE_OBJECT(key_hash);
+            RELEASE_OBJECT(entry_key_hash);
             return &dict_obj->entries[i].value;
         }
     }
@@ -153,17 +169,18 @@ static void dict_release(object* obj) {
     dict_object* dict_obj = AS_DICT(obj);
 
     // only release elements if we are about to be freed!
-    if (obj->refs != 1) {
-        return default_release(obj);
-    }
+    if (obj->refs == 1) {
 
-    // release all the elements this dict references
-    for (size_t i = 0; i < dict_obj->size; ++i) {
+        // release all the elements this dict references
+        for (size_t i = 0; i < dict_obj->size; ++i) {
 
-        dict_entry entry = dict_obj->entries[i];
+            dict_entry entry = dict_obj->entries[i];
 
-        entry.key->type->release(entry.key);
-        entry.value->type->release(entry.value);
+            RELEASE_OBJECT(entry.key);
+            RELEASE_OBJECT(entry.value);
+        }
+
+        free(dict_obj->entries);
     }
 
     // delegate the dict object to default release
@@ -205,6 +222,8 @@ type_object dict_type = {
         .number_functions   = &dict_number_functions,
         .mapping_functions  = &dict_mapping_functions,
         .sequence_functions = NULL,
+
+        .create_iterator    = NULL,
 
         .methods            = dict_methods,
 
