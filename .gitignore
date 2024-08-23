@@ -16,6 +16,7 @@ thirdparty/
 include/parser_temp/
 build.ninja
 
+test/
 build/
 exec
 *.ll

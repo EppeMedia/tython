@@ -298,7 +298,12 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    cout << "tython " << TYTHON_VERSION << endl;
+    if (configuration.version) {
+
+        cout << "tython " << TYTHON_VERSION << (!GC_ENABLED ? " (GC disabled)" : "") << endl;
+
+        return 0;
+    }
 
     if (!configuration.src_files) {
 

@@ -1,6 +1,5 @@
-#/*
-#Prints the string representation of the specified argument to the standard output stream.
-#*/
-#def hello(arg):
-#    print("Hello")
-#    print(arg)
+/*
+Greets the string representation of the specified argument over the standard output stream.
+*/
+def hello(arg):
+    print("Hello " + arg + "!")

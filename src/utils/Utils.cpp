@@ -202,6 +202,7 @@ namespace utils {
         return configuration_t {
             .src_files = getDefaultArguments(argc, argv),
             .help = hasFlag(argc, argv, { FLAG_HELP, FLAG_HELP_SHORT, FLAG_HELP_UNHELPFUL }),
+            .version = hasFlag(argc, argv, { FLAG_VERSION }),
             .verbose = hasFlag(argc, argv, { FLAG_VERBOSE, FLAG_VERBOSE_SHORT }),
             .main = getFlagArgument(argc, argv, { FLAG_MAIN, FLAG_MAIN_SHORT }),
             .build_dir = getFlagArgument(argc, argv, { FLAG_BUILD_DIR, FLAG_BUILD_DIR_SHORT }),

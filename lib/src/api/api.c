@@ -351,7 +351,6 @@ void __set__(specialization_t object_spec, specialization_t key_spec, specializa
     object* key = box_internal(key_spec);
     object* value = box_internal(value_spec);
 
-    GRAB_OBJECT(obj);
     GRAB_OBJECT(key);
     GRAB_OBJECT(value); // do not release here; we grab it for the instance we are setting it to
 
@@ -360,7 +359,6 @@ void __set__(specialization_t object_spec, specialization_t key_spec, specializa
     object** ref = obj->type->mapping_functions->subscript(obj, key);
     (*ref) = value;
 
-    RELEASE_OBJECT(obj);
     RELEASE_OBJECT(key);
 }
 
@@ -444,4 +442,17 @@ specialization_t str(specialization_t spec) {
         .tag    = SPEC_OBJECT,
         .object = str,
     };
+}
+
+void debug(specialization_t spec) {
+
+    printf("Type:\t\t%d\r\n", spec.tag);
+    printf("Value:\t\t");
+    print(spec);
+
+    if (spec.tag == SPEC_OBJECT) {
+        printf("ID:\t\t%p\r\n", spec.object->identity);
+        printf("Refs:\t\t%d\r\n", spec.object->refs);
+        printf("Type ptr:\t%p\r\n", spec.object->type);
+    }
 }

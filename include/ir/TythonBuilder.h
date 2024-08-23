@@ -105,9 +105,10 @@ public:
      * Generates the instructions for assigning one specialization union to another.
      * @param assignee The specialization union to assign to.
      * @param value The specialization union to assign.
+     * @param gc_enabled Indicates whether or not the assignment should generate GC grab/release logic.
      * @return Returns a reference to the assignee.
      */
-    llvm::Value* CreateAssign(llvm::Value* assignee, llvm::Value* value);
+    llvm::Value* CreateAssign(llvm::Value* assignee, llvm::Value* value, bool gc_enabled = true);
 
     /**
      * Generates instructions top test the specified subject for truthiness.

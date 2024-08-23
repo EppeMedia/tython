@@ -1,5 +1,0 @@
-Optimize IR->IR through Clang:
-clang -O3 -S -emit-llvm build/ir/scratch.ll -o a.ll
-
-Create tython executable from IR file:
-clang -O3 nbody.ll -lm -L../../cmake-build-debug/lib/src/ -ltython_lib -flto

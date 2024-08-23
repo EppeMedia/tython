@@ -125,4 +125,10 @@ specialization_t list(specialization_t obj);
  */
 specialization_t str(specialization_t spec);
 
+/**
+ * Utility function to print debug information for the specialization instance.
+ * @param spec The specialization instance to print debug info for.
+ */
+void debug(specialization_t spec);
+
 #endif //TYTHON_API_H

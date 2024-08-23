@@ -7,10 +7,11 @@
 FLAG_TYTHON="--tython"
 FLAG_CPYTHON="--cpython"
 FLAG_CODON="--codon"
+FLAG_ALL="--all"
 
 # Check if the correct number of arguments is provided
 if [ "$#" -le 2 ]; then
-  echo "Usage: $0 <benchmarks_source_directory> <iterations> <COMPILER...>, with COMPILER := { $FLAG_TYTHON, $FLAG_CPYTHON, $FLAG_CODON }"
+  echo "Usage: $0 <benchmarks_source_directory> <iterations> <COMPILER...>, with COMPILER := { $FLAG_TYTHON, $FLAG_CPYTHON, $FLAG_CODON, $FLAG_ALL }"
   exit 1
 fi
 
@@ -20,13 +21,17 @@ run_codon=0
 
 for arg in "$@"
 do
-    if [ "$arg" == "$FLAG_TYTHON" ]; then
+    if [ "$arg" == "$FLAG_TYTHON" ] || [ "$arg" == "$FLAG_ALL" ]; then
         run_tython=1
         break
-    elif [ "$arg" == "$FLAG_CPYTHON" ]; then
+    fi
+
+    if [ "$arg" == "$FLAG_CPYTHON" ] || [ "$arg" == "$FLAG_ALL" ]; then
         run_cpython=1
         break
-    elif [ "$arg" == "$FLAG_CODON" ]; then
+    fi
+
+    if [ "$arg" == "$FLAG_CODON" ] || [ "$arg" == "$FLAG_ALL" ]; then
         run_codon=1
         break
     fi

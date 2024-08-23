@@ -3,7 +3,7 @@
 
 llvm::Value* Context::findVariable(const std::string& name) {
 
-    if (this->variable_shadow_symbol_table.count(name)) {
+    if (this->isLexicalBlock() && this->variable_shadow_symbol_table.count(name)) {
         return this->variable_shadow_symbol_table.at(name);
     }
 
@@ -15,6 +15,10 @@ llvm::Value* Context::findVariable(const std::string& name) {
 }
 
 void Context::registerVariable(const std::string& name, llvm::Value* value) {
+
+    if (!this->isLexicalBlock()) {
+        throw CompileException("Attempt to register variable in non-lexical context!");
+    }
 
     if (findVariable(name)) {
         throw CompileException("Attempt to register variable with existing name in scope!");
@@ -58,6 +62,10 @@ void Context::setComplete() {
 
 bool Context::isComplete() const {
     return this->flags & TYTHON_CONTEXT_FLAG_COMPLETE;
+}
+
+bool Context::isFunction() const {
+    return this->flags & TYTHON_CONTEXT_FLAG_FUNCTION;
 }
 
 bool Context::isAssign() const {

@@ -28,11 +28,13 @@ std::any SourceFileVisitor::visitImport_statement(TythonParser::Import_statement
 
 std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_statementContext *ctx) {
 
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+
     std::function<void (llvm::Value*)> rhs_handler;
 
     try {
 
-        this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+        this->builder->nestContext();
 
         try {
 
@@ -80,6 +82,8 @@ std::any SourceFileVisitor::visitLbl_assign_statement(TythonParser::Lbl_assign_s
 
     rhs_handler(rhs);
 
+    this->builder->popContext();
+
     return rhs;
 }
 
@@ -118,6 +122,8 @@ std::any SourceFileVisitor::visitLbl_lval_key_access(TythonParser::Lbl_lval_key_
 
 std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plus_eqContext *ctx) {
 
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+
     auto operand = any_cast<llvm::Value*>(visit(ctx->expression()));
     llvm::Value* assign_value;
 
@@ -155,10 +161,14 @@ std::any SourceFileVisitor::visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plu
 
     rhs_handler(assign_value);
 
+    this->builder->popContext();
+
     return assign_value;
 }
 
 std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_minus_eqContext *ctx) {
+
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
 
     auto operand = any_cast<llvm::Value*>(visit(ctx->expression()));
     llvm::Value* assign_value;
@@ -196,6 +206,8 @@ std::any SourceFileVisitor::visitLbl_assign_minus_eq(TythonParser::Lbl_assign_mi
     const auto rhs_handler = any_cast<std::function<void (llvm::Value*)>>(visit(ctx->lval()));
 
     rhs_handler(assign_value);
+
+    this->builder->popContext();
 
     return assign_value;
 }
@@ -564,7 +576,13 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
 
         it = this->builder->CreateGetIterator(iterable);
 
-        this->builder->CreateReleaseObject(iterable);
+//        this->builder->CreateReleaseObject(iterable);
+//
+//        // if the iterable was the return value of a function call, deregister it now (we have already freed it)
+//        {
+//            auto returns = &this->builder->current_context->floating_return_values;
+//            returns->erase(std::remove_if(returns->begin(), returns->end(), [iterable](llvm::Value* v) { return iterable->getValueID() == v->getValueID(); }), returns->end());
+//        }
 
         // grab a reference to the iterator
         this->builder->CreateGrabObject(it);
@@ -580,7 +598,7 @@ std::any SourceFileVisitor::visitFor_loop(TythonParser::For_loopContext *ctx) {
         auto it_value = this->builder->CallIteratorNext(it);
 
         // bind the stale iterator value to the induction variable
-        this->builder->CreateAssign(it_var, it_value);
+        this->builder->CreateAssign(it_var, it_value, false); // we'll manage the timing of the reference counting manually
 
         this->builder->CreateCondBr(test, br_for, br_end);
 
@@ -739,7 +757,7 @@ std::any SourceFileVisitor::visitFunction_def(TythonParser::Function_defContext 
     auto identifier = ctx->IDENTIFIER()->getText();
 
     // create a new scope for this function's arguments. The body scope of the function will be nested in this.
-    this->builder->nestContext();
+    this->builder->nestContext(TYTHON_CONTEXT_FLAG_LEX_BLOCK | TYTHON_CONTEXT_FLAG_FUNCTION);
 
     // function declarations are fully opaque; we only know that it will return an object (may be None), and that it takes either at most n, or a variable number of arguments
     auto return_type = this->module->specialization_type;
@@ -815,6 +833,40 @@ std::any SourceFileVisitor::visitReturn_statement(TythonParser::Return_statement
 
     this->builder->current_context->setComplete();
 
+    // first insert GC cleanup, then generate return!
+
+    // clean up all lexical contexts up to and including the function level
+    ::Context* context = this->builder->current_context;
+    while (context) {
+
+        // invoke a release on all known entries in the shadow table
+        if (context->isLexicalBlock()) {
+            for (auto& v : context->variable_shadow_symbol_table) {
+
+                const auto load = this->builder->CreateLoad(this->module->specialization_type, v.second);
+
+//                if (load->getValueID() == ret_val->getValueID()) {
+//                    continue; // we do not release the object we are returning
+//                }
+
+                this->builder->CreateReleaseObject(load);
+            }
+        }
+
+        for (auto r : context->floating_return_values) {
+            if (r->getValueID() == ret_val->getValueID()) {
+                continue; // we do not release the object we are returning
+            }
+            this->builder->CreateReleaseObject(r);
+        }
+
+        if (context->isFunction()) {
+            break;
+        }
+
+        context = context->parent;
+    }
+
     return this->builder->CreateRet(ret_val);
 }
 
@@ -882,6 +934,7 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
     }
 
     auto params = any_cast<std::vector<llvm::Value*>>(visitInternalCallParameters(ctx->parameters()));
+    std::vector<llvm::Value*> adjusted_params = params;
 
     const auto function_name = ctx->IDENTIFIER()->getText();
     auto f = this->module->findProcedure(function_name);
@@ -894,14 +947,14 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
         if (params.size() > f->arg_size()) {
 
             utils::log_warn(module, ctx, std::format("Dropping last {} arguments.", params.size() - f->arg_size()));
-            params.resize(f->arg_size());
+            adjusted_params.resize(f->arg_size());
 
         } else {
 
             utils::log_warn(module, ctx, "Padding argument list with None values.");
 
             for (int i = 0; i < f->arg_size() - params.size(); ++i) {
-                params.push_back(this->builder->CreateNoneSpec());
+                adjusted_params.push_back(this->builder->CreateNoneSpec());
             }
         }
 
@@ -933,9 +986,9 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
         throw CompileException("Undefined reference to function \"" + function_name + "\".");
     }
 
-    llvm::Value* result = this->builder->CreateCall(f, params);
+    llvm::Value* result = this->builder->CreateCall(f, adjusted_params);
 
-    // release param objects
+    // release all original param objects
     for (auto& p : params) {
         this->builder->CreateReleaseObject(p);
     }
@@ -943,6 +996,18 @@ llvm::Value *SourceFileVisitor::visitInternalCallExpression(TythonParser::Call_e
     if (result->getType()->isVoidTy()) {
         // return None implicitly
         return this->builder->CreateNoneSpec();
+    }
+
+    // Track this return value. If it is not used by the end of the lexical scope, release it
+    ::Context* lex_context = this->builder->current_context;
+    // climb to the enclosing lexical scope to register floating return values
+    while (lex_context && !lex_context->isLexicalBlock()) {
+        lex_context = lex_context->parent;
+    }
+
+    if (lex_context) {
+        this->builder->CreateGrabObject(result);
+        lex_context->floating_return_values.push_back(result);
     }
 
     return result;
@@ -1178,7 +1243,7 @@ std::any SourceFileVisitor::visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    this->builder->nestContext();
     const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
     this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
@@ -1200,7 +1265,7 @@ std::any SourceFileVisitor::visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    this->builder->nestContext();
     const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
     this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
@@ -1227,7 +1292,7 @@ std::any SourceFileVisitor::visitLbl_dec_prefix(TythonParser::Lbl_dec_prefixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    this->builder->nestContext();
     const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
     this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);
@@ -1249,7 +1314,7 @@ std::any SourceFileVisitor::visitLbl_dec_suffix(TythonParser::Lbl_dec_suffixCont
     const auto ptr_t = llvm::PointerType::get(this->builder->object_type, 0);
 
     // get lval
-    this->builder->nestContext(TYTHON_CONTEXT_FLAG_ASSIGN);
+    this->builder->nestContext();
     const auto lval_ref = any_cast<llvm::Value*>(visit(ctx->expression()));
     this->builder->popContext();
     const auto lval = this->builder->CreateLoad(ptr_t, lval_ref);

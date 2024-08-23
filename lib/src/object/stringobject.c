@@ -88,8 +88,14 @@ static object* string_concat(object* str, object* rhs) {
         type_error();
     }
 
+    GRAB_OBJECT(str);
+    GRAB_OBJECT(rhs);
+
     string_object* lhs_str = AS_STRING(str);
     string_object* rhs_str = AS_STRING(rhs->type->str(rhs));
+
+    GRAB_OBJECT(lhs_str);
+    GRAB_OBJECT(rhs_str);
 
     // create a buffer large enough for the concatenated string
     const size_t len = lhs_str->length + rhs_str->length;
@@ -98,6 +104,12 @@ static object* string_concat(object* str, object* rhs) {
     // copy the contents of the string buffers
     memcpy(buf, lhs_str->str, lhs_str->length);
     memcpy(buf + lhs_str->length, rhs_str->str, rhs_str->length);
+
+    RELEASE_OBJECT(lhs_str);
+    RELEASE_OBJECT(rhs_str);
+
+    RELEASE_OBJECT(str);
+    RELEASE_OBJECT(rhs);
 
     return string_create(buf, len);
 }

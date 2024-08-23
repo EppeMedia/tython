@@ -12,7 +12,29 @@
 #include "object/boolobject.h"
 #include "error/error.h"
 
+#define INTEGER_CACHE_SIZE  256
+
+static object* integer_cache[INTEGER_CACHE_SIZE];
+static bool integer_cache_initialized = false;
+
 object* int_create(long long v) {
+
+    if (v >= 0 && v < INTEGER_CACHE_SIZE) {
+
+        if (!integer_cache_initialized) {
+
+            for (int i = 0; i < INTEGER_CACHE_SIZE; ++i) {
+                object* e = ALLOC(int_type);
+                AS_INT(e)->value = i;
+                integer_cache[i] = e;
+                GRAB_OBJECT(e);
+            }
+
+            integer_cache_initialized = true;
+        }
+
+        return integer_cache[v];
+    }
 
     object* a = ALLOC(int_type);
 

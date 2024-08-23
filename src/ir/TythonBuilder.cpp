@@ -12,7 +12,7 @@
 void TythonBuilder::init() {
 
     // create global scope
-    this->current_context = new class Context();
+    this->current_context = new class Context(nullptr, TYTHON_CONTEXT_FLAG_LEX_BLOCK);
 
     initFirstClassTypes();
 }
@@ -108,14 +108,19 @@ Context *TythonBuilder::nestContext(unsigned int flags) {
 
 Context *TythonBuilder::popContext(bool free) {
 
-    if (free) {
+    if (free && !this->current_context->isComplete()) {
 
-        // free objects bound to variables that were declared in this scope
+        // release objects bound to variables that were declared in this scope
         for (auto &e: this->current_context->variable_shadow_symbol_table) {
 
             const auto load = this->CreateLoad(this->module->specialization_type, e.second);
 
             this->CreateReleaseObject(load);
+        }
+
+        // release floating objects returned in this context
+        for (auto r : this->current_context->floating_return_values) {
+            this->CreateReleaseObject(r);
         }
     }
 
@@ -146,7 +151,7 @@ llvm::Value *TythonBuilder::CreateGetMappingFunctions(llvm::Value *type_object) 
     return this->CreateGEP(this->typeobject_type, type_object, {zero, slot });
 }
 
-llvm::Value *TythonBuilder::CreateAssign(llvm::Value *assignee, llvm::Value *value) {
+llvm::Value *TythonBuilder::CreateAssign(llvm::Value *assignee, llvm::Value *value, bool gc_enabled) {
 
     /*
      * LHS is (globally) allocated to hold a specialization union.
@@ -156,11 +161,16 @@ llvm::Value *TythonBuilder::CreateAssign(llvm::Value *assignee, llvm::Value *val
      */
 
     const auto old_value = this->CreateLoad(this->module->specialization_type, assignee);
-    this->CreateReleaseObject(old_value); // decrement old value ref count
+
+    if (gc_enabled) {
+        this->CreateReleaseObject(old_value); // decrement old value ref count
+    }
 
     this->CreateStore(value, assignee);
 
-    this->CreateGrabObject(value);
+    if (gc_enabled) {
+        this->CreateGrabObject(value);
+    }
 
     return assignee;
 }
@@ -183,12 +193,12 @@ llvm::Value *TythonBuilder::CreateObjectIsTruthy(llvm::Value *subject) {
 
         const auto condition_primitive = (llvm::Value*)this->CreateCall(*this->module->object_is_truthy_func, { object_primitive }, "object_is_truthy");
 
+        this->CreateReleaseObjectPrimitive(object_primitive);
+
         return this->CreateSpecInstance(SPEC_INT, condition_primitive);
     };
 
     const auto result_spec = this->CreateTypeGuard(subject, int_handler, float_handler, object_handler);
-
-    this->CreateReleaseObject(subject);
 
     // get the integer out of the result spec
     const auto content = this->getContent(result_spec);
@@ -204,8 +214,6 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
                                         const std::function<llvm::Value*(llvm::Value *, llvm::Value *)>& specialized_int_case_handler,
                                         const std::function<llvm::Value*(llvm::Value *, llvm::Value *)>& specialized_float_case_handler,
                                         const std::function<llvm::Value *(llvm::Value *, llvm::Value *)>& dynamic_runtime_handler) {
-
-    // todo: insert GC operations where appropriate (when LHS is object, grab and release it; same for RHS; also grab any result objects)
 
     const auto int32_t = llvm::IntegerType::getInt32Ty(this->getContext());
     const auto int64_t = llvm::IntegerType::getInt64Ty(this->getContext());
@@ -319,10 +327,12 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
         const auto rhs_value_cast = this->CreateIntToPtr(rhs_value, ptr_t);
 
         const auto object_spec = this->CreateSpecInstance(SPEC_OBJECT, rhs_value_cast);
+
         this->CreateGrabObject(object_spec);
-
         const auto rhs_primitive = this->CreateCall(*this->module->object_to_primitive, {rhs_value_cast, type_tag_value }, "rhs_primitive");
+        this->CreateReleaseObjectPrimitive(rhs_value_cast);
 
+        // matching the grab for the binop
         this->CreateReleaseObjectPrimitive(rhs_value_cast);
 
         // we can now assume the primitive is a valid reference. Runtime type assertion will abort the stack frame otherwise
@@ -481,7 +491,6 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
             const auto lhs_value_cast = this->CreateIntToPtr(lhs_value, ptr_t);
 
             const auto object_spec = this->CreateSpecInstance(SPEC_OBJECT, lhs_value_cast);
-            this->CreateGrabObject(object_spec);
 
             const auto lhs_primitive = this->CreateCall(*this->module->object_to_primitive, {lhs_value_cast, type_tag_value }, "lhs_primitive");
 
@@ -542,9 +551,6 @@ llvm::Value* TythonBuilder::CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
 
             const auto lhs_object_spec = this->CreateSpecInstance(SPEC_OBJECT, lhs_value_cast);
             const auto rhs_object_spec = this->CreateSpecInstance(SPEC_OBJECT, rhs_value_cast);
-
-            this->CreateGrabObject(lhs_object_spec);
-            this->CreateGrabObject(rhs_object_spec);
 
             const auto result = dynamic_runtime_handler(lhs_value_cast, rhs_value_cast);
 
@@ -1052,18 +1058,25 @@ llvm::Value *TythonBuilder::CreateStringObject(llvm::Value *cstr, llvm::Value *l
 
 llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
-    if (this->current_context->findVariable(name)) {
+    ::Context* lex_context = this->current_context;
+
+    // climb to the enclosing lexical scope to register variables
+    while (!lex_context->isLexicalBlock()) {
+        lex_context = lex_context->parent;
+    }
+
+    if (lex_context->findVariable(name)) {
         throw CompileException("Attempt to create variable with existing name in scope!");
     }
 
     llvm::Value* alloc;
 
-    if (this->current_context->isGlobal()) {
+    if (lex_context->isGlobal()) {
 
         llvm::Constant *zeroInit = llvm::ConstantAggregateZero::get(this->module->specialization_type);
         alloc = new llvm::GlobalVariable(*this->module, this->module->specialization_type, false, llvm::GlobalValue::InternalLinkage, zeroInit, name);
 
-    } else if (auto loopContext = this->current_context->getEnclosingLoop()) { // check if we are nested in a loop
+    } else if (auto loopContext = lex_context->getEnclosingLoop()) { // check if we are nested in a loop
 
         // go to the top-level loop;
         ::Context* parentLoop = nullptr;
@@ -1095,16 +1108,13 @@ llvm::Value* TythonBuilder::CreateVariable(const std::string &name) {
 
 #if GC_ENABLED
     // default value is None, otherwise the GC infrastructure would try to grab a reference on a garbage pointer (not an object instance)
-    if (!this->current_context->isGlobal()) {
-//        this->CreateStore(this->none_object_instance, alloc);
-        const auto default_value = this->CreateSpecInstance(SPEC_OBJECT, this->none_object_instance);
-        this->CreateStore(default_value, alloc);
-    }
+    const auto default_value = this->CreateSpecInstance(SPEC_OBJECT, this->none_object_instance);
+    this->CreateStore(default_value, alloc);
 #endif
 
     // register and return reference
-    this->current_context->registerVariable(name, alloc);
-    return this->current_context->findVariable(name);
+    lex_context->registerVariable(name, alloc);
+    return lex_context->findVariable(name);
 }
 
 llvm::Value* TythonBuilder::CreateDictLiteral(llvm::Value *count, std::vector<std::pair<llvm::Value *, llvm::Value *>> &entries) {

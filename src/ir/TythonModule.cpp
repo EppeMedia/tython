@@ -80,6 +80,11 @@ void TythonModule::initialize() {
     *(this->tython_str_func) = this->getOrInsertFunction("str", tython_str_type);
     registerProcedure((llvm::Function*)this->tython_str_func->getCallee(), "str"); // user accessible // todo: make a tython wrapper for this in the standard library module
 
+    llvm::FunctionType* tython_debug_type = llvm::FunctionType::get(void_t, { this->specialization_type }, false);
+    auto tython_debug_func = new llvm::FunctionCallee();
+    *(tython_debug_func) = this->getOrInsertFunction("debug", tython_debug_type);
+    registerProcedure((llvm::Function*)tython_debug_func->getCallee(), "debug"); // user accessible // todo: make a tython wrapper for this in the standard library module
+
     llvm::FunctionType* tython_ewout_type = llvm::FunctionType::get(void_t, { this->specialization_type }, false);
     this->tython_ewout_func = new llvm::FunctionCallee();
     *(this->tython_ewout_func) = this->getOrInsertFunction("ewout", tython_ewout_type);

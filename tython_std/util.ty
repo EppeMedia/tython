@@ -1,13 +1,13 @@
-#
-## Returns the minimum of the provided arguments.
-#def min(a, b):
-#    if a < b:
-#        return a
-#    return b
-#
-## Implementation of zip.
-#def zip(x, y):
-#    zip = []
-#    for i in range(0, min(len(x), len(y))):
-#        zip.append((x[i], y[i]))
-#    return zip
+
+# Returns the minimum of the provided arguments.
+def min(a, b):
+    if a < b:
+        return a
+    return b
+
+# Implementation of zip.
+def zip(x, y):
+    zip = []
+    for i in range(0, min(len(x), len(y))):
+        zip.append((x[i], y[i]))
+    return zip

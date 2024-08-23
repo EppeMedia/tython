@@ -24,7 +24,7 @@ extern type_object list_iterator_type;
 typedef struct list_iterator_object_t {
     ObjectHead;
 
-    object* idx;
+    size_t idx;
     list_object* list_obj;
 
 } list_iterator_object;

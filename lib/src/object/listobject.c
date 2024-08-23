@@ -262,10 +262,9 @@ static object* list_create_iterator(object* obj) {
 
     list_iterator_object* it = AS_LIST_ITERATOR(list_iterator_type.alloc(&list_iterator_type));
 
-    it->idx = TO_INT(0);
+    it->idx = 0;
     it->list_obj = list_obj;
 
-    GRAB_OBJECT(it->idx);
     GRAB_OBJECT(AS_OBJECT(it->list_obj));
 
     return AS_OBJECT(it);
@@ -350,15 +349,21 @@ static object* list_iterator_next(object* obj) {
 
     list_iterator_object* it = AS_LIST_ITERATOR(obj);
 
-    if (AS_INT(it->idx)->value >= it->list_obj->size) {
+    if (it->idx >= it->list_obj->size) {
         // this iterator has run off the end
         return AS_OBJECT(TYTHON_NONE);
     }
 
-    object* e = *list_subscript(AS_OBJECT(it->list_obj), it->idx);
+    object* idx_obj = TO_INT(it->idx);
+
+    GRAB_OBJECT(idx_obj);
+
+    object* e = *list_subscript(AS_OBJECT(it->list_obj), idx_obj);
+
+    RELEASE_OBJECT(idx_obj);
 
     // increment index
-    AS_INT(it->idx)->value++;
+    it->idx++;
 
     return e;
 }
@@ -369,7 +374,7 @@ static object* list_iterator_to_bool(object* obj) {
 
     list_iterator_object* it = AS_LIST_ITERATOR(obj);
 
-    if (AS_INT(it->idx)->value >= it->list_obj->size) {
+    if (it->idx >= it->list_obj->size) {
         return TYTHON_FALSE;
     }
 
@@ -380,7 +385,6 @@ static void list_iterator_release(object* obj) {
 
     // if we are about to be GC'ed, release the index object and list references
     if (obj->refs == 1) {
-        RELEASE_OBJECT(AS_LIST_ITERATOR(obj)->idx);
         RELEASE_OBJECT(AS_LIST_ITERATOR(obj)->list_obj);
     }
 
