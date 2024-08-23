@@ -8,6 +8,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include "TythonModule.h"
 #include "model/Context.h"
+#include "utils/Utils.h"
 #include <string>
 
 class TythonBuilder : public llvm::IRBuilder<> {
@@ -15,6 +16,8 @@ class TythonBuilder : public llvm::IRBuilder<> {
     friend class SourceFileVisitor;
 
 private:
+
+    const configuration_t* config;
 
     llvm::StructType* object_type;
     llvm::StructType* typeobject_type;
@@ -46,9 +49,19 @@ private:
     TythonModule* module;
     class Context* current_context;
 
+    /**
+     * Creates a call to the specified binary number function using the specified operands.
+     * @param number_function_slot The slot from which to load the number function.
+     * @param lhs The left-hand side of the binary operation (this must be an object pointer).
+     * @param rhs The right-hand side of the binary operation (this must be an object pointer).
+     * @return Returns the result of the number function call.
+     */
+    llvm::Value* CreateBinaryNumberFunctionCall(size_t number_function_slot, llvm::Value* lhs, llvm::Value* rhs);
+
 public:
-    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb) : llvm::IRBuilder<>(bb),
+    TythonBuilder(TythonModule* module, llvm::BasicBlock* bb, const configuration_t* config) : llvm::IRBuilder<>(bb),
                                                                 module(module),
+                                                                config(config),
                                                                 current_context(nullptr),
                                                                 object_type(nullptr),
                                                                 typeobject_type(nullptr),
@@ -57,6 +70,8 @@ public:
                                                                 none_object_instance(nullptr) {
         init();
     };
+
+    ::Context* popGlobalContext();
 
     /**
      * Creates a variable in the current context.
@@ -86,9 +101,35 @@ public:
      */
     llvm::Value* CreateGetMappingFunctions(llvm::Value* type_object);
 
-    llvm::Value* CreateObjectIsTruthy(llvm::Value* object_instance);
+    /**
+     * Generates the instructions for assigning one specialization union to another.
+     * @param assignee The specialization union to assign to.
+     * @param value The specialization union to assign.
+     * @param gc_enabled Indicates whether or not the assignment should generate GC grab/release logic.
+     * @return Returns a reference to the assignee.
+     */
+    llvm::Value* CreateAssign(llvm::Value* assignee, llvm::Value* value, bool gc_enabled = true);
+
+    /**
+     * Generates instructions top test the specified subject for truthiness.
+     * @param subject The subject to test for truthiness. Must be a specialization type.
+     * @return Returns an integer primitive greater than zero iff the subject is truthy.
+     */
+    llvm::Value* CreateObjectIsTruthy(llvm::Value* subject);
 
     llvm::Value* CreateResolveBuiltinMethod(llvm::Value* object, llvm::Value* name);
+
+    /**
+     * Wraps binary operations in a dynamic type guard.
+     * @param lhs The left-hand side of the binary operation.
+     * @param rhs The right-hand side of the binary operation.
+     * @param specialized_case_handler This receives two primitive values, perform a binop instruction and return the result of that operation.
+     * @param dynamic_runtime_handler This receives two OBJECT pointers, and should delegate control to the right runtime calls.
+     */
+    llvm::Value* CreateBinop(llvm::Value* lhs, llvm::Value* rhs,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& specialized_int_case_handler,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& specialized_float_case_handler,
+                             const std::function<llvm::Value* (llvm::Value*, llvm::Value*)>& dynamic_runtime_handler);
 
     /**
      * Generates the instructions to numerically add two Tython objects.
@@ -115,21 +156,36 @@ public:
     llvm::Value* CreateTythonMult(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
- * Generates the instructions to numerically divide two Tython objects.
- * @param lhs The lhs object of the division.
- * @param rhs The rhs object of the division.
- * @return Returns a reference to the result of the division of the specified lhs and rhs.
- */
+     * Generates the instructions to numerically divide two two numbers.
+     * @param lhs The lhs object of the division.
+     * @param rhs The rhs object of the division.
+     * @return Returns a reference to the result of the division of the specified lhs and rhs.
+     */
     llvm::Value* CreateTythonDiv(llvm::Value* lhs, llvm::Value* rhs);
 
     /**
- * Generates the instructions to numerically exponentiate the lhs (base) object by the rhs (exponent) object.
- * @param lhs The lhs object (base) of the exponentiation.
- * @param rhs The rhs object of the exponent.
- * @return Returns a reference to the result of the exponentiation of the specified lhs (base) and rhs (exponent).
- */
+     * Generates the instructions to numerically floor-divide two numbers.
+     * @param lhs The lhs object of the floor division.
+     * @param rhs The rhs object of the floor division.
+     * @return Returns a reference to the result of the floor division of the specified lhs and rhs.
+     */
+    llvm::Value* CreateTythonFloorDiv(llvm::Value* lhs, llvm::Value* rhs);
+
+    /**
+     * Generates the instructions to numerically exponentiate the lhs (base) object by the rhs (exponent) object.
+     * @param lhs The lhs object (base) of the exponentiation.
+     * @param rhs The rhs object of the exponent.
+     * @return Returns a reference to the result of the exponentiation of the specified lhs (base) and rhs (exponent).
+     */
     llvm::Value* CreateTythonExp(llvm::Value* lhs, llvm::Value* rhs);
 
+    /**
+     * Generates the instructions to take the modulo of two numbers.
+     * @param lhs The lhs object of the modulo.
+     * @param rhs The rhs object of the modulo.
+     * @return Returns a reference to the result of the modulo of the specified lhs and rhs.
+     */
+    llvm::Value* CreateTythonMod(llvm::Value* lhs, llvm::Value* rhs);
     /**
      * Generates the instructions to perform a rich comparison between to the specified objects.
      * @param lhs The left-hand side of the comparison operation.
@@ -164,10 +220,22 @@ public:
 
     /**
      * Generates the instructions to increment the specified iterator reference.
-     * @param it The iterator to increment.
+     * @param it_primitive The iterator to increment.
      * @return Returns the (stale) value of the iterator before the increment.
      */
-    llvm::Value* CallIteratorNext(llvm::Value* it);
+    llvm::Value* CallIteratorNext(llvm::Value* it_primitive);
+
+    /**
+     * Creates a specialization struct around the global none instance.
+     */
+    llvm::Value* CreateNoneSpec();
+
+    /**
+     * Generates the instructions to create a new boolean object instance for the specified boolean truthiness.
+     * @param truthiness The boolean value to create a boolean object for.
+     * @return Returns a reference to the new boolean object.
+     */
+    llvm::Value* CreateBoolObject(bool truthiness);
 
     /**
      * Generates the instructions to create a new integer object instance for the specified integer value.
@@ -208,10 +276,10 @@ public:
     llvm::Value* CreateListLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
 
     /**
-     * Generates the instructions to create a tuple object containing the {count} {elements}.
-     * @param count The number of elements the new tuple should contain.
-     * @param elements The elements the tuple should be initialized with.
-     * @return Returns a reference to the newly created tuple object.
+     * Generates the instructions to create a __tuple__ object containing the {count} {elements}.
+     * @param count The number of elements the new __tuple__ should contain.
+     * @param elements The elements the __tuple__ should be initialized with.
+     * @return Returns a reference to the newly created __tuple__ object.
      */
     llvm::Value* CreateTupleLiteral(llvm::Value* count, std::vector<llvm::Value*>& elements);
 
@@ -222,10 +290,114 @@ public:
     void CreateGrabObject(llvm::Value* object);
 
     /**
-     * Generates the instructions to release a reference to the specified object.
-     * @param object The object to be released.
+     * Generates the guarded instructions to release a reference to the specified value.
+     * @param object The value to be released.
      */
     void CreateReleaseObject(llvm::Value* object);
+
+    /**
+     * Generates the instructions to release a reference to the specified object primitive.
+     * @param object The object primitiveto be released.
+     */
+    void CreateReleaseObjectPrimitive(llvm::Value* object);
+
+    /**
+     * Creates a zero-initialized instance of a specialization union.
+     * @return Returns a zero-initialized instance of a specialization struct.
+     */
+    llvm::Value* CreateSpecInstance();
+
+    /**
+     * Creates a specialized type/value struct.
+     * @param type_enum The type of the specialization.
+     * @param value The value which is of type {type_enum}.
+     * @param name The name of the instance (only used if the instance is non-local).
+     * @param forceGlobal Indicates whether the instance should be global generated as a global (regardless of context).
+     */
+    llvm::Value* CreateSpecInstance(int32_t type_enum, llvm::Value* value, std::string name = "", bool forceGlobal = false);
+
+    /**
+     * Generates the instructions to copy the specified specialization instance to the specified target.
+     * Note that the target should have at least sizeof(specialization_type) bytes of writable memory.
+     * @param spec_instance The specialization instance to copy.
+     * @param target The target to copy into.
+     * @return Returns a reference to the target.
+     */
+    llvm::Value* CreateCopySpec(llvm::Value* spec_instance, llvm::Value* target);
+
+    /**
+     * Creates a type guard for the specified guardee value, invoking the code generated by the specified handler at runtime, depending on the type tag of the guardee.
+     * If the runtime type tag is not INT, FLOAT, or OBJECT, or if the handler is a nullpointer, this throws a type error (the code generated by the object handler is not called).
+     *
+     * @param guardee The specialization object to be guarded.
+     * @param int_handler The integer handler. Receives a primitive i64 value. Must return a specialization struct.
+     * @param float_handler The float handler. Receives a primitive f64 value. Must return a specialization struct.
+     * @param object_handler The object handler. Receives a primitive object reference (ptr). Must return a specialization struct.
+     * @return Returns a reference to the result of the invoked handler at runtime. This is a specialization struct.
+     */
+    llvm::Value* CreateTypeGuard(llvm::Value *guardee,
+                                 const std::function<llvm::Value* (llvm::Value*)> &int_handler,
+                                 const std::function<llvm::Value* (llvm::Value*)> &float_handler,
+                                 const std::function<llvm::Value* (llvm::Value*)> &object_handler);
+
+    /**
+     * Creates a type guard for the specified guardee value, invoking the code generated by the specified object_handler handler if the runtime type tag of the guardee is SPEC_OBJECT.
+     * Otherwise, throws a type error (the code generated by the object handler is not called).
+     * <br>
+     * The specified object handler receives an object pointer, <b>not</b> a specialization struct.
+     * @param guardee The value to guard at runtime.
+     * @param object_handler The handler which generates the object handler code. Receives a primitive object reference (ptr). Must return a specialization struct.
+     * @return Returns the result of the object handler.
+     */
+    llvm::Value* CreateObjectTypeGuard(llvm::Value* guardee, const std::function<llvm::Value* (llvm::Value*)>& object_handler);
+
+    /**
+     * Generates the instructions to box the specified specialization value:<br>
+     * box({ INT, i }) -> { OBJ, integer_object(i) }<br>
+     * box({ FLOAT, f }) -> { OBJ, float_object(f) }<br>
+     * box({ OBJ, o }) -> { OBJ, o }<br>
+     *
+     * @param value The specialization value to box.
+     * @return Returns a boxed representation of the specified specialization value.
+     */
+    llvm::Value* CreateBox(llvm::Value* value);
+
+    /**
+     * Generates the instructions to take to primitive object pointer out of the specified specialization value.
+     * @param value The specialization value to take the primitive object pointer out of.
+     * @return Returns the primitive object pointer contained inside the specified specialization value.
+     */
+    llvm::Value* CreateGetObjectPrimitive(llvm::Value* value);
+
+    /**
+     * Gets the type tag of the specified specialization union.
+     * @param spec The specialization union to get the type tag of.
+     * @return Returns the type tag related to the specified specialization union.
+     */
+    llvm::Value* getTag(llvm::Value* spec);
+
+    /**
+     * Sets the type tag of the specified specialization union to the specified value.
+     * @param spec The specialization union to set the type tag of.
+     * @param value The value to set the tag to.
+     * @return Returns the specialization union with the tag set.
+     */
+    llvm::Value* setTag(llvm::Value* spec, llvm::Value* value);
+
+    /**
+     * Gets the content of the specified specialization union.
+     * @param spec The specialization union to get the content of.
+     * @return Returns the content related to the specified specialization union.
+     */
+    llvm::Value* getContent(llvm::Value* spec);
+
+    /**
+     * Sets the content of the specified specialization union to the specified value.
+     * @param spec The specialization union to set the content of.
+     * @param value The value to set the content to.
+     * @return Returns the specialization union with the content set.
+     */
+    llvm::Value* setContent(llvm::Value* spec, llvm::Value* value, const std::string& name = "content");
 
 };
 

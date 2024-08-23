@@ -8,7 +8,7 @@
 #include "object.h"
 #include "type.h"
 
-#define FLOATOBJECT_REPRESENTATION_FORMAT       "%.*Lf"
+#define FLOATOBJECT_REPRESENTATION_FORMAT       "%.*f"
 #define FLOATOBJECT_REPRESENTATION_PRECISION    17
 
 extern type_object float_type;
@@ -16,12 +16,12 @@ extern type_object float_type;
 typedef struct float_object_t {
     ObjectHead
 
-    long double value;
+    double value;
 
 } float_object;
 
-#define IS_FLOAT(instance) (instance->type == &float_type)
-#define AS_FLOAT(instance) ((float_object*)instance)
+#define IS_FLOAT(instance) ((instance)->type == &float_type)
+#define AS_FLOAT(instance) ((float_object*)(instance))
 
 /**
  * Creates a float object instance with the value set to {v}.

@@ -57,7 +57,8 @@ statement           : simple_statements
 simple_statement    : expression
                     | assign_statement
                     | break_statement
-                    | return_statement;
+                    | return_statement
+                    | ewout_statement;
 
 simple_statements   : simple_statement (SYM_SEMCOL simple_statement)* SYM_SEMCOL? NEWLINE;
 
@@ -72,7 +73,8 @@ assign_statement    : lval SYM_ASSIGN expression    #lbl_assign_statement
                     ;
 
 break_statement     : KW_BREAK;
-return_statement    : KW_RETURN expression;
+return_statement    : KW_RETURN expression?;
+ewout_statement     : KW_EWOUT expression;
 
 if_statement        : KW_IF expression SYM_COL
                         br_if=block
@@ -110,8 +112,10 @@ expression          : SYM_LPAR expression SYM_RPAR                  #lbl_express
                     | lhs=expression SYM_EXP rhs=expression         #lbl_exponent_expr
                     | lhs=expression SYM_MULT rhs=expression        #lbl_mult_expr
                     | lhs=expression SYM_DIV rhs=expression         #lbl_div_expr
+                    | lhs=expression SYM_FLOOR_DIV rhs=expression   #lbl_floor_div_expr
                     | lhs=expression SYM_PLUS rhs=expression        #lbl_add_expr
                     | lhs=expression SYM_MINUS rhs=expression       #lbl_sub_expr
+                    | lhs=expression SYM_MOD rhs=expression         #lbl_mod_expr
 //                    Logic expressions
                     | lhs=expression SYM_AND rhs=expression         #lbl_and_expr
                     | lhs=expression SYM_OR rhs=expression          #lbl_or_expr
@@ -129,7 +133,9 @@ expression          : SYM_LPAR expression SYM_RPAR                  #lbl_express
                     | IDENTIFIER                                    #lbl_identifier
                     ;
 
-lval                : expression;
+lval                : obj=expression SYM_LSQ key=expression SYM_RSQ #lbl_lval_key_access
+                    | IDENTIFIER                                    #lbl_lval_identifier
+                    ;
 
 key_value_pair      : key=expression SYM_COL value=expression;
 
@@ -143,6 +149,8 @@ literal             : INT_LIT
                     | FLOAT_LIT
                     | STR_LIT
                     | NONE_LIT
+                    | TRUE_LIT
+                    | FALSE_LIT
                     | dict_lit
                     | list_lit
                     | tuple_lit

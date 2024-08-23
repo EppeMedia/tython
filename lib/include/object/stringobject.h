@@ -20,7 +20,7 @@ typedef struct string_object_t {
 
 #define IS_STRING(instance) (AS_OBJECT(instance)->type == &string_type)
 #define AS_STRING(instance) ((string_object*)(instance))
-#define GET_STRING(instance) (AS_STRING(instance->type->str(instance)))
+#define GET_STRING(instance) (AS_STRING((instance)->type->str(instance)))
 
 /**
  * Creates a string object for the specified c-style string and length. At most {length} characters of {str} are copied.

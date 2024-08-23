@@ -8,6 +8,7 @@
 #include "object/stringobject.h"
 #include "object/floatobject.h"
 #include "object/integerobject.h"
+#include "error/error.h"
 
 char* to_cstr(string_object* string_obj) {
 
@@ -38,7 +39,7 @@ object* string_create(const char* cstr, size_t length) {
         content[i] = cstr[i];
     }
 
-    object* obj = string_type.alloc(&string_type);
+    object* obj = ALLOC(string_type);
 
     AS_STRING(obj)->str = content;
     AS_STRING(obj)->length = length;
@@ -53,7 +54,7 @@ object* string_length(object* str) {
 
     size_t length = AS_STRING(str)->length;
 
-    return float_create(length);
+    return TO_INT(length);
 }
 
 /**
@@ -78,6 +79,55 @@ static object* identity(object* str) {
     return str;
 }
 
+static object* string_concat(object* str, object* rhs) {
+
+    assert(IS_STRING(str));
+
+    // make sure rhs has a string representation
+    if (!rhs->type->str) {
+        type_error();
+    }
+
+    GRAB_OBJECT(str);
+    GRAB_OBJECT(rhs);
+
+    string_object* lhs_str = AS_STRING(str);
+    string_object* rhs_str = AS_STRING(rhs->type->str(rhs));
+
+    GRAB_OBJECT(lhs_str);
+    GRAB_OBJECT(rhs_str);
+
+    // create a buffer large enough for the concatenated string
+    const size_t len = lhs_str->length + rhs_str->length;
+    char buf[len];
+
+    // copy the contents of the string buffers
+    memcpy(buf, lhs_str->str, lhs_str->length);
+    memcpy(buf + lhs_str->length, rhs_str->str, rhs_str->length);
+
+    RELEASE_OBJECT(lhs_str);
+    RELEASE_OBJECT(rhs_str);
+
+    RELEASE_OBJECT(str);
+    RELEASE_OBJECT(rhs);
+
+    return string_create(buf, len);
+}
+
+static void string_release(object* obj) {
+
+    // If we are about to be GC'ed, free the string buffer
+    if (obj->refs == 1) {
+        free(AS_STRING(obj)->str);
+    }
+
+    default_release(obj);
+}
+
+static number_functions string_number_functions = {
+        .add            = &string_concat,
+};
+
 static sequence_functions string_sequence_functions = {
     .length = &string_length,
 };
@@ -101,10 +151,10 @@ type_object string_type = {
         .str                = &identity,
         .hash               = &string_hash,
 
-        .number_functions   = NULL,
+        .number_functions   = &string_number_functions,
         .mapping_functions  = NULL,
         .sequence_functions = &string_sequence_functions,
 
         .grab               = &default_grab,
-        .release            = &default_release,
+        .release            = &string_release,
 };

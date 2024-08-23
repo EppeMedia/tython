@@ -47,6 +47,8 @@ public:
 
     virtual std::any visitReturn_statement(TythonParser::Return_statementContext *context) = 0;
 
+    virtual std::any visitEwout_statement(TythonParser::Ewout_statementContext *context) = 0;
+
     virtual std::any visitIf_statement(TythonParser::If_statementContext *context) = 0;
 
     virtual std::any visitFor_loop(TythonParser::For_loopContext *context) = 0;
@@ -73,17 +75,9 @@ public:
 
     virtual std::any visitLbl_inc_suffix(TythonParser::Lbl_inc_suffixContext *context) = 0;
 
-    virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *context) = 0;
-
     virtual std::any visitLbl_dec_prefix(TythonParser::Lbl_dec_prefixContext *context) = 0;
 
-    virtual std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *context) = 0;
-
-    virtual std::any visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *context) = 0;
-
     virtual std::any visitLbl_dec_suffix(TythonParser::Lbl_dec_suffixContext *context) = 0;
-
-    virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *context) = 0;
 
     virtual std::any visitLbl_neq_expr(TythonParser::Lbl_neq_exprContext *context) = 0;
 
@@ -91,23 +85,37 @@ public:
 
     virtual std::any visitLbl_add_expr(TythonParser::Lbl_add_exprContext *context) = 0;
 
-    virtual std::any visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *context) = 0;
-
     virtual std::any visitLbl_inc_prefix(TythonParser::Lbl_inc_prefixContext *context) = 0;
 
     virtual std::any visitLbl_mult_expr(TythonParser::Lbl_mult_exprContext *context) = 0;
 
-    virtual std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *context) = 0;
-
     virtual std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *context) = 0;
+
+    virtual std::any visitLbl_mod_expr(TythonParser::Lbl_mod_exprContext *context) = 0;
+
+    virtual std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *context) = 0;
+
+    virtual std::any visitLbl_call_expression(TythonParser::Lbl_call_expressionContext *context) = 0;
+
+    virtual std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *context) = 0;
+
+    virtual std::any visitLbl_gte_expr(TythonParser::Lbl_gte_exprContext *context) = 0;
+
+    virtual std::any visitLbl_key_access(TythonParser::Lbl_key_accessContext *context) = 0;
+
+    virtual std::any visitLbl_lte_expr(TythonParser::Lbl_lte_exprContext *context) = 0;
+
+    virtual std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *context) = 0;
 
     virtual std::any visitLbl_gt_expr(TythonParser::Lbl_gt_exprContext *context) = 0;
 
     virtual std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *context) = 0;
 
-    virtual std::any visitLbl_slice_access(TythonParser::Lbl_slice_accessContext *context) = 0;
+    virtual std::any visitLbl_floor_div_expr(TythonParser::Lbl_floor_div_exprContext *context) = 0;
 
-    virtual std::any visitLval(TythonParser::LvalContext *context) = 0;
+    virtual std::any visitLbl_lval_key_access(TythonParser::Lbl_lval_key_accessContext *context) = 0;
+
+    virtual std::any visitLbl_lval_identifier(TythonParser::Lbl_lval_identifierContext *context) = 0;
 
     virtual std::any visitKey_value_pair(TythonParser::Key_value_pairContext *context) = 0;
 

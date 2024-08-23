@@ -3,17 +3,15 @@
 //
 
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 #include "object/boolobject.h"
 #include "bridge/basicland.h"
-#include "object/functionobject.h"
+#include "object/integerobject.h"
+#include "object/floatobject.h"
+#include "api/api.h"
+#include "error/error.h"
 
 bool object_is_truthy(object* obj) {
-
-    if (!obj) {
-        return false;
-    }
 
     const number_functions* nf = obj->type->number_functions;
 
@@ -21,8 +19,7 @@ bool object_is_truthy(object* obj) {
 
     object* bool_obj = (*nf->to_bool)(obj);
 
-    assert(IS_BOOL(bool_obj));
-
+    // we do not need to GC bool objects
     return AS_BOOL(bool_obj)->value;
 }
 
@@ -52,4 +49,34 @@ function_object_function* resolve_builtin_method(object* object, const char* nam
     assert("Type error: method not found" && NULL);
 
     return NULL;
+}
+
+primitive_t object_to_primitive(object* object, int32_t type) {
+
+    switch (type) {
+
+        case SPEC_INT:
+            if (IS_INT(object)) {
+                return (primitive_t){ .integer = AS_INT(object)->value };
+            } else if (IS_FLOAT(object)) {
+                return (primitive_t){ .integer = AS_FLOAT(object)->value };
+            } else {
+                type_error();
+            }
+
+        case SPEC_FLOAT:
+
+            if (IS_INT(object)) {
+                return (primitive_t){ .floating_point = AS_INT(object)->value };
+            } else if (IS_FLOAT(object)) {
+                return (primitive_t){ .floating_point = AS_FLOAT(object)->value };
+            } else {
+                type_error();
+            }
+
+        default:
+            type_error();
+    }
+
+    return (primitive_t){ .integer = 0 };
 }

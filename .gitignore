@@ -16,11 +16,17 @@ thirdparty/
 include/parser_temp/
 build.ninja
 
+test/
 build/
 exec
+*.ll
+*.out
 
-benchmark/
+benchmarks/tython
 cmake-build-release/
 cmake-release/
 src/grammar/gen/
 
+.gdbinit
+
+**/*.aux

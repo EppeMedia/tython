@@ -10,10 +10,11 @@
 #include "object/stringobject.h"
 #include "object/integerobject.h"
 #include "object/boolobject.h"
+#include "error/error.h"
 
 object* float_create(double v) {
 
-    object* a = float_type.alloc(&float_type);
+    object* a = ALLOC(float_type);
 
     AS_FLOAT(a)->value = v;
 
@@ -28,7 +29,7 @@ static object* float_to_string(object* object) {
     const int str_len = snprintf(NULL, 0, FLOATOBJECT_REPRESENTATION_FORMAT, FLOATOBJECT_REPRESENTATION_PRECISION, AS_FLOAT(object)->value);
 
     // allocate string buffer
-    char* str = malloc(sizeof(char) * str_len);
+    char str[str_len];
 
     // fill string
     sprintf(str, FLOATOBJECT_REPRESENTATION_FORMAT, FLOATOBJECT_REPRESENTATION_PRECISION, AS_FLOAT(object)->value);
@@ -55,6 +56,8 @@ static object* float_rich_compare(object* lhs, object* rhs, int op) {
         rhs_value = AS_FLOAT(rhs)->value;
     } else if (IS_INT(rhs)) {
         rhs_value = (double)AS_INT(rhs)->value;
+    } else {
+        type_error();
     }
 
     NUMBER_RICH_COMPARE(lhs_value, rhs_value, op)
@@ -81,7 +84,6 @@ static float_object* convert_to_float(object* obj) {
 
     number_functions* nfs = obj->type->number_functions;
 
-    // todo: type error
     assert(nfs && nfs->to_float);
 
     return AS_FLOAT(nfs->to_float(obj));
@@ -94,7 +96,13 @@ static object* float_add(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(lhs_obj->value + rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT(lhs_obj->value + rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* float_sub(object* lhs, object* rhs) {
@@ -104,7 +112,13 @@ static object* float_sub(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(lhs_obj->value - rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT(lhs_obj->value - rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* float_mult(object* lhs, object* rhs) {
@@ -114,7 +128,13 @@ static object* float_mult(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(lhs_obj->value * rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT(lhs_obj->value * rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* float_div(object* lhs, object* rhs) {
@@ -124,7 +144,29 @@ static object* float_div(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(lhs_obj->value / rhs_obj->value);
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT(lhs_obj->value / rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
+}
+
+static object* float_floor_div(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_INT((long long int)(lhs_obj->value / rhs_obj->value));
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static object* float_exp(object* lhs, object* rhs) {
@@ -134,7 +176,29 @@ static object* float_exp(object* lhs, object* rhs) {
     float_object* lhs_obj = AS_FLOAT(lhs);
     float_object* rhs_obj = convert_to_float(rhs);
 
-    return TO_FLOAT(powl(lhs_obj->value, rhs_obj->value));
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT(pow(lhs_obj->value, rhs_obj->value));
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
+}
+
+static object* float_mod(object* lhs, object* rhs) {
+
+    assert(IS_FLOAT(lhs));
+
+    float_object* lhs_obj = AS_FLOAT(lhs);
+    float_object* rhs_obj = convert_to_float(rhs);
+
+    GRAB_OBJECT(rhs_obj);
+
+    object* result = TO_FLOAT((long long int)lhs_obj->value % (long long int)rhs_obj->value);
+
+    RELEASE_OBJECT(rhs_obj);
+
+    return result;
 }
 
 static number_functions float_number_functions = {
@@ -146,7 +210,9 @@ static number_functions float_number_functions = {
     .sub                = &float_sub,
     .mult               = &float_mult,
     .div                = &float_div,
+    .floor_div          = &float_floor_div,
     .exp                = &float_exp,
+    .mod                = &float_mod,
 } ;
 
 type_object float_type = {
@@ -156,7 +222,7 @@ type_object float_type = {
             .refs       = 0,
     },
 
-    .alloc              = &pool_alloc,
+    .alloc              = &default_alloc,
     .seqalloc           = NULL,
 
     .base               = NULL,

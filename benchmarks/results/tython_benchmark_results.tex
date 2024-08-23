@@ -1,0 +1,108 @@
+\begin{table}[hbt]
+\centering
+\begin{tabular}{ll}
+Label & Compiler flags \\
+\toprule
+Configuration1 & \lstinline[]$-d --no-specialize$ \\
+\midrule
+Configuration2 & \lstinline[]$-d --no-specialize --no-guards$ \\
+\midrule
+Configuration3 & \lstinline[]$-d$ \\
+\midrule
+Configuration4 & \lstinline[]$$ \\
+\midrule
+\end{tabular}
+\caption{The benchmark build configurations.}\label{tab:build_configurations}
+\end{table}
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive\_1 & 1.4597 & 1.4597 & 1.4597 & 1.4597 & 0.0000 \\
+\midrule
+fibonacci\_while\_1 & 0.2768 & 0.2768 & 0.2768 & 0.2768 & 0.0000 \\
+\midrule
+nbody\_1 & 1.6442 & 1.6442 & 1.6442 & 1.6442 & 0.0000 \\
+\midrule
+nqueens\_1 & 2.2429 & 2.2429 & 2.2429 & 2.2429 & 0.0000 \\
+\midrule
+pi\_1 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+quicksort\_1 & 1.9750 & 1.9750 & 1.9750 & 1.9750 & 0.0000 \\
+\midrule
+sieve\_1 & 4.9628 & 4.9628 & 4.9628 & 4.9628 & 0.0000 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Configuration1 (1 iterations).}\label{tab:benchmark_results1}
+\end{table}
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive\_2 & 1.5291 & 1.5291 & 1.5291 & 1.5291 & 0.0000 \\
+\midrule
+fibonacci\_while\_2 & 0.2827 & 0.2827 & 0.2827 & 0.2827 & 0.0000 \\
+\midrule
+nbody\_2 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+nqueens\_2 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+pi\_2 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\midrule
+quicksort\_2 & 2.0813 & 2.0813 & 2.0813 & 2.0813 & 0.0000 \\
+\midrule
+sieve\_2 & 3.9764 & 3.9764 & 3.9764 & 3.9764 & 0.0000 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Configuration2 (1 iterations).}\label{tab:benchmark_results2}
+\end{table}
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive\_3 & 0.1729 & 0.1729 & 0.1729 & 0.1729 & 0.0000 \\
+\midrule
+fibonacci\_while\_3 & 0.0294 & 0.0294 & 0.0294 & 0.0294 & 0.0000 \\
+\midrule
+nbody\_3 & 1.7782 & 1.7782 & 1.7782 & 1.7782 & 0.0000 \\
+\midrule
+nqueens\_3 & 1.8985 & 1.8985 & 1.8985 & 1.8985 & 0.0000 \\
+\midrule
+pi\_3 & 2.6243 & 2.6243 & 2.6243 & 2.6243 & 0.0000 \\
+\midrule
+quicksort\_3 & 1.7556 & 1.7556 & 1.7556 & 1.7556 & 0.0000 \\
+\midrule
+sieve\_3 & 3.7711 & 3.7711 & 3.7711 & 3.7711 & 0.0000 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Configuration3 (1 iterations).}\label{tab:benchmark_results3}
+\end{table}
+\noindent
+\begin{table}[hbt]
+\centering
+\begin{tabular}{lllllllll}
+    & \thead{Fastest \ Time (s)} & \thead{Mean \ Time (s)} & \thead{Median \ Time (s)} & \thead{Max \ Time (s)} & \thead{Variance (s$^2$)} \\
+\toprule
+fibonacci\_recursive\_4 & 0.0895 & 0.0895 & 0.0895 & 0.0895 & 0.0000 \\
+\midrule
+fibonacci\_while\_4 & 0.0274 & 0.0274 & 0.0274 & 0.0274 & 0.0000 \\
+\midrule
+nbody\_4 & 1.8853 & 1.8853 & 1.8853 & 1.8853 & 0.0000 \\
+\midrule
+nqueens\_4 & 1.9585 & 1.9585 & 1.9585 & 1.9585 & 0.0000 \\
+\midrule
+pi\_4 & 3.3716 & 3.3716 & 3.3716 & 3.3716 & 0.0000 \\
+\midrule
+quicksort\_4 & 1.5029 & 1.5029 & 1.5029 & 1.5029 & 0.0000 \\
+\midrule
+sieve\_4 & 3.9711 & 3.9711 & 3.9711 & 3.9711 & 0.0000 \\
+\midrule
+\end{tabular}
+\caption{The benchmark results for Configuration4 (1 iterations).}\label{tab:benchmark_results4}
+\end{table}

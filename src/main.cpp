@@ -104,26 +104,36 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
 
     // Run compiler
     auto bb = BasicBlock::Create(*llvmContext);
-    TythonBuilder builder(module, bb);
+    TythonBuilder builder(module, bb, config);
 
     SourceFileVisitor sourceFileVisitor(module, &builder, object_symbol_table);
 
     // module (or program) entry point
-    auto int32_type = llvm::Type::getInt32Ty(builder.getContext());
-    auto entry_function_type = llvm::FunctionType::get(int32_type, false);
+    auto int64_type = llvm::Type::getInt64Ty(builder.getContext());
+    auto entry_function_type = llvm::FunctionType::get(int64_type, false);
     auto entry_function_name = isMain ? "main" : "__module_entry__";
     auto entry_function_linkage = isMain ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
     auto entry_function = llvm::Function::Create(entry_function_type, entry_function_linkage, entry_function_name, module);
-    auto entry_function_bb = llvm::BasicBlock::Create(builder.getContext(), "entry", entry_function);
+    auto entry_function_exit = llvm::BasicBlock::Create(builder.getContext(), "exit", entry_function);
+    auto entry_function_entry = llvm::BasicBlock::Create(builder.getContext(), "entry", entry_function, entry_function_exit);
 
     // all top-level instructions are inside a main procedure
-    builder.SetInsertPoint(entry_function_bb);
+    builder.SetInsertPoint(entry_function_entry);
 
     // descend into the source file
     sourceFileVisitor.visitProgram(ast);
 
+    if (!builder.GetInsertBlock()->getTerminator()) {
+        builder.CreateBr(entry_function_exit);
+    }
+
+    builder.SetInsertPoint(entry_function_exit);
+
+    // GC global variables
+    builder.popGlobalContext();
+
     // finish up the main function
-    auto zero = llvm::ConstantInt::get(int32_type, 0);
+    auto zero = llvm::ConstantInt::get(int64_type, 0);
     builder.CreateRet(zero);
 
     // update compilation unit - symbol table map
@@ -169,25 +179,30 @@ std::string build_sourcefile(const configuration_t* config, std::string& path, b
     }
 
     legacy::PassManager pass;
-    auto FileType = llvm::CodeGenFileType::CGFT_ObjectFile;
 
-    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+    // avoid optimizations for debugging
+    if (!config->debug) {
+
+        // optimize tagged union value structs with constant type
+        pass.add(createSROAPass());
+        pass.add(createSCCPPass());
+        pass.add(createCFGSimplificationPass());
+
+//        // loop invariant code motion (hoisting code to preheader)
+//        pass.add(createLICMPass());
+//        // Promote allocas to registers.
+//        pass.add(createPromoteMemoryToRegisterPass());
+//        // Do simple "peephole" optimizations and bit-twiddling optimizations.
+//        pass.add(createInstructionCombiningPass());
+//        // Reassociate expressions.
+//        pass.add(createReassociatePass());
+    }
+
+    if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile)) {
 
         errs() << "The selected target cannot emit a file of this type.";
 
         throw CompileException("The selected target cannot emit a file of this type.");
-    }
-
-    // avoid optimizations for debugging
-    if (!config->debug) {
-        // loop invariant code motion (hoisting code to preheader)
-        pass.add(createLICMPass());
-        // Promote allocas to registers.
-        pass.add(createPromoteMemoryToRegisterPass());
-        // Do simple "peephole" optimizations and bit-twiddling optimizations.
-        pass.add(createInstructionCombiningPass());
-        // Reassociate expressions.
-        pass.add(createReassociatePass());
     }
 
     pass.run(*module);
@@ -283,7 +298,12 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    cout << "tython " << TYTHON_VERSION << endl;
+    if (configuration.version) {
+
+        cout << "tython " << TYTHON_VERSION << (!GC_ENABLED ? " (GC disabled)" : "") << endl;
+
+        return 0;
+    }
 
     if (!configuration.src_files) {
 
@@ -291,6 +311,14 @@ int main(int argc, char **argv) {
         cout << MSG_HELP << endl;
 
         return 1;
+    }
+
+#if !GC_ENABLED
+        std::cerr << "Warning: garbage collection is disabled in this build." << std::endl;
+#endif
+
+    if (configuration.no_guards && !configuration.no_specialize) {
+        std::cerr << "Warning: --no-guards flag is set, but has no effect without --no-specialize also set." << std::endl;
     }
 
     // initialize compilation target
@@ -333,9 +361,12 @@ int main(int argc, char **argv) {
 
     std::cout << "Linking objects and building executable..." << endl;
 
-    std::string executable_filename;
+    std::string executable_filename = "exec";
 
-    executable_filename = configuration.out->value_or("exec");
+    if (configuration.out) {
+        executable_filename = configuration.out->value();
+    }
+
     const auto path_delimiter_pos = executable_filename.find_last_of('/');
 
     // make sure the requested path exists

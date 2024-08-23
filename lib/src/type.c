@@ -135,7 +135,14 @@ object* pool_alloc(type_object* typeobj) {
 }
 
 object* default_alloc(type_object* typeobj) {
-    return (object*) default_seqalloc(typeobj, 0);
+
+    object* obj = malloc(typeobj->instance_size);
+
+    obj->identity = obj;
+    obj->type = typeobj;
+    obj->refs = 0;
+
+    return obj;
 }
 
 object* default_seqalloc(type_object* typeobj, size_t n) {
@@ -152,19 +159,15 @@ object* default_seqalloc(type_object* typeobj, size_t n) {
 }
 
 void default_grab(object* instance) {
-
     GRAB_OBJECT(instance);
 }
 
 void default_release(object* instance) {
 
-    assert(instance->refs > 0);
-
-    instance->refs--;
-
-    if (instance->refs == 0) {
+    if (instance->refs == 1) {
         // release this object
-//        printf("Releasing object %p...\r\n", instance);
         free(instance);
+    } else {
+        instance->refs--;
     }
 }

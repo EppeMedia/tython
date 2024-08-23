@@ -3,8 +3,8 @@
 //
 
 #include <list>
-#include "../../include/utils/Utils.h"
-#include "../../include/exception/CompileException.h"
+#include "utils/Utils.h"
+#include "exception/CompileException.h"
 #include <spdlog/spdlog.h>
 #include <Token.h>
 
@@ -202,12 +202,15 @@ namespace utils {
         return configuration_t {
             .src_files = getDefaultArguments(argc, argv),
             .help = hasFlag(argc, argv, { FLAG_HELP, FLAG_HELP_SHORT, FLAG_HELP_UNHELPFUL }),
+            .version = hasFlag(argc, argv, { FLAG_VERSION }),
             .verbose = hasFlag(argc, argv, { FLAG_VERBOSE, FLAG_VERBOSE_SHORT }),
             .main = getFlagArgument(argc, argv, { FLAG_MAIN, FLAG_MAIN_SHORT }),
             .build_dir = getFlagArgument(argc, argv, { FLAG_BUILD_DIR, FLAG_BUILD_DIR_SHORT }),
             .out = getFlagArgument(argc, argv, { FLAG_OUTPUT, FLAG_OUTPUT_SHORT }),
             .link_objects = getFlagArguments(argc, argv, { FLAG_LINK_OBJECTS, FLAG_LINK_OBJECTS_SHORT }),
             .emit_llvm = getFlagArgument(argc, argv, FLAG_EMIT_LLVM),
+            .no_specialize = hasFlag(argc, argv, { FLAG_NO_SPECIALIZE, FLAG_NO_SPECIALIZE_SHORT }),
+            .no_guards = hasFlag(argc, argv, { FLAG_NO_TYPE_GUARDS }),
             .debug = hasFlag(argc, argv, { FLAG_EMIT_DEBUG, FLAG_EMIT_DEBUG_SHORT }),
         };
     }
@@ -280,7 +283,7 @@ namespace utils {
 
     void log_warn(const TythonModule *module, antlr4::ParserRuleContext *ctx, const std::string &message) {
 
-        const auto source_name = module->getSourceFileName();
+        const auto& source_name = module->getSourceFileName();
         const auto line_nr = ctx->getStart()->getLine();
 
         const auto msg = std::format("{}, line {}: {}\n\r->\t{}", source_name, line_nr, message, ctx->getText());

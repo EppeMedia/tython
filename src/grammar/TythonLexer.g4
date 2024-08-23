@@ -60,6 +60,7 @@ KW_BREAK            : 'break';
 KW_EXTERN           : 'extern';
 KW_IMPORT           : 'import';
 KW_SELF             : 'self';
+KW_EWOUT            : 'ewout';      // Error/Warning OUT
 
 // symbols
 SYM_LPAR            : '(' {this->openBrace();};
@@ -92,7 +93,9 @@ SYM_PLUS            : '+';
 SYM_MINUS           : '-';
 SYM_MULT            : '*';
 SYM_DIV             : '/';
+SYM_FLOOR_DIV       : '//';
 SYM_EXP             : '**';
+SYM_MOD             : '%';
 
 SYM_INC             : '++';
 SYM_DEC             : '--';
@@ -104,8 +107,8 @@ SYM_COMMENT         : '#' ~[\r\n]* -> skip;
 SYM_COMMENT_START   : '/*' -> pushMode(comment_block), skip;
 
 // identifier-like literals
-TRUE_LIT            : 'true';
-FALSE_LIT           : 'false';
+TRUE_LIT            : 'True';
+FALSE_LIT           : 'False';
 NONE_LIT            : 'None';
 
 // references

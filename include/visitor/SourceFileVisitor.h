@@ -42,7 +42,8 @@ public:
     std::any visitLbl_assign_plus_eq(TythonParser::Lbl_assign_plus_eqContext *ctx) override;
     std::any visitLbl_assign_minus_eq(TythonParser::Lbl_assign_minus_eqContext *ctx) override;
 
-    std::any visitLval(TythonParser::LvalContext *ctx) override;
+    std::any visitLbl_lval_key_access(TythonParser::Lbl_lval_key_accessContext *ctx) override;
+    std::any visitLbl_lval_identifier(TythonParser::Lbl_lval_identifierContext *ctx) override;
 
     std::any visitLbl_expression_parentheses(TythonParser::Lbl_expression_parenthesesContext *ctx) override;
 
@@ -70,6 +71,8 @@ public:
     std::any visitFunction_def(TythonParser::Function_defContext *ctx) override;
     std::any visitReturn_statement(TythonParser::Return_statementContext *ctx) override;
 
+    std::any visitEwout_statement(TythonParser::Ewout_statementContext *ctx) override;
+
     std::any visitCall_expression(TythonParser::Call_expressionContext *ctx) override;
     std::any visitArguments(TythonParser::ArgumentsContext *ctx) override;
 
@@ -85,8 +88,10 @@ public:
     std::any visitLbl_exponent_expr(TythonParser::Lbl_exponent_exprContext *ctx) override;
     std::any visitLbl_mult_expr(TythonParser::Lbl_mult_exprContext *ctx) override;
     std::any visitLbl_div_expr(TythonParser::Lbl_div_exprContext *ctx) override;
+    std::any visitLbl_floor_div_expr(TythonParser::Lbl_floor_div_exprContext *ctx) override;
     std::any visitLbl_add_expr(TythonParser::Lbl_add_exprContext *ctx) override;
     std::any visitLbl_sub_expr(TythonParser::Lbl_sub_exprContext *ctx) override;
+    std::any visitLbl_mod_expr(TythonParser::Lbl_mod_exprContext *ctx) override;
 
     std::any visitLbl_and_expr(TythonParser::Lbl_and_exprContext *ctx) override;
     std::any visitLbl_or_expr(TythonParser::Lbl_or_exprContext *ctx) override;
