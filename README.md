@@ -1,6 +1,6 @@
 # Tython
 
-An experimental type-shifting Python compiler. Initially developed for running performance experiments for the MSc. thesis of Manzi Aimé Ntagengerwa (https://manzi-it.com/file/resume/tython.pdf).
+An experimental type-shifting Python compiler. Initially developed for running performance experiments for the MSc. thesis of Manzi Aimé Ntagengerwa (https://manzi-it.com/file/resume/thesis.pdf).
 
 # Installation
 
